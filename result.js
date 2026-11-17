@@ -95,7 +95,8 @@ let rsSelected = null; /* 선택한 객실 호수 */
 let rsChip = "all";
 let rsQuery = "";
 const currentRows = () => resultRows(rsDate);
-const isEditable = (r) => r.status === "review" || (r.status === "done" && !r.confirmed);
+/* 검수대기 · 청소완료 상태에서 재청소를 요청할 수 있어요 (재청소 요청 상태는 체크한 항목을 읽기만 해요) */
+const isEditable = (r) => r.status === "review" || r.status === "done";
 
 const STAFF_AVATAR = (name) => {
     const photo = STAFF_PHOTO[name]
@@ -154,6 +155,11 @@ const PHOTO_GROUPS = [
     { name: "욕실 청소 상태", desc: "세면대와 변기, 바닥 상태가 보이도록 촬영해 주세요.", n: 4, fresh: 2 },
 ];
 
+const rsPhoto = (r, gi, i) => ({
+    src: ATTACHMENTS[(gi * 2 + i) % ATTACHMENTS.length],
+    fresh: !!(r.resub && i < PHOTO_GROUPS[gi].fresh),
+});
+
 function renderResultDetail() {
     const box = $("#rsDetail");
     const r = currentRows().find((x) => x.no === rsSelected);
@@ -190,7 +196,6 @@ function renderResultDetail() {
         `<div class="rs-items">${r.hist.map(([t, title, note]) => item(fmtStamp(rsDate, t), title, note)).join("")}</div>`
     );
 
-    const photoIdx = (gi, i) => (gi * 2 + i) % ATTACHMENTS.length;
     const photos = acc(
         "인증사진",
         PHOTO_GROUPS.map(
@@ -198,7 +203,7 @@ function renderResultDetail() {
         <div class="rs-photo-group">
           <div class="rs-photo-tit"><strong>${g.name}</strong><span>${g.desc}</span></div>
           <div class="rs-photo-list">${Array.from({ length: g.n }, (_, i) => `
-            <div class="rs-photo"><img src="${ATTACHMENTS[photoIdx(gi, i)]}" alt="${g.name}" onerror="this.style.visibility='hidden'" />${r.resub && i < g.fresh ? `<span class="badge rs-new">NEW</span>` : ""}</div>`).join("")}
+            <button class="rs-photo" type="button" data-rs-photo="${gi}:${i}" aria-label="${g.name} ${i + 1}번 사진 크게 보기"><img src="${rsPhoto(r, gi, i).src}" alt="" onerror="this.style.visibility='hidden'" />${rsPhoto(r, gi, i).fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</button>`).join("")}
           </div>
         </div>`
         ).join("")
@@ -235,6 +240,22 @@ function renderResultDetail() {
         )
         : "";
 
+    /* 하단 버튼: 검수대기 = 재청소 요청 + 검수 완료 / 청소완료 = 재청소 요청 / 재청소 요청 = 요청 취소 + 검수 완료 */
+    const foot =
+        r.status === "reclean"
+            ? `<div class="rs-d-foot">
+      <button class="btn btn-lg btn-outline" type="button" data-rs-cancel>재청소 요청 취소</button>
+      <button class="btn btn-lg btn-primary" type="button" data-rs-confirm>검수 완료</button>
+    </div>`
+            : r.status === "review"
+                ? `<div class="rs-d-foot">
+      <button class="btn btn-lg btn-outline" type="button" data-rs-reclean>재청소 요청</button>
+      <button class="btn btn-lg btn-primary" type="button" data-rs-confirm>검수 완료</button>
+    </div>`
+                : `<div class="rs-d-foot is-single">
+      <button class="btn btn-lg btn-primary" type="button" data-rs-reclean>재청소 요청</button>
+    </div>`;
+
     box.innerHTML = `
     <div class="rs-d-head">
       <h2>청소 결과 상세</h2>
@@ -246,12 +267,7 @@ function renderResultDetail() {
         <div class="rs-acc-list">${history}${photos}${checklist}${memo}${notes}</div>
       </div>
     </div>
-    ${editable
-            ? `<div class="rs-d-foot">
-      <button class="btn btn-lg btn-outline" type="button" data-rs-reclean disabled>재청소 요청</button>
-      <button class="btn btn-lg btn-primary" type="button" data-rs-confirm>검수 완료</button>
-    </div>`
-            : ""}`;
+    ${foot}`;
     fitRsDetail();
 }
 
@@ -305,8 +321,6 @@ function handleResultsClick(e) {
         const on = chk.getAttribute("aria-checked") !== "true";
         chk.setAttribute("aria-checked", String(on));
         chk.classList.toggle("is-checked", on);
-        /* 체크한 항목이 하나라도 있어야 재청소를 요청할 수 있어요 */
-        $("[data-rs-reclean]").disabled = !$("#rsDetail .rs-check-item.is-checked");
         return true;
     }
     const r = currentRows().find((x) => x.no === rsSelected);
@@ -320,19 +334,176 @@ function handleResultsClick(e) {
     }
     if (r && e.target.closest("[data-rs-reclean]")) {
         const req = [...document.querySelectorAll("#rsDetail .rs-check-item.is-checked")].map((x) => x.textContent.trim());
-        if (!req.length) return true;
-        const msg = $("#rsMsg").value.trim();
+        const msg = ($("#rsMsg")?.value || "").trim();
+        r.prev = { status: r.status, confirmed: !!r.confirmed };
         r.status = "reclean";
+        r.confirmed = false;
         r.req = req;
-        r.msg = msg || `${req.join(", ")} 재청소 요청`;
+        r.msg = msg || (req.length ? `${req.join(", ")} 재청소 요청` : "재청소 요청");
         r.first = r.first || r.at;
         r.hist.push([nowHHMM(), "재청소 요청", `요청사유: ${r.msg}`]);
         renderResults();
         renderResultDetail();
+        openRsModal("requested");
+        return true;
+    }
+    if (r && e.target.closest("[data-rs-cancel]")) {
+        openRsModal("cancelAsk");
+        return true;
+    }
+    const photo = e.target.closest("[data-rs-photo]");
+    if (r && photo) {
+        const [gi, i] = photo.dataset.rsPhoto.split(":").map(Number);
+        openRsViewer(r, gi, i);
         return true;
     }
     return false;
 }
+
+/* ---------- 모달 (딤드 + 가운데) : 재청소 요청 완료 / 요청 취소 확인 / 취소 완료 / 인증사진 크게 보기 ---------- */
+const rsModalEl = document.createElement("div");
+rsModalEl.className = "hm";
+rsModalEl.id = "rsModal";
+rsModalEl.hidden = true;
+document.body.appendChild(rsModalEl);
+
+function closeRsModal() {
+    rsModalEl.hidden = true;
+    rsModalEl.innerHTML = "";
+}
+
+function openRsModal(kind) {
+    const ok = kind === "cancelAsk";
+    const danger = ok;
+    const title =
+        kind === "requested" ? "재청소 요청이 완료 되었습니다."
+            : kind === "cancelAsk" ? "재청소 요청을 취소 하시겠습니까?"
+                : "재청소 요청이 취소 되었습니다.";
+    const sub = kind === "requested" ? "재청소가 시작되기 전까지 요청을 취소할 수 있습니다." : "";
+    rsModalEl.innerHTML = `
+    <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="${title}">
+      <div class="rs-cm-body">
+        <span class="rs-cm-ic${danger ? " is-danger" : ""}"><img src="${ICON(danger ? "exclamation-red" : "check-purple")}" alt="" /></span>
+        <div class="rs-cm-tx"><strong>${title}</strong>${sub ? `<span>${sub}</span>` : ""}</div>
+      </div>
+      <div class="rs-cm-btns">
+        ${ok ? `<button class="btn btn-lg btn-outline" type="button" data-rs-m="close">닫기</button>` : ""}
+        <button class="btn btn-lg btn-primary" type="button" data-rs-m="${ok ? "cancel-ok" : "close"}">확인</button>
+      </div>
+    </div>`;
+    rsModalEl.hidden = false;
+    rsModalEl.querySelector(".btn-primary").focus();
+}
+
+/* 인증사진 뷰어: 큰 사진 1장 + 썸네일 목록 (많으면 가로 스크롤 / 스크롤바 자리는 항상 비워둬요) */
+let rsView = null;
+function openRsViewer(r, gi, i) {
+    const g = PHOTO_GROUPS[gi];
+    rsView = { photos: Array.from({ length: g.n }, (_, k) => rsPhoto(r, gi, k)), i };
+    rsModalEl.innerHTML = `
+    <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="인증사진">
+      <div class="hm-head">
+        <h2 class="hm-title">인증사진</h2>
+        <button class="hm-close" type="button" data-rs-m="close" aria-label="닫기"><img class="i20" src="${ICON("close")}" alt="" /></button>
+      </div>
+      <div class="rs-vw-body">
+        <div class="rs-vw-main"><img id="rsVwImg" alt="" /><span class="badge badge-pr500 rs-new" id="rsVwNew">NEW</span></div>
+        <div class="rs-vw-lw">
+          <div class="rs-vw-list" id="rsVwList">${rsView.photos.map((p, k) => `
+            <button class="rs-vw-th" type="button" data-rs-th="${k}" aria-label="${k + 1}번 사진"><img src="${p.src}" alt="" onerror="this.style.visibility='hidden'" />${p.fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</button>`).join("")}
+          </div>
+          <div class="rs-vw-bar" id="rsVwBar"><span class="rs-vw-thumb" id="rsVwThumb"></span></div>
+        </div>
+      </div>
+    </div>`;
+    rsModalEl.hidden = false;
+    paintRsViewer();
+    syncRsBar();
+}
+
+function paintRsViewer() {
+    const p = rsView.photos[rsView.i];
+    const img = $("#rsVwImg");
+    img.style.visibility = "";
+    img.onerror = () => (img.style.visibility = "hidden");
+    img.src = p.src;
+    $("#rsVwNew").hidden = !p.fresh;
+    rsModalEl.querySelectorAll("[data-rs-th]").forEach((b) => b.classList.toggle("is-on", Number(b.dataset.rsTh) === rsView.i));
+}
+
+/* 가로 스크롤바: 목록이 넘칠 때만 보이고, 안 넘쳐도 자리(높이)는 그대로 */
+function syncRsBar() {
+    const list = $("#rsVwList"), bar = $("#rsVwBar"), th = $("#rsVwThumb");
+    if (!list || !bar) return;
+    const over = list.scrollWidth - list.clientWidth;
+    bar.classList.toggle("is-off", over <= 1);
+    if (over <= 1) return;
+    const w = (bar.clientWidth * list.clientWidth) / list.scrollWidth;
+    th.style.width = w + "px";
+    th.style.transform = `translateX(${((bar.clientWidth - w) * list.scrollLeft) / over}px)`;
+}
+
+rsModalEl.addEventListener("click", (e) => {
+    if (e.target === rsModalEl) return closeRsModal();
+    const th = e.target.closest("[data-rs-th]");
+    if (th) {
+        rsView.i = Number(th.dataset.rsTh);
+        paintRsViewer();
+        return;
+    }
+    const m = e.target.closest("[data-rs-m]");
+    if (!m) return;
+    if (m.dataset.rsM === "cancel-ok") {
+        const r = currentRows().find((x) => x.no === rsSelected);
+        if (r) {
+            const pv = r.prev || { status: "done", confirmed: false };
+            r.status = pv.status;
+            r.confirmed = pv.confirmed;
+            r.prev = null;
+            r.req = null;
+            r.msg = null;
+            r.hist.push([nowHHMM(), "재청소 요청 취소"]);
+            renderResults();
+            renderResultDetail();
+        }
+        openRsModal("cancelled");
+        return;
+    }
+    closeRsModal();
+});
+rsModalEl.addEventListener("scroll", syncRsBar, true);
+rsModalEl.addEventListener("wheel", (e) => {
+    const list = e.target.closest?.("#rsVwList");
+    if (list && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        list.scrollLeft += e.deltaY;
+        e.preventDefault();
+    }
+}, { passive: false });
+/* 스크롤바 막대 끌기 / 트랙 누르기 */
+rsModalEl.addEventListener("pointerdown", (e) => {
+    const bar = e.target.closest("#rsVwBar");
+    if (!bar || bar.classList.contains("is-off")) return;
+    const list = $("#rsVwList"), th = $("#rsVwThumb");
+    const over = list.scrollWidth - list.clientWidth;
+    const room = bar.clientWidth - th.offsetWidth;
+    const toScroll = (x, grab) => {
+        const left = Math.min(Math.max(x - bar.getBoundingClientRect().left - grab, 0), room);
+        list.scrollLeft = (left / room) * over;
+    };
+    const grab = e.target === th ? e.clientX - th.getBoundingClientRect().left : th.offsetWidth / 2;
+    toScroll(e.clientX, grab);
+    const move = (ev) => toScroll(ev.clientX, grab);
+    const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+});
+window.addEventListener("resize", syncRsBar);
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !rsModalEl.hidden) closeRsModal();
+});
 
 $("#rsSearch").addEventListener("input", (e) => {
     rsQuery = e.target.value;

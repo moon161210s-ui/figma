@@ -1280,6 +1280,17 @@ button {
     color: var(--color-gray-300);
 }
 
+/* 진한 배지 (Figma Badge: black / pr 500) */
+.badge-black {
+    background: var(--color-gray-900);
+    color: var(--color-base-inverse);
+}
+
+.badge-pr500 {
+    background: var(--color-primary-500);
+    color: var(--color-white);
+}
+
 /* ==========================================================
  Button (box_button.svg)
  크기: lg 56 / md 48 / sm 40 / xs 32
@@ -2951,6 +2962,10 @@ main[hidden] {
 
 .rs-photo {
     position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    cursor: pointer;
     height: 136px;
     overflow: hidden;
     border: 1px solid var(--color-line-low);
@@ -2968,8 +2983,6 @@ main[hidden] {
     position: absolute;
     top: 9px;
     left: 9px;
-    background: var(--color-primary-500);
-    color: var(--color-white);
 }
 
 /* 체크리스트 */
@@ -3012,8 +3025,8 @@ main[hidden] {
 }
 
 .rs-box {
-    display: grid;
-    place-items: center;
+    position: relative;
+    flex-shrink: 0;
     width: 20px;
     height: 20px;
     border: 1px solid var(--color-line-normal);
@@ -3021,7 +3034,12 @@ main[hidden] {
     background: var(--color-base-inverse);
 }
 
+/* 체크 아이콘(20×20)은 테두리 안쪽(18×18)이 아니라 박스 전체(20×20)에 맞춰야 정중앙이에요 */
 .rs-box img {
+    position: absolute;
+    inset: -1px;
+    width: 20px;
+    height: 20px;
     visibility: hidden;
 }
 
@@ -3076,6 +3094,173 @@ main[hidden] {
     gap: 8px;
     padding: 16px 20px;
     background: var(--color-base-inverse);
+}
+
+.rs-d-foot.is-single {
+    grid-template-columns: 1fr;
+}
+
+/* ---------- 컨펌 모달 (540 / 본문 위 32 · 아래 20 / 버튼 56) ---------- */
+.rs-cm-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 32px 24px 20px;
+}
+
+.rs-cm-ic {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 999px;
+    background: var(--color-primary-50);
+}
+
+.rs-cm-ic.is-danger {
+    background: var(--color-dangerous-bg);
+}
+
+.rs-cm-ic img {
+    width: 40px;
+    height: 40px;
+}
+
+.rs-cm-tx {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.rs-cm-tx strong {
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.rs-cm-tx span {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+}
+
+.rs-cm-btns {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+}
+
+.rs-cm-btns .btn {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* ---------- 인증사진 뷰어 (1200 / 큰 사진 600 / 썸네일 145×110) ---------- */
+.rs-vw {
+    width: 1200px;
+}
+
+.rs-vw-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    padding: 16px 24px;
+    overflow: hidden;
+}
+
+.rs-vw-main {
+    position: relative;
+    flex-shrink: 0;
+    height: min(600px, calc(100dvh - 300px));
+    min-height: 160px;
+    overflow: hidden;
+    border: 1px solid var(--color-line-low);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-disable);
+}
+
+.rs-vw-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.rs-vw-main .rs-new {
+    top: 10px;
+    left: 10px;
+}
+
+.rs-vw-lw {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rs-vw-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.rs-vw-list::-webkit-scrollbar {
+    display: none;
+}
+
+.rs-vw-th {
+    position: relative;
+    flex: 0 0 145px;
+    width: 145px;
+    height: 110px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-line-low);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-disable);
+    opacity: 0.4;
+    cursor: pointer;
+}
+
+.rs-vw-th.is-on,
+.rs-vw-th:hover {
+    opacity: 1;
+}
+
+.rs-vw-th img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.rs-vw-th .rs-new {
+    top: 9px;
+    left: 9px;
+}
+
+/* 가로 스크롤바 (8px): 넘칠 때만 보이고, 안 넘쳐도 자리는 그대로 */
+.rs-vw-bar {
+    position: relative;
+    height: 8px;
+    border-radius: 100px;
+    background: var(--color-gray-50);
+    cursor: pointer;
+}
+
+.rs-vw-bar.is-off {
+    visibility: hidden;
+}
+
+.rs-vw-thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 8px;
+    border-radius: 100px;
+    background: var(--color-gray-900);
 }
 
 @media (max-width: 900px) {

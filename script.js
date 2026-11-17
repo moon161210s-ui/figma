@@ -969,6 +969,7 @@ document.addEventListener("keydown", (e) => {
         if (hoursOpen()) closeHours();
         else if (fmenu) closeFilterMenu();
         else if (pop) closePopover();
+        else if (document.getElementById("rsModal")?.hidden === false) { /* 청소 결과 모달이 열려 있으면 모달만 닫아요 (result.js) */ }
         else if (typeof rsSelected !== "undefined" && rsSelected) {
             rsSelected = null;
             renderResults();
