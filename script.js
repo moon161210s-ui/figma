@@ -590,6 +590,17 @@ function openPopover(kind, anchor, room) {
         });
     }
 
+    /* 퇴실 예정(요일+시간 설정) 모달만 높이 400px 로 고정하고, 내용이 넘치면 본문만 스크롤돼요 (닫기/저장하기 버튼은 아래에 고정) */
+    if (kind === "checkout") {
+        pop.classList.add("is-fixed");
+        const body = document.createElement("div");
+        body.className = "pop-body";
+        const act = $(".pop-actions", pop);
+        while (pop.firstChild && pop.firstChild !== act)
+            body.appendChild(pop.firstChild);
+        pop.insertBefore(body, act);
+    }
+
     document.body.appendChild(pop);
     initTimePicker(pop);
     placePopover();

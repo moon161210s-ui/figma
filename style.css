@@ -751,7 +751,7 @@ button {
 
 .search {
     position: relative;
-    width: 240px;
+    width: 200px;
 }
 
 .search .i20 {
@@ -1424,6 +1424,49 @@ button {
     border-radius: var(--radius-lg);
     background: var(--color-base-inverse);
     box-shadow: var(--shadow-popover);
+}
+
+/* 요일/시간 설정 모달: 높이 400px 고정 / 넘치는 내용은 .pop-body 에서 스크롤 (스크롤바는 알림 센터와 같은 디자인) */
+.popover.is-fixed {
+    display: flex;
+    flex-direction: column;
+    height: min(400px, calc(100vh - 8px));
+}
+
+.pop-body {
+    flex: 1;
+    min-height: 0;
+    margin-right: -11px;
+    /* 스크롤바가 모달 안쪽 여백에 놓여서 내용 폭은 그대로예요 */
+    padding-right: 3px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.popover.is-fixed .pop-actions {
+    flex-shrink: 0;
+}
+
+.pop-body::-webkit-scrollbar {
+    width: var(--scroll-width);
+}
+
+.pop-body::-webkit-scrollbar-track {
+    margin: var(--scroll-inset) 0;
+    background: transparent;
+}
+
+.pop-body::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: var(--color-gray-200);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .pop-body {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-gray-200) transparent;
+    }
 }
 
 .pop-label {
