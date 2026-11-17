@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>실시간 객실 청소 현황 | VENDY</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="preload" as="image" href="resource/icon/moon.svg" />
     <!-- 저장된 화면 모드를 화면이 그려지기 전에 적용해요 (깜빡임 방지) -->
     <script>try { if (localStorage.getItem("theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) { }</script>
 </head>
@@ -90,7 +91,8 @@
                             aria-label="프로필 메뉴">
                             <!-- 프로필 사진: resource/img/avatar.png -->
                             <img class="avatar" src="resource/img/avatar.png" alt="프로필" />
-                            <img class="i16" src="resource/icon/arrow-down.svg" alt="" />
+                            <!-- 시안 icon/arrow-down 24x24: 큰 버전(-big) 아이콘 사용 -->
+                            <img class="i24" src="resource/icon/arrow-down-big.svg" alt="" />
                         </button>
                     </div>
                 </header>

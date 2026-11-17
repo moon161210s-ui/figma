@@ -482,6 +482,17 @@ button {
     cursor: pointer;
 }
 
+/* 시안 icon_btn 상태: Hover = 테두리 gray-100 / Click(누르는 중·알림센터가 열려 있는 동안) = 배경 low-bg + 기본 테두리 */
+.icon-btn:hover {
+    border-color: var(--color-gray-100);
+}
+
+.icon-btn:active,
+.icon-btn[aria-expanded="true"] {
+    border-color: var(--color-line-normal);
+    background: var(--color-bg-low);
+}
+
 .icon-btn.has-dot::after {
     content: "";
     position: absolute;
@@ -707,6 +718,28 @@ button {
     padding: 20px 24px;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     background: var(--color-base-inverse);
+}
+
+/* 스크롤해서 패널의 원래 윗부분이 헤더 뒤로 올라가도 위쪽 모서리 radius 가 유지되도록,
+   고정된 툴바의 두 모서리 바깥을 배경색으로 덮어요 (스크롤 전에는 배경과 같은 색이라 티가 안 나요) */
+.toolbar::before,
+.toolbar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: var(--radius-xl);
+    height: var(--radius-xl);
+    pointer-events: none;
+}
+
+.toolbar::before {
+    left: 0;
+    background: radial-gradient(circle at 100% 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
+}
+
+.toolbar::after {
+    right: 0;
+    background: radial-gradient(circle at 0 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
 }
 
 .search {
@@ -1401,41 +1434,79 @@ button {
     margin-top: 16px;
 }
 
-.time-field {
-    position: relative;
-    display: block;
+/* ---------- 시간 선택 (오전/오후 · 시 · 분 목록) ---------- */
+.tp {
     margin-top: 8px;
 }
 
-.time-field .i20 {
-    position: absolute;
-    top: 10px;
-    left: 12px;
-    pointer-events: none;
-}
-
-.time-field input {
-    width: 100%;
+.tp-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     height: 40px;
-    padding: 0 12px 0 40px;
-    border: 1px solid var(--color-line-normal);
-    border-radius: var(--radius-md);
-    font: inherit;
+    padding: 0 12px;
+    border: 1px solid var(--color-gray-900);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
     font-size: var(--fs-body1);
     color: var(--color-gray-900);
 }
 
-.time-field input::-webkit-calendar-picker-indicator {
+.tp-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    height: 216px;
+    margin-top: 4px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+    overflow: hidden;
+}
+
+.tp-col {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.tp-col::-webkit-scrollbar {
     display: none;
 }
 
-.time-field input:focus {
-    outline: none;
-    border-color: var(--color-primary-accent);
+.tp-col+.tp-col {
+    border-left: 1px solid var(--color-line-low);
 }
 
-.time-field input.is-error {
-    border-color: var(--color-dangerous);
+.tp-item {
+    flex-shrink: 0;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-body1);
+    color: var(--color-gray-900);
+    cursor: pointer;
+}
+
+.tp-item:hover {
+    background: var(--color-bg-disable);
+}
+
+.tp-item.is-selected {
+    background: var(--color-primary-500);
+    color: var(--color-white);
+    font-weight: var(--fw-bold);
+}
+
+.tp-item:focus-visible {
+    outline: 2px solid var(--color-primary-accent);
+    outline-offset: -2px;
 }
 
 /* ---------- Calendar ---------- */
@@ -1664,14 +1735,15 @@ button {
 .noti {
     position: fixed;
     z-index: 40;
-    top: 96px;
-    right: 20px;
+    /* 위치는 script.js 의 placeNoti() 가 종 버튼 기준으로 정해요: 버튼 아래 4px, 오른쪽 끝선 맞춤 */
+    top: var(--noti-top, 96px);
+    right: var(--noti-right, 20px);
     display: flex;
     flex-direction: column;
     gap: 24px;
     --noti-max-h: 699px;
     width: 394px;
-    max-height: min(var(--noti-max-h), calc(100vh - 116px));
+    max-height: min(var(--noti-max-h), calc(100vh - var(--noti-top, 96px) - 20px));
     padding: 19px 23px 39px;
     overflow: hidden;
     border: 1px solid var(--color-line-normal);
@@ -1986,8 +2058,10 @@ button {
     flex-direction: column;
     width: 540px;
     max-width: 100%;
-    max-height: 100%;
-    padding: 1px;
+    max-height: calc(100vh - 40px);
+    /* 화면 세로가 모달 높이(약 820px)보다 작으면 모달이 줄어들고, 본문에 스크롤이 생겨요 */
+    max-height: calc(100dvh - 40px);
+    padding: 0;
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
@@ -2031,9 +2105,13 @@ button {
     display: flex;
     flex-direction: column;
     gap: 40px;
-    padding: 16px 24px;
-    overflow-y: auto;
     min-height: 0;
+    margin-right: 8px;
+    /* 스크롤바가 모달 오른쪽 여백에 놓여서 내용 폭(492px)은 그대로예요 */
+    padding: 16px var(--scroll-width) 16px 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
 .hm-group {
@@ -2209,4 +2287,11 @@ button {
 .hm-body::-webkit-scrollbar-thumb {
     border-radius: 999px;
     background: var(--color-gray-200);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .hm-body {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-gray-200) transparent;
+    }
 }

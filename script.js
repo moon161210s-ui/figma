@@ -139,11 +139,51 @@ function normalizeRoom(r) {
     r.end = d(11, 10 + nights);
     r.origEnd = d(11, 10 + nights - (r.extNight || 0));
     r.origOut = addMinutes(r.out, -(r.extHour || 0) * 60);
-    r.clean = r.clean || addMinutes(r.out, 60);
-    r.cleanLen = 120; /* 청소 가능 시간 길이(분) */
+    /* 시안 샘플: 퇴실을 연장한 객실 / 청소 시간을 직접 정한 객실은 '직접 고친 값'으로 취급 */
+    r.outLocked = !!r.extHour;
+    r.cleanLocked = !!r.clean;
+    r.clean = r.clean || r.out;
+    r.cleanLen = 0; /* applyHours() 가 운영 시간대 규칙으로 채워요 */
     return r;
 }
+/* ---------- 운영 시간대 기본 규칙 (모달에서 설정 / 모든 객실 타일의 기본값) ----------
+   - 객실별로 우측 패널에서 직접 고친 시간(outLocked / cleanLocked)은 이 규칙보다 우선해요 */
+const HOURS_DEFAULT = {
+    weekday: { in: "20:00", out: "15:00" },
+    weekend: { in: "20:00", out: "15:00" },
+    cleanOut: "0" /* 퇴실 N시간 후부터 청소 */,
+    cleanIn: "0" /* 입실 N시간 전까지 청소 */,
+    extend: "0" /* 연장 N시간 초과 시 1박 추가 */,
+    dayUse: "0" /* 대실 최대 N시간 */,
+};
+let HOURS = JSON.parse(JSON.stringify(HOURS_DEFAULT));
+try {
+    const saved = JSON.parse(localStorage.getItem("hours"));
+    if (saved) HOURS = { ...HOURS, ...saved };
+} catch (e) { }
+
+
+/* 평일/주말은 퇴실 날짜의 요일로 정해요 (토·일 = 주말) */
+const hoursKey = (r) => ([0, 6].includes(r.end.getDay()) ? "weekend" : "weekday");
+
+/* 기본 규칙을 모든 객실에 적용해요 (직접 고친 시간은 그대로 둬요)
+   퇴실 시간 = 규칙의 퇴실 시간 / 청소 시작 = 퇴실 + N시간 후 / 청소 마감 = 입실 시간 - M시간 전 */
+function applyHours() {
+    ROOMS.forEach((r) => {
+        if (r.empty) return;
+        const h = HOURS[hoursKey(r)];
+        if (!r.outLocked) {
+            r.out = h.out;
+            r.origOut = h.out;
+        }
+        if (!r.cleanLocked) r.clean = addMinutes(r.out, Number(HOURS.cleanOut) * 60);
+        const end = toMin(h.in) - Number(HOURS.cleanIn) * 60;
+        r.cleanLen = Math.max(0, end - toMin(r.clean));
+    });
+}
+
 const ROOMS = RAW_ROOMS.map(normalizeRoom);
+applyHours();
 
 /* 상단 요약 카드 숫자 (서버 데이터로 교체 대상) */
 let SUMMARY = { checkin: 12, checkout: 15, clean: 17, alert: 3 };
@@ -349,11 +389,29 @@ function openPopover(kind, anchor, room) {
       <button class="btn btn-sm btn-outline" type="button" data-pop-close>닫기</button>
       <button class="btn btn-sm btn-primary" type="button" data-pop-save>저장하기</button>
     </div>`;
-    const timeField = (id, value) => `
-    <label class="time-field">
-      ${icon("time")}
-      <input id="${id}" type="text" inputmode="numeric" maxlength="5" placeholder="00:00" autocomplete="off" value="${value}" />
-    </label>`;
+    /* 시간 선택: 오전/오후 · 시 · 분 목록에서 골라요 (고른 값은 숨겨진 #popTime 에 "HH:MM" 으로 들어가요) */
+    const timeField = (id, value) => {
+        const t = normTime(value) || "00:00";
+        const h24 = +t.slice(0, 2);
+        const h12 = h24 % 12 || 12;
+        const col = (key, items, cur) =>
+            `<div class="tp-col" data-col="${key}" role="listbox">${items
+                .map(
+                    ([v, label]) =>
+                        `<button type="button" class="tp-item${v === cur ? " is-selected" : ""}" data-v="${v}" role="option" aria-selected="${v === cur}" tabindex="${v === cur ? 0 : -1}">${label}</button>`
+                )
+                .join("")}</div>`;
+        return `
+    <div class="tp" id="tp-${id}">
+      <div class="tp-field">${icon("time")}<span class="tp-text">${t}</span></div>
+      <input id="${id}" type="hidden" value="${t}" />
+      <div class="tp-panel">
+        ${col("ap", [["AM", "오전"], ["PM", "오후"]], h24 < 12 ? "AM" : "PM")}
+        ${col("h", Array.from({ length: 12 }, (_, i) => [String(i + 1), pad(i + 1)]), String(h12))}
+        ${col("m", Array.from({ length: 60 }, (_, i) => [String(i), pad(i)]), String(+t.slice(3)))}
+      </div>
+    </div>`;
+    };
     /* 저장할 때 시간을 읽어요 (형식이 틀리면 빨간 테두리) */
     const readTime = () => {
         const el = $("#popTime", pop);
@@ -374,6 +432,8 @@ function openPopover(kind, anchor, room) {
             const t = readTime();
             if (!t) return false;
             room.clean = t;
+            room.cleanLocked = true; /* 직접 고친 시간이 기본 규칙보다 우선 */
+            applyHours();
             return true;
         };
     }
@@ -453,6 +513,8 @@ function openPopover(kind, anchor, room) {
             if (!t) return false;
             room.end = sel;
             room.out = t;
+            room.outLocked = true; /* 직접 고친 시간이 기본 규칙보다 우선 */
+            applyHours();
             return true;
         };
     }
@@ -529,7 +591,53 @@ function openPopover(kind, anchor, room) {
     }
 
     document.body.appendChild(pop);
+    initTimePicker(pop);
     placePopover();
+}
+
+/* 시간 선택 목록 동작: 클릭 / 위·아래 방향키로 고르고, 열릴 때 선택된 값이 가운데 오게 스크롤해요 */
+function initTimePicker(root) {
+    const tp = $(".tp", root);
+    if (!tp) return;
+    const input = $("input[type=hidden]", tp);
+    const text = $(".tp-text", tp);
+    const cols = {};
+    tp.querySelectorAll(".tp-col").forEach((c) => (cols[c.dataset.col] = c));
+    const sel = (key) => $(".tp-item.is-selected", cols[key]).dataset.v;
+    const sync = () => {
+        const h = +sel("h") % 12;
+        const h24 = sel("ap") === "PM" ? h + 12 : h;
+        input.value = `${pad(h24)}:${pad(+sel("m"))}`;
+        text.textContent = input.value;
+        input.classList.remove("is-error");
+    };
+    const pick = (btn, focus) => {
+        const col = btn.parentElement;
+        col.querySelectorAll(".tp-item").forEach((b) => {
+            const on = b === btn;
+            b.classList.toggle("is-selected", on);
+            b.setAttribute("aria-selected", String(on));
+            b.tabIndex = on ? 0 : -1;
+        });
+        col.scrollTop = btn.offsetTop - (col.clientHeight - btn.offsetHeight) / 2;
+        if (focus) btn.focus();
+        sync();
+    };
+    tp.addEventListener("click", (e) => {
+        const b = e.target.closest(".tp-item");
+        if (b) pick(b, false);
+    });
+    tp.addEventListener("keydown", (e) => {
+        const b = e.target.closest(".tp-item");
+        if (!b || !["ArrowUp", "ArrowDown"].includes(e.key)) return;
+        e.preventDefault();
+        const n = e.key === "ArrowDown" ? b.nextElementSibling : b.previousElementSibling;
+        if (n) pick(n, true);
+    });
+    Object.values(cols).forEach((c) => {
+        const b = $(".tp-item.is-selected", c);
+        c.scrollTop = b.offsetTop - (c.clientHeight - b.offsetHeight) / 2;
+    });
 }
 
 /* ==========================================================
@@ -1206,10 +1314,22 @@ function markAllRead() {
     markRead(NOTIFICATIONS.map((n) => n.id));
 }
 
+/* 알림센터 위치: 종 버튼 맨 아래에서 4px 아래, 종 버튼 맨 오른쪽 끝선에 맞춰요 */
+function placeNoti() {
+    const r = $("#bellBtn").getBoundingClientRect();
+    const panel = $("#notiPanel");
+    panel.style.setProperty("--noti-top", r.bottom + 4 + "px");
+    panel.style.setProperty("--noti-right", window.innerWidth - r.right + "px");
+}
+window.addEventListener("resize", () => {
+    if (notiOpen) placeNoti();
+});
+
 function openNoti() {
     closeFilterMenu();
     closePopover();
     notiOpen = true;
+    placeNoti();
     $("#notiPanel").hidden = false;
     $("#bellBtn").setAttribute("aria-expanded", "true");
     renderNoti();
@@ -1296,6 +1416,13 @@ renderBell();
    - <html data-theme="dark"> 로 전환해요 (색은 style.css 의 토큰이 바뀌어요)
    - 선택한 모드는 이 브라우저에 저장돼서 새로고침해도 유지돼요 (저장이 막힌 환경에서는 저장 없이 동작)
    ========================================================== */
+/* 해/달 아이콘을 미리 받아 둬요: 처음 전환할 때 달(moon.svg)을 그제야 내려받느라 아이콘만 늦게 바뀌던 문제 방지 */
+["sun", "moon"].forEach((n) => {
+    const im = new Image();
+    im.src = ICON(n);
+    if (im.decode) im.decode().catch(() => { });
+});
+
 function applyTheme(mode) {
     const dark = mode === "dark";
     if (dark) document.documentElement.setAttribute("data-theme", "dark");
@@ -1330,20 +1457,6 @@ applyTheme(
    - 평일/주말 탭은 입·퇴실 시간만 따로 갖고, 나머지 설정은 공통이에요
    - 저장하면 HOURS 에 반영하고 localStorage 에 보관해요 (서버 연결 시 saveHours() 안에서 전송)
    ========================================================== */
-const HOURS_DEFAULT = {
-    weekday: { in: "20:00", out: "15:00" },
-    weekend: { in: "20:00", out: "15:00" },
-    cleanOut: "0" /* 퇴실 N시간 후부터 청소 */,
-    cleanIn: "0" /* 입실 N시간 전까지 청소 */,
-    extend: "0" /* 연장 N시간 초과 시 1박 추가 */,
-    dayUse: "0" /* 대실 최대 N시간 */,
-};
-let HOURS = JSON.parse(JSON.stringify(HOURS_DEFAULT));
-try {
-    const saved = JSON.parse(localStorage.getItem("hours"));
-    if (saved) HOURS = { ...HOURS, ...saved };
-} catch (e) { }
-
 const hm = $("#hoursModal");
 let hmTab = "weekday";
 let hmTrigger = null;
@@ -1415,6 +1528,9 @@ function saveHours() {
         localStorage.setItem("hours", JSON.stringify(HOURS));
     } catch (e) { }
     /* TODO: 서버 연결 시 여기서 HOURS 를 전송 */
+    applyHours(); /* 모든 객실 타일·우측 패널에 새 기본 규칙 적용 */
+    renderFloors();
+    renderDetail();
     closeHours();
 }
 
