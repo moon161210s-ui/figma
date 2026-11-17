@@ -754,7 +754,8 @@ document.addEventListener("click", (e) => {
 
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-        if (fmenu) closeFilterMenu();
+        if (hoursOpen()) closeHours();
+        else if (fmenu) closeFilterMenu();
         else if (pop) closePopover();
         else if (selectedNo) {
             selectedNo = null;
@@ -1322,3 +1323,148 @@ applyTheme(
         ? "dark"
         : "light"
 );
+
+/* ==========================================================
+   운영 시간대 설정 모달
+   - 사이드바 하단 '운영 시간대 설정' 클릭 → 열기 / 닫기·X·바깥 클릭·Esc → 닫기
+   - 평일/주말 탭은 입·퇴실 시간만 따로 갖고, 나머지 설정은 공통이에요
+   - 저장하면 HOURS 에 반영하고 localStorage 에 보관해요 (서버 연결 시 saveHours() 안에서 전송)
+   ========================================================== */
+const HOURS_DEFAULT = {
+    weekday: { in: "20:00", out: "15:00" },
+    weekend: { in: "20:00", out: "15:00" },
+    cleanOut: "0" /* 퇴실 N시간 후부터 청소 */,
+    cleanIn: "0" /* 입실 N시간 전까지 청소 */,
+    extend: "0" /* 연장 N시간 초과 시 1박 추가 */,
+    dayUse: "0" /* 대실 최대 N시간 */,
+};
+let HOURS = JSON.parse(JSON.stringify(HOURS_DEFAULT));
+try {
+    const saved = JSON.parse(localStorage.getItem("hours"));
+    if (saved) HOURS = { ...HOURS, ...saved };
+} catch (e) { }
+
+const hm = $("#hoursModal");
+let hmTab = "weekday";
+let hmTrigger = null;
+const hoursOpen = () => !hm.hidden;
+
+/* 탭을 바꾸기 전에 현재 탭의 입·퇴실 시간을 임시 보관해요 */
+const hmDraft = JSON.parse(JSON.stringify(HOURS));
+
+function hmShowTab(tab) {
+    hmTab = tab;
+    hm.querySelectorAll("[data-hm-tab]").forEach((b) =>
+        b.setAttribute("aria-selected", String(b.dataset.hmTab === tab))
+    );
+    $("#hmIn").value = hmDraft[tab].in;
+    $("#hmOut").value = hmDraft[tab].out;
+    hm.querySelectorAll(".is-error").forEach((el) => el.classList.remove("is-error"));
+}
+
+/* 현재 탭 입력값을 임시 보관 (형식이 올바를 때만) */
+function hmKeepTab() {
+    const i = normTime($("#hmIn").value),
+        o = normTime($("#hmOut").value);
+    if (i) hmDraft[hmTab].in = i;
+    if (o) hmDraft[hmTab].out = o;
+}
+
+function openHours(trigger) {
+    hmTrigger = trigger || null;
+    Object.assign(hmDraft, JSON.parse(JSON.stringify(HOURS)));
+    hmShowTab("weekday");
+    $("#hmCleanOut").value = HOURS.cleanOut;
+    $("#hmCleanIn").value = HOURS.cleanIn;
+    $("#hmExtend").value = HOURS.extend;
+    $("#hmDayUse").value = HOURS.dayUse;
+    hm.hidden = false;
+    setTimeout(() => $("#hmIn").focus(), 50); /* 나타나는 전환이 시작된 뒤에 포커스 */
+}
+
+function closeHours() {
+    hm.hidden = true;
+    if (hmTrigger) hmTrigger.focus();
+}
+
+/* 저장: 시간 형식(HH:MM)과 숫자 칸을 확인하고, 틀린 칸은 빨간 테두리로 알려줘요 */
+function saveHours() {
+    hmKeepTab();
+    const i = normTime($("#hmIn").value),
+        o = normTime($("#hmOut").value);
+    $("#hmIn").classList.toggle("is-error", !i);
+    $("#hmOut").classList.toggle("is-error", !o);
+    const nums = ["hmCleanOut", "hmCleanIn", "hmExtend", "hmDayUse"].map((id) => {
+        const el = $("#" + id);
+        const ok = el.value !== "";
+        el.classList.toggle("is-error", !ok);
+        return ok;
+    });
+    if (!i || !o) return (i ? $("#hmOut") : $("#hmIn")).focus();
+    const bad = nums.indexOf(false);
+    if (bad > -1) return $("#" + ["hmCleanOut", "hmCleanIn", "hmExtend", "hmDayUse"][bad]).focus();
+    HOURS = {
+        weekday: { ...hmDraft.weekday },
+        weekend: { ...hmDraft.weekend },
+        cleanOut: String(+$("#hmCleanOut").value),
+        cleanIn: String(+$("#hmCleanIn").value),
+        extend: String(+$("#hmExtend").value),
+        dayUse: String(+$("#hmDayUse").value),
+    };
+    try {
+        localStorage.setItem("hours", JSON.stringify(HOURS));
+    } catch (e) { }
+    /* TODO: 서버 연결 시 여기서 HOURS 를 전송 */
+    closeHours();
+}
+
+$("#hoursBtn").addEventListener("click", (e) => {
+    e.preventDefault();
+    openHours(e.currentTarget);
+});
+hm.addEventListener("click", (e) => {
+    if (e.target === hm || e.target.closest("[data-hm-close]")) return closeHours();
+    const tab = e.target.closest("[data-hm-tab]");
+    if (tab && tab.dataset.hmTab !== hmTab) {
+        hmKeepTab();
+        hmShowTab(tab.dataset.hmTab);
+    }
+});
+$("#hmSave").addEventListener("click", saveHours);
+
+/* 시간 칸: 숫자만 입력하면 HH:MM 으로 자동 정리 / 숫자 칸: 숫자만 */
+["#hmIn", "#hmOut"].forEach((sel) => {
+    const el = $(sel);
+    el.addEventListener("input", () => {
+        const n = el.value.replace(/\D/g, "").slice(0, 4);
+        el.value = n.length > 2 ? `${n.slice(0, 2)}:${n.slice(2)}` : n;
+        el.classList.remove("is-error");
+    });
+    el.addEventListener("blur", () => {
+        const t = normTime(el.value);
+        if (t) el.value = t;
+    });
+});
+["#hmCleanOut", "#hmCleanIn", "#hmExtend", "#hmDayUse"].forEach((sel) => {
+    const el = $(sel);
+    el.addEventListener("input", () => {
+        el.value = el.value.replace(/\D/g, "");
+        el.classList.remove("is-error");
+    });
+});
+hm.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.matches("input")) saveHours();
+    /* 모달 밖으로 포커스가 빠져나가지 않게 Tab 을 가둬요 */
+    if (e.key === "Tab") {
+        const f = [...hm.querySelectorAll("button, input")].filter((x) => !x.disabled);
+        const first = f[0],
+            last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    }
+});

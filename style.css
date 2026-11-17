@@ -277,7 +277,7 @@ body {
 }
 
 /* ==========================================================
- Icons (img/icon/*.svg 를 <img>로 사용)
+ Icons (resource/icon/*.svg 를 <img>로 사용)
  ※ 아이콘 색은 svg 파일 안에 고정되어 있어 CSS 로 바꾸지 않음.
  상태별(활성/호버/비활성/다크모드) 색이 시안과 다르게 보이면 해당 색의 svg 를 따로 준비해서 교체할 것
  ========================================================== */
@@ -1951,10 +1951,262 @@ button {
  - 아이콘 svg 는 색이 파일에 들어 있어서, 검은색 아이콘만 흰색으로 뒤집어요
  - 색이 있는 아이콘(-orange / -purple / -blue / -gray / -red / -white)은 그대로 둬요
  ========================================================== */
-[data-theme="dark"] img[src*="img/icon/"]:not([src*="-orange"]):not([src*="-purple"]):not([src*="-blue"]):not([src*="-gray"]):not([src*="-red"]):not([src*="-white"]) {
+[data-theme="dark"] img[src*="resource/icon/"]:not([src*="-orange"]):not([src*="-purple"]):not([src*="-blue"]):not([src*="-gray"]):not([src*="-red"]):not([src*="-white"]) {
     filter: invert(1);
 }
 
 [data-theme="dark"] .logo img {
     filter: invert(1) hue-rotate(180deg);
+}
+
+/* ==========================================================
+ 운영 시간대 설정 모달 (사이드바 하단 '운영 시간대 설정')
+ 시안: modal_xl_운영시간대설정 (너비 540 / 패딩 24 / 섹션 간격 40)
+ ========================================================== */
+.hm {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(31, 34, 37, 0.4);
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.hm[hidden] {
+    display: grid;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.hm-box {
+    display: flex;
+    flex-direction: column;
+    width: 540px;
+    max-width: 100%;
+    max-height: 100%;
+    padding: 1px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+    box-shadow: var(--shadow-popover);
+}
+
+.hm-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 32px;
+    padding: 16px 24px;
+    flex-shrink: 0;
+}
+
+.hm-title {
+    margin: 0;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5, 36px);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.hm-close {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+}
+
+.hm-close:hover {
+    background: var(--color-bg-disable);
+}
+
+.hm-body {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 16px 24px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.hm-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hm-group.is-time {
+    gap: 12px;
+}
+
+.hm-group-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hm-group h3 {
+    margin: 0;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.hm-group p {
+    margin: 0;
+    font-size: var(--fs-body1);
+    line-height: 24px;
+    color: var(--color-gray-300);
+}
+
+.hm-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.hm-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.hm-tab {
+    height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-md);
+    background: var(--color-base-inverse);
+    font: inherit;
+    font-size: var(--fs-body1);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+    cursor: pointer;
+}
+
+.hm-tab[aria-selected="true"] {
+    border-color: var(--color-gray-900);
+    background: var(--color-gray-900);
+    color: var(--color-base-inverse);
+}
+
+.hm-row {
+    display: flex;
+    gap: 16px;
+}
+
+.hm-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hm-label,
+.hm-unit {
+    font-size: var(--fs-body1);
+    line-height: 24px;
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-900);
+    white-space: nowrap;
+}
+
+.hm-unit b {
+    font-weight: var(--fw-bold);
+}
+
+.hm-unit span {
+    font-weight: var(--fw-regular);
+}
+
+.hm-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hm-line.is-tight {
+    gap: 4px;
+}
+
+.hm-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hm-input {
+    position: relative;
+    display: block;
+    width: 160px;
+}
+
+.hm-input.is-time {
+    width: 100%;
+}
+
+.hm-input .i20 {
+    position: absolute;
+    top: 9px;
+    left: 12px;
+    pointer-events: none;
+}
+
+.hm-input input {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+    font: inherit;
+    font-size: var(--fs-body1);
+    color: var(--color-gray-900);
+}
+
+.hm-input.is-time input {
+    padding-left: 40px;
+}
+
+.hm-input input:focus {
+    outline: 0;
+    border-color: var(--color-gray-900);
+}
+
+.hm-input input.is-error {
+    border-color: var(--color-dangerous);
+}
+
+.hm-foot {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+    flex-shrink: 0;
+}
+
+.hm-foot .btn {
+    flex: 1;
+}
+
+/* 모달 안 스크롤바는 알림센터와 같은 디자인 */
+.hm-body::-webkit-scrollbar {
+    width: var(--scroll-width);
+}
+
+.hm-body::-webkit-scrollbar-track {
+    margin: var(--scroll-inset) 0;
+    background: transparent;
+}
+
+.hm-body::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--color-gray-200);
 }
