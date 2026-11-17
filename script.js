@@ -223,9 +223,12 @@ function roomCard(r) {
 }
 
 /* 체크된 필터 값 (처음에는 전부 체크 = 전체 / 아래 FILTER_DEFS 뒤에서 채워요) */
-const filters = { floor: new Set(), status: new Set() };
+/* 선택한 값만 담아요. 아무것도 선택하지 않으면 필터 없음(= 전체) */
+const filters = { floor: new Set(), status: new Set(), rtype: new Set() };
+const filterPass = (kind, value) => filters[kind].size === 0 || filters[kind].has(value);
 
 function renderFloors() {
+    if (!$("#floors")) return; /* 청소 결과 화면(result.html)에는 없어요 */
     const q = query.trim();
     const floors = [...new Set(ROOMS.map((r) => r.floor))];
     const html = floors
@@ -234,11 +237,9 @@ function renderFloors() {
                 (r) =>
                     r.floor === f &&
                     (!q || r.no.includes(q)) &&
-                    filters.floor.has(String(r.floor)) &&
-                    /* 상태가 없는 빈 객실(304호)은 상태가 전부 체크돼 있을 때만 보여요 */
-                    (r.status
-                        ? filters.status.has(r.status)
-                        : Object.keys(STATUS).every((k) => filters.status.has(k)))
+                    filterPass("floor", String(r.floor)) &&
+                    /* 상태가 없는 빈 객실(304호)은 청소 상태 필터를 쓰지 않을 때만 보여요 */
+                    (r.status ? filterPass("status", r.status) : filters.status.size === 0)
             );
             if (!list.length) return "";
             return `
@@ -255,6 +256,7 @@ function renderFloors() {
 /* ---------- 우측 상세 패널 ---------- */
 function renderDetail() {
     const workspace = $("#workspace");
+    if (!workspace) return; /* 청소 결과 화면(result.html)에는 없어요 */
     const panel = $("#detail");
     const r = ROOMS.find((x) => x.no === selectedNo);
     workspace.classList.toggle("has-detail", !!r);
@@ -325,6 +327,7 @@ function renderDetail() {
 /* 패널은 화면 맨 아래(여백 20px)까지 채우고, 스크롤하면 헤더 아래(120px)에 붙어요 */
 function fitDetail() {
     const cell = $(".detail-cell");
+    if (!cell) return;
     const panel = $("#detail");
     if (!$("#workspace").classList.contains("has-detail")) return;
     const top = Math.max(120, cell.getBoundingClientRect().top);
@@ -355,6 +358,8 @@ let pop = null; /* 현재 열린 팝오버 요소 */
 let popAnchor = null; /* 팝오버를 연 버튼 */
 
 function closePopover() {
+    const rd = document.getElementById("rsDate");
+    if (rd) rd.setAttribute("aria-expanded", "false");
     if (pop) pop.remove();
     pop = null;
     popAnchor = null;
@@ -372,7 +377,9 @@ function placePopover() {
     const extra = pn ? Math.max(0, pn.getBoundingClientRect().bottom - pop.getBoundingClientRect().bottom) : 0;
     const w = pop.offsetWidth,
         h = pop.offsetHeight + extra;
-    const left = Math.max(8, a.right - w); /* 버튼 오른쪽 끝에 맞춤 */
+    /* 기본은 버튼 오른쪽 끝에 맞추고, data-align="left" 인 팝오버(청소 결과 날짜)는 왼쪽 끝에 맞춰요 */
+    let left = pop.dataset.align === "left" ? a.left : a.right - w;
+    left = Math.max(8, Math.min(left, document.documentElement.clientWidth - w - 8));
     let top = a.bottom + 4; /* 버튼 아래 4px */
     if (top + h > window.innerHeight - 4)
         top = Math.max(4, window.innerHeight - h - 4);
@@ -566,6 +573,64 @@ function openPopover(kind, anchor, room) {
         };
     }
 
+    /* 청소 결과 날짜 선택: 퇴실 예정 모달과 같은 달력인데 시간 칸만 없어요 (날짜 제한 없음 / 실제 달력) */
+    if (kind === "resultDate") {
+        pop.dataset.align = "left";
+        let view = new Date(rsDate.getFullYear(), rsDate.getMonth(), 1);
+        let sel = new Date(rsDate);
+        const todayMid = new Date();
+        todayMid.setHours(0, 0, 0, 0);
+        const drawCal = () => {
+            const first = view.getDay();
+            const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+            const cells = ["일", "월", "화", "수", "목", "금", "토"].map(
+                (w, i) => `<span class="dow${i === 0 ? " sun" : i === 6 ? " sat" : ""}">${w}</span>`
+            );
+            for (let i = 0; i < first; i++) cells.push("<span></span>");
+            for (let n = 1; n <= days; n++) {
+                const dt = new Date(view.getFullYear(), view.getMonth(), n);
+                const on = dt.getTime() === sel.getTime();
+                const isToday = dt.getTime() === todayMid.getTime();
+                const cls = [on ? "is-selected" : "", isToday ? "is-today" : ""].filter(Boolean).join(" ");
+                cells.push(`<button type="button" data-day="${n}"${cls ? ` class="${cls}"` : ""}${isToday ? ' aria-label="오늘"' : ""}>${n}</button>`);
+            }
+            $(".cal-grid", pop).innerHTML = cells.join("");
+            $(".cal-title", pop).textContent = `${view.getFullYear()}년 ${view.getMonth() + 1}월`;
+        };
+        pop.innerHTML = `
+      <div class="cal-head">
+        <strong class="cal-title"></strong>
+        <div class="cal-nav">
+          <button class="btn-icon" type="button" data-cal="-1" aria-label="이전 달">${icon("arrow-left")}</button>
+          <button class="btn-icon" type="button" data-cal="1" aria-label="다음 달">${icon("arrow-right")}</button>
+        </div>
+      </div>
+      <div class="cal-grid"></div>
+      ${actions}`;
+        drawCal();
+        pop.addEventListener("click", (e) => {
+            const nav = e.target.closest("[data-cal]");
+            const day = e.target.closest("[data-day]");
+            if (nav) {
+                view = new Date(view.getFullYear(), view.getMonth() + Number(nav.dataset.cal), 1);
+                drawCal();
+            }
+            if (day) {
+                sel = new Date(view.getFullYear(), view.getMonth(), Number(day.dataset.day));
+                drawCal();
+            }
+            placePopover();
+        });
+        save = () => {
+            rsDate = sel;
+            rsSelected = null;
+            closePopover();
+            renderResults();
+            renderResultDetail();
+            return false; /* 이미 닫고 다시 그렸어요 */
+        };
+    }
+
     pop.addEventListener("click", (e) => {
         if (e.target.closest("[data-pop-close]")) closePopover();
         if (e.target.closest("[data-pop-save]")) {
@@ -687,7 +752,12 @@ function initTimePicker(root) {
    - 하단 공용 버튼은 이 드롭다운에서는 사용하지 않음
    ========================================================== */
 const SEARCH_MIN = 20;
+const RESULT_TYPES = ["스탠다드", "디럭스", "프리미엄"];
 const FILTER_DEFS = {
+    rtype: {
+        base: "객실 유형",
+        options: () => RESULT_TYPES.map((t) => ({ value: t, label: t })),
+    },
     floor: {
         base: "층 전체",
         options: () =>
@@ -702,10 +772,6 @@ const FILTER_DEFS = {
             Object.entries(STATUS).map(([value, s]) => ({ value, label: s.label })),
     },
 };
-/* 처음에는 모든 항목이 체크된 상태(= 전체) */
-Object.keys(FILTER_DEFS).forEach((k) =>
-    FILTER_DEFS[k].options().forEach((o) => filters[k].add(o.value))
-);
 /* 체크 표시: resource/iconcheck-white.svg (보라 배경 위 흰색 체크) */
 const CHECK_SVG = icon("check-white", 16);
 
@@ -717,15 +783,12 @@ function updateFilterButtons() {
     document.querySelectorAll(".select[data-filter]").forEach((btn) => {
         const kind = btn.dataset.filter,
             def = FILTER_DEFS[kind];
-        const all = def.options();
-        const picked = all.filter((o) => filters[kind].has(o.value));
-        let text = def.base; /* 전체 체크 = 기본 문구 */
-        if (picked.length === 0) text = "선택 없음";
-        else if (picked.length < all.length)
-            text =
-                picked[0].label + (picked.length > 1 ? ` 외 ${picked.length - 1}` : "");
+        const picked = def.options().filter((o) => filters[kind].has(o.value));
+        let text = def.base; /* 아무것도 고르지 않음 = 기본 문구 (Default) */
+        if (picked.length)
+            text = picked[0].label + (picked.length > 1 ? ` 외 ${picked.length - 1}` : "");
         btn.querySelector(".select-label").textContent = text;
-        btn.classList.toggle("is-active", picked.length < all.length);
+        btn.classList.toggle("is-active", picked.length > 0); /* 값을 고름 (completed) */
     });
 }
 
@@ -791,28 +854,25 @@ function openFilterMenu(btn) {
     const hasSearch = options.length > SEARCH_MIN;
     fmenu.innerHTML = `
     ${hasSearch
-            ? `<label class="filter-search">${icon(
-                "search",
-                16
-            )}<input type="text" placeholder="검색" /></label>`
+            ? `<label class="filter-search">
+          <img class="i16 fs-icon" src="${ICON("search-gray")}" alt="" />
+          <img class="i16 fs-icon-focus" src="${ICON("search")}" alt="" aria-hidden="true" />
+          <input type="text" placeholder="검색" /></label>`
             : ""
         }
-    <ul class="filter-list" role="listbox" aria-multiselectable="true"></ul>`;
+    <ul class="filter-list" role="listbox" aria-multiselectable="true"></ul>
+    <button class="filter-reset" type="button">${icon("reset", 16)}필터 초기화</button>`;
     document.body.appendChild(fmenu);
 
     const list = fmenu.querySelector(".filter-list");
     let keyword = "";
-    const ALL = "__all";
-    const isAll = () => options.every((o) => filters[kind].has(o.value));
     const draw = () => {
         const kw = keyword.trim().toLowerCase();
         const shown = options.filter((o) => o.label.toLowerCase().includes(kw));
-        /* "전체" 는 맨 위에 항상 (검색 중에는 숨김) — 전부 체크돼 있을 때만 체크 */
-        const rows = (kw ? [] : [{ value: ALL, label: "전체" }]).concat(shown);
-        list.innerHTML = rows.length
-            ? rows
+        list.innerHTML = shown.length
+            ? shown
                 .map((o) => {
-                    const on = o.value === ALL ? isAll() : filters[kind].has(o.value);
+                    const on = filters[kind].has(o.value);
                     return `
           <li class="filter-item${on ? " is-checked" : ""
                         }" role="option" aria-selected="${on}" data-value="${o.value}">
@@ -825,22 +885,25 @@ function openFilterMenu(btn) {
         placeFilterMenu();
     };
     draw();
+    const apply = () => {
+        draw();
+        updateFilterButtons();
+        if (kind === "rtype") renderResults();
+        else renderFloors();
+    };
 
     list.addEventListener("click", (e) => {
         const li = e.target.closest(".filter-item");
         if (!li) return;
         const set = filters[kind],
             v = li.dataset.value;
-        if (v === ALL) {
-            /* 전체 체크 → 전부 해제 / 하나라도 비어 있으면 → 전부 체크 */
-            const all = isAll();
-            options.forEach((o) => (all ? set.delete(o.value) : set.add(o.value)));
-        } else {
-            set.has(v) ? set.delete(v) : set.add(v);
-        }
-        draw();
-        updateFilterButtons();
-        renderFloors();
+        set.has(v) ? set.delete(v) : set.add(v);
+        apply();
+    });
+    /* 필터 초기화: 선택을 모두 지워서 전체가 보이게 해요 */
+    fmenu.querySelector(".filter-reset").addEventListener("click", () => {
+        filters[kind].clear();
+        apply();
     });
     const input = fmenu.querySelector("input");
     if (input) {
@@ -862,6 +925,7 @@ document.addEventListener("click", (e) => {
         openProfileMenu(pbtn);
         return;
     }
+    if (typeof handleResultsClick === "function" && handleResultsClick(e)) return;
     const fbtn = e.target.closest(".select[data-filter]");
     if (fbtn) {
         openFilterMenu(fbtn);
@@ -905,7 +969,11 @@ document.addEventListener("keydown", (e) => {
         if (hoursOpen()) closeHours();
         else if (fmenu) closeFilterMenu();
         else if (pop) closePopover();
-        else if (selectedNo) {
+        else if (typeof rsSelected !== "undefined" && rsSelected) {
+            rsSelected = null;
+            renderResults();
+            renderResultDetail();
+        } else if (selectedNo) {
             selectedNo = null;
             renderFloors();
             renderDetail();
@@ -918,7 +986,7 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
-$("#roomSearch").addEventListener("input", (e) => {
+$("#roomSearch")?.addEventListener("input", (e) => {
     query = e.target.value;
     renderFloors();
 });
@@ -927,6 +995,7 @@ $("#roomSearch").addEventListener("input", (e) => {
    붙기 전: 필터 상자 바로 아래에 층 제목이 이어져요(간격 0) / 붙은 뒤: 아래로 20px 더 흰 배경을 깔아 스크롤되는 타일을 가려요 */
 function updateToolbarStuck() {
     const bar = $(".toolbar");
+    if (!bar) return; /* 청소 결과 화면(result.html)에는 없어요 */
     const stickyTop = parseFloat(getComputedStyle(bar).top) || 0;
     bar.classList.toggle("is-stuck", bar.getBoundingClientRect().top <= stickyTop + 0.5);
 }
@@ -1026,20 +1095,9 @@ function applyLive(changed) {
     lastFetch = Date.now();
 }
 
-/* 필터가 '전체' 상태였다면, 새로 생긴 층·상태도 자동으로 포함 */
+/* 필터는 선택한 값만 담고 있어서, 새로 생긴 층·상태는 따로 처리하지 않아도 돼요 */
 function keepAllFilters(update) {
-    const wasAll = {};
-    Object.keys(FILTER_DEFS).forEach(
-        (k) =>
-        (wasAll[k] = FILTER_DEFS[k]
-            .options()
-            .every((o) => filters[k].has(o.value)))
-    );
     update();
-    Object.keys(FILTER_DEFS).forEach((k) => {
-        if (wasAll[k])
-            FILTER_DEFS[k].options().forEach((o) => filters[k].add(o.value));
-    });
 }
 
 /* 전체 데이터 교체 (재연결 / 폴링) */
@@ -1409,9 +1467,7 @@ function showRoom(no) {
         /* 검색·필터에 가려져 있으면 풀어서 보여줘요 */
         query = "";
         $("#roomSearch").value = "";
-        Object.keys(FILTER_DEFS).forEach((k) =>
-            FILTER_DEFS[k].options().forEach((o) => filters[k].add(o.value))
-        );
+        Object.keys(FILTER_DEFS).forEach((k) => filters[k].clear());
         updateFilterButtons();
         renderFloors();
     }
@@ -1640,3 +1696,19 @@ hm.addEventListener("keydown", (e) => {
         }
     }
 });
+
+/* 사이드바 사업장 선택: 누르면 열림 상태(테두리 진하게 + 위쪽 화살표)로 바뀌고, 바깥을 누르거나 Esc 를 누르면 닫혀요.
+   (사업장 목록 시안이 생기면 여기서 목록을 열어 주세요) */
+(function () {
+    const btn = $(".team-select");
+    if (!btn) return;
+    const set = (on) => btn.setAttribute("aria-expanded", String(on));
+    btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        set(btn.getAttribute("aria-expanded") !== "true");
+    });
+    document.addEventListener("click", () => set(false));
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") set(false);
+    });
+})();
