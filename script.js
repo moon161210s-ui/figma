@@ -10,12 +10,8 @@ const STAFF_PHOTO = {
   전재연: "img/staff-2.png",
   유가은: "img/staff-3.png",
 };
-const ATTACHMENTS = [
-  "img/room-1.png",
-  "img/room-2.png",
-  "img/room-3.png",
-  "img/room-4.png",
-];
+/* 청소 완료 객실의 첨부 사진: img/room-1.png ~ room-4.png (실제 사진으로 교체) */
+const ATTACHMENTS = ["img/room-1.png", "img/room-2.png", "img/room-3.png", "img/room-4.png"];
 
 /* ---------- 유틸 ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -71,15 +67,11 @@ const tagHtml = (t) => (t ? `<span class="tag">${t}</span>` : "");
 const STAFF = ["이서영", "전재연", "유가은", "한다경", "최하석", "김이레"];
 /* 순서 = 청소 상태 필터 드롭다운에 보이는 순서 (시안) */
 const STATUS = {
-  todo: { label: "청소필요", tile: "badge-todo", panel: "badge-todo" },
-  progress: { label: "청소중", tile: "badge-progress", panel: "badge-info" },
-  done: { label: "청소완료", tile: "badge-done", panel: "badge-done" },
-  reassign: {
-    label: "재배정 필요",
-    tile: "badge-reassign",
-    panel: "badge-reassign",
-  },
-  review: { label: "검수대기", tile: "badge-review", panel: "badge-review" },
+    todo: { label: "청소필요", tile: "badge-todo", panel: "badge-todo" },
+    progress: { label: "청소중", tile: "badge-progress", panel: "badge-info" },
+    done: { label: "청소완료", tile: "badge-done", panel: "badge-done" },
+    reassign: { label: "재배정 필요", tile: "badge-reassign", panel: "badge-reassign" },
+    review: { label: "검수대기", tile: "badge-review", panel: "badge-review" },
 };
 
 const YEAR = 2026;
@@ -268,11 +260,8 @@ function renderDetail() {
           ATTACHMENTS.length
         })</small></h3>
         <div class="attach-list">
-          ${ATTACHMENTS.map(
-            (src) => `<img src="${src}" alt="청소 완료 사진" />`
-          ).join("")}
-        </div>`
-          : `
+          ${ATTACHMENTS.map((src) => `<img src="${src}" alt="청소 완료 사진" />`).join("")}
+        </div>` : `
         <h3 class="detail-section">첨부파일</h3>
         <div class="attach-empty">
           <strong>등록된 첨부파일이 없어요.</strong>
@@ -492,24 +481,20 @@ function openPopover(kind, anchor, room) {
       <p class="pop-label">오늘 근무 직원</p>
       <div class="staff-list" role="radiogroup"></div>
       ${actions}`;
-    drawStaff();
-    pop.addEventListener("click", (e) => {
-      const item = e.target.closest("[data-staff]");
-      if (item) {
-        chosen = item.dataset.staff;
         drawStaff();
-      }
-    });
-    save = () => {
-      if (chosen !== room.staff) {
-        room.staff = chosen;
-        room.staffTag = ""; /* 조퇴 표시는 이전 직원 기준이라 지워요 */
-        if (room.status === "reassign")
-          room.status = "todo"; /* 재배정 완료 → 청소필요 */
-      }
-      return true;
-    };
-  }
+        pop.addEventListener("click", (e) => {
+            const item = e.target.closest("[data-staff]");
+            if (item) { chosen = item.dataset.staff; drawStaff(); }
+        });
+        save = () => {
+            if (chosen !== room.staff) {
+                room.staff = chosen;
+                room.staffTag = "";                                  /* 조퇴 표시는 이전 직원 기준이라 지워요 */
+                if (room.status === "reassign") room.status = "todo"; /* 재배정 완료 → 청소필요 */
+            }
+            return true;
+        };
+    }
 
   pop.addEventListener("click", (e) => {
     if (e.target.closest("[data-pop-close]")) closePopover();
@@ -610,7 +595,7 @@ function placeFilterMenu() {
   fmenu.style.top = top + "px";
 }
 
-/* ---------- 프로필 메뉴 (마이페이지 / 사업장 정보 / 내문의 / 로그아웃) ---------- */
+/* ---------- 프로필 메뉴 (마이페이지 / 사업장 정보 / 내 문의 / 로그아웃) ---------- */
 function openProfileMenu(btn) {
   const wasSame = fmenuBtn === btn;
   closePopover();
@@ -626,7 +611,7 @@ function openProfileMenu(btn) {
     <ul class="filter-list">
       <li class="filter-item" role="menuitem" data-menu="mypage"><span class="label">마이페이지</span></li>
       <li class="filter-item" role="menuitem" data-menu="business"><span class="label">사업장 정보</span></li>
-      <li class="filter-item" role="menuitem" data-menu="inquiry"><span class="label">내문의</span></li>
+      <li class="filter-item" role="menuitem" data-menu="inquiry"><span class="label">내 문의</span></li>
     </ul>
     <button class="menu-logout" type="button" data-menu="logout">로그아웃</button>`;
   document.body.appendChild(fmenu);
@@ -858,25 +843,20 @@ function rerenderDetail() {
 
 /* 서버 데이터를 화면에 반영해요. changed = 바뀐 객실 번호 목록 (없으면 전체 비교) */
 function applyLive(changed) {
-  const sel = selectedNo && ROOMS.find((x) => x.no === selectedNo && !x.empty);
-  if (selectedNo && !sel) {
-    closePopover();
-    selectedNo = null;
-  } /* 사라진 객실이면 선택 해제 */
-  renderSummary();
-  renderFloors();
-  if (selectedNo && (!changed || changed.includes(selectedNo))) {
-    if (pop) {
-      if (sel.status === "done") {
-        closePopover();
-        rerenderDetail();
-      } /* 청소 완료되면 수정 불가 */ else pendingDetail = true;
-    } else rerenderDetail();
-  } else if (!selectedNo) renderDetail();
-  updateFilterButtons();
-  renderBell();
-  renderClock();
-  lastFetch = Date.now();
+    const sel = selectedNo && ROOMS.find((x) => x.no === selectedNo && !x.empty);
+    if (selectedNo && !sel) { closePopover(); selectedNo = null; }   /* 사라진 객실이면 선택 해제 */
+    renderSummary();
+    renderFloors();
+    if (selectedNo && (!changed || changed.includes(selectedNo))) {
+        if (pop) {
+            if (sel.status === "done") { closePopover(); rerenderDetail(); }   /* 청소 완료되면 수정 불가 */
+            else pendingDetail = true;
+        } else rerenderDetail();
+    } else if (!selectedNo) renderDetail();
+    updateFilterButtons();
+    renderBell();
+    renderClock();
+    lastFetch = Date.now();
 }
 
 /* 필터가 '전체' 상태였다면, 새로 생긴 층·상태도 자동으로 포함 */
@@ -1021,65 +1001,45 @@ setTimeout(function tick() {
    - 읽음 처리 : 알림의 버튼을 누르면 그 알림이, 알림센터를 닫으면 보고 있던 탭의 알림이 모두 읽음이 돼요
    - 서버 연결 : 서버에서 받은 알림 목록으로 setNotifications(list) 를 호출하세요
        알림 1건 = { id, type, title, date, text, actions: [{ label, room? }], read }
-       type : issue(특이사항) / reassign(재배정 필요) / todo(청소필요) / review(검수요청) / notice(시스템 공지)
+       type : issue(특이사항) / reassign(재배정 필요) / todo(청소 필요) / review(검수 요청) / notice(시스템 공지)
        actions 의 room 이 있으면 그 객실을 선택해서 보여줘요 (없으면 읽음 처리만 해요 → 서버 연결 시 처리 동작을 넣으세요)
        읽음 상태를 서버에 저장하려면 markRead() 안의 주석 위치에서 요청을 보내세요
    ========================================================== */
 const NOTI_TYPES = {
-  issue: { tab: "특이사항", icon: "exclamation-triangle-orange" },
-  reassign: { tab: "직원 관리", icon: "user-red" },
-  todo: { tab: "청소현황", icon: "soap-gray" },
-  review: { tab: "청소현황", icon: "check-blue" },
-  notice: { tab: "시스템 공지", icon: "notice-purple" },
+    issue: { tab: "특이사항", icon: "exclamation-triangle-orange" },
+    reassign: { tab: "직원 관리", icon: "user-red" },
+    todo: { tab: "청소현황", icon: "soap-gray" },
+    review: { tab: "청소현황", icon: "check-blue" },
+    notice: { tab: "시스템 공지", icon: "notice-purple" },
 };
-const NOTI_TABS = ["전체", "청소현황", "직원 관리", "특이사항", "시스템 공지"];
+const NOTI_TABS = ["전체", "청소 현황", "직원 관리", "특이사항", "시스템 공지"];
 
 let NOTIFICATIONS = [
-  {
-    id: 1,
-    type: "issue",
-    title: "이민지 · 특이사항 등록",
-    date: "11월 15일 11:41",
-    text: "드라이기 바람이 약해요.\n교체해야 할 것 같아요.",
-    actions: [{ label: "자세히보기" }, { label: "직접 처리하기" }],
-    read: false,
-  },
-  {
-    id: 2,
-    type: "reassign",
-    title: "201호 · 재배정 필요",
-    date: "11월 15일 11:41",
-    text: "청소 담당자가 조퇴했어요.\n담당자 재배정이 필요해요.",
-    actions: [{ label: "현황 확인", room: "201" }],
-    read: true,
-  },
-  {
-    id: 3,
-    type: "todo",
-    title: "104호 · 청소필요",
-    date: "11월 15일 11:41",
-    text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 1시간 지났어요.",
-    actions: [{ label: "현황 확인", room: "104" }],
-    read: true,
-  },
-  {
-    id: 4,
-    type: "review",
-    title: "306호 · 검수요청",
-    date: "11월 15일 11:41",
-    text: "306호 청소가 끝났어요.\n검수가 필요해요.",
-    actions: [{ label: "결과 검수", room: "306" }],
-    read: true,
-  },
-  {
-    id: 5,
-    type: "notice",
-    title: "시스템공지",
-    date: "11월 15일 11:41",
-    text: "[서비스 정기 점검 안내] 안정적인 서비스 제공을 위해 정기 점검이 예정되어 있습니다. 점검 시간 동안 일부 기능 이용이 제한될 수 있습니다.",
-    actions: [],
-    read: true,
-  },
+    {
+        id: 1, type: "issue", title: "이민지 · 특이사항 등록", date: "11월 15일 11:41",
+        text: "드라이기 바람이 약해요.\n교체해야 할 것 같아요.",
+        actions: [{ label: "자세히보기" }, { label: "직접 처리하기" }], read: false
+    },
+    {
+        id: 2, type: "reassign", title: "201호 · 재배정 필요", date: "11월 15일 11:41",
+        text: "청소 담당자가 조퇴했어요.\n담당자 재배정이 필요해요.",
+        actions: [{ label: "현황 확인", room: "201" }], read: true
+    },
+    {
+        id: 3, type: "todo", title: "104호 · 청소필요", date: "11월 15일 11:41",
+        text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 1시간 지났어요.",
+        actions: [{ label: "현황 확인", room: "104" }], read: true
+    },
+    {
+        id: 4, type: "review", title: "306호 · 검수요청", date: "11월 15일 11:41",
+        text: "306호 청소가 끝났어요.\n검수가 필요해요.",
+        actions: [{ label: "결과 검수", room: "306" }], read: true
+    },
+    {
+        id: 5, type: "notice", title: "시스템공지", date: "11월 15일 11:41",
+        text: "[서비스 정기 점검 안내] 안정적인 서비스 제공을 위해 정기 점검이 예정되어 있습니다. 점검 시간 동안 일부 기능 이용이 제한될 수 있습니다.",
+        actions: [], read: true
+    },
 ];
 
 const readIds =
