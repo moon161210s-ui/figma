@@ -2473,6 +2473,7 @@ main[hidden] {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    min-height: 480px;
     padding: 20px;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
@@ -2548,10 +2549,46 @@ main[hidden] {
     color: var(--color-base-inverse);
 }
 
-/* 표 */
+/* 표: 머리글은 고정, 목록만 스크롤 (스크롤바는 다른 영역과 같은 디자인 / 오른쪽 패널 여백 안쪽에 둬서 머리글과 줄이 맞아요) */
 .rs-table {
     display: flex;
+    flex: 1;
     flex-direction: column;
+    min-height: 0;
+}
+
+.rs-th {
+    flex-shrink: 0;
+}
+
+.rs-tbody {
+    flex: 1;
+    min-height: 0;
+    margin-right: -12px;
+    padding-right: 4px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.rs-tbody::-webkit-scrollbar {
+    width: var(--scroll-width);
+}
+
+.rs-tbody::-webkit-scrollbar-track {
+    margin: var(--scroll-inset) 0;
+    background: transparent;
+}
+
+.rs-tbody::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: var(--color-gray-200);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .rs-tbody {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-gray-200) transparent;
+    }
 }
 
 .rs-tr {

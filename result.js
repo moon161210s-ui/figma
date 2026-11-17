@@ -1,7 +1,7 @@
 /* ==========================================================
    청소 결과 화면 (result.html / script.js 뒤에 불러와요)
    - 날짜별 결과 목록 / 상태 칩 필터 / 호실 검색 / 객실 유형 필터
-   - '자세히보기' → 우측 패널 (검수 이력 · 인증사진 · 체크리스트 · 메모 · 특이사항)
+   - '자세히 보기' → 우측 패널 (검수 이력 · 인증사진 · 체크리스트 · 메모 · 특이사항)
    - 재청소 요청 / 검수 완료 (서버 연결 전에는 이 화면 안에서만 바뀌어요)
    ========================================================== */
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -14,15 +14,15 @@ const nowHHMM = () => {
     return `${pad(n.getHours())}:${pad(n.getMinutes())}`;
 };
 
-/* 결과 상태 → 배지 (실시간 현황과 같은 .badge 컴포넌트). 청소완료는 확인 전 = 초록 / 확인 후 = 회색(비활성) */
+/* 결과 상태 → 배지 (실시간 현황과 같은 .badge 컴포넌트). 청소 완료는 확인 전 = 초록 / 확인 후 = 회색(비활성) */
 const resultBadge = (r) =>
     r.status === "review"
-        ? { cls: "badge-review", label: "검수대기" }
+        ? { cls: "badge-review", label: "검수 대기" }
         : r.status === "reclean"
             ? { cls: "badge-reassign", label: "재청소 요청" }
             : r.confirmed
-                ? { cls: "badge-todo", label: "청소완료" }
-                : { cls: "badge-done", label: "청소완료" };
+                ? { cls: "badge-todo", label: "청소 완료" }
+                : { cls: "badge-done", label: "청소 완료" };
 
 /* 샘플 데이터 (2026. 11. 10 기준 / 실제 서비스에서는 서버 데이터로 교체)
    at: 청소 완료(또는 재검수 요청) 시각 / first: 처음 청소 완료 시각 / hist: [시각, 제목, 설명]
@@ -32,38 +32,38 @@ const RESULT_BASE = [
     {
         no: "101", type: "스탠다드", staff: "최하석", status: "review", at: "16:10", first: "15:25", resub: true,
         hist: [
-            ["15:25", "최초 청소완료"],
+            ["15:25", "최초 청소 완료"],
             ["15:40", "재청소 요청", "요청사유: 침구 정리가 잘 안된것 같습니다. 다시 해주세요."],
             ["16:10", "직원 재검수 요청", "전달된 메모: 꼼꼼하게 다시 재청소 했습니다!"],
         ],
         memo: ["16:10", "꼼꼼하게 다시 재청소 했습니다!"],
         notes: [[0, "15:40", "한다경", "드라이기 바람이 약해요. 교체해야 할 것 같아요."], [-2, "14:20", "전재연", "진상 손님이 바닥을 박살내고 갔어요ㅠ"]],
     },
-    { no: "102", type: "스탠다드", staff: "유가은", status: "done", at: "16:40", hist: [["16:40", "최초 청소완료"]] },
-    { no: "105", type: "스탠다드", staff: "이서영", status: "done", at: "16:40", hist: [["16:40", "최초 청소완료"]] },
+    { no: "102", type: "스탠다드", staff: "유가은", status: "done", at: "16:40", hist: [["16:40", "최초 청소 완료"]] },
+    { no: "105", type: "스탠다드", staff: "이서영", status: "done", at: "16:40", hist: [["16:40", "최초 청소 완료"]] },
     {
         no: "203", type: "스탠다드", staff: "한다경", status: "review", at: "16:40", first: "15:25", resub: true,
         hist: [
-            ["15:25", "최초 청소완료"],
+            ["15:25", "최초 청소 완료"],
             ["15:55", "재청소 요청", "요청사유: 바닥 청소가 필요합니다."],
             ["16:40", "직원 재검수 요청", "전달된 메모: 바닥까지 다시 닦았어요."],
         ],
         memo: ["16:40", "바닥까지 다시 닦았어요."],
     },
-    { no: "207", type: "스탠다드", staff: "이서영", status: "review", at: "16:55", hist: [["16:55", "최초 청소완료"]] },
-    { no: "305", type: "디럭스", staff: "유가은", status: "review", at: "17:10", hist: [["17:10", "최초 청소완료"]] },
+    { no: "207", type: "스탠다드", staff: "이서영", status: "review", at: "16:55", hist: [["16:55", "최초 청소 완료"]] },
+    { no: "305", type: "디럭스", staff: "유가은", status: "review", at: "17:10", hist: [["17:10", "최초 청소 완료"]] },
     {
         no: "403", type: "프리미엄", staff: "최하석", status: "reclean", at: "16:30", first: "16:30",
-        hist: [["16:30", "최초 청소완료"], ["17:00", "재청소 요청", "요청사유: 환기가 필요합니다."]],
+        hist: [["16:30", "최초 청소 완료"], ["17:00", "재청소 요청", "요청사유: 환기가 필요합니다."]],
         req: ["환기"], msg: "환기가 필요합니다.",
     },
     {
         no: "408", type: "디럭스", staff: "송혜원", status: "reclean", at: "16:40", first: "16:40",
-        hist: [["16:40", "최초 청소완료"], ["17:05", "재청소 요청", "요청사유: 욕실 물기 제거가 필요합니다."]],
+        hist: [["16:40", "최초 청소 완료"], ["17:05", "재청소 요청", "요청사유: 욕실 물기 제거가 필요합니다."]],
         req: ["욕실 물기 제거"], msg: "욕실 물기 제거가 필요합니다.",
     },
-    { no: "409", type: "디럭스", staff: "전재연", status: "done", confirmed: true, at: "16:40", hist: [["16:40", "최초 청소완료"], ["17:20", "검수 완료"]] },
-    { no: "504", type: "프리미엄", staff: "김이레", status: "done", confirmed: true, at: "16:40", hist: [["16:40", "최초 청소완료"], ["17:20", "검수 완료"]] },
+    { no: "409", type: "디럭스", staff: "전재연", status: "done", confirmed: true, at: "16:40", hist: [["16:40", "최초 청소 완료"], ["17:20", "검수 완료"]] },
+    { no: "504", type: "프리미엄", staff: "김이레", status: "done", confirmed: true, at: "16:40", hist: [["16:40", "최초 청소 완료"], ["17:20", "검수 완료"]] },
 ];
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const dayKey = (dt) => `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
@@ -83,7 +83,7 @@ function resultRows(date) {
         if (date < RESULT_BASE_DATE)
             rows = rows.map((r) => ({
                 no: r.no, type: r.type, staff: r.staff, status: "done", confirmed: true, at: r.at,
-                hist: [[r.at, "최초 청소완료"], ["17:20", "검수 완료"]],
+                hist: [[r.at, "최초 청소 완료"], ["17:20", "검수 완료"]],
             }));
         else rows.forEach((r) => (r.notes = null));
     }
@@ -95,7 +95,7 @@ let rsSelected = null; /* 선택한 객실 호수 */
 let rsChip = "all";
 let rsQuery = "";
 const currentRows = () => resultRows(rsDate);
-/* 검수대기 · 청소완료 상태에서 재청소를 요청할 수 있어요 (재청소 요청 상태는 체크한 항목을 읽기만 해요) */
+/* 검수 대기 · 청소 완료 상태에서 재청소를 요청할 수 있어요 (재청소 요청 상태는 체크한 항목을 읽기만 해요) */
 const isEditable = (r) => r.status === "review" || r.status === "done";
 
 const STAFF_AVATAR = (name) => {
@@ -107,7 +107,7 @@ const STAFF_AVATAR = (name) => {
 
 const RS_CHIPS = [
     ["all", "전체"],
-    ["done", "청소완료"],
+    ["done", "청소 완료"],
     ["review", "검수 대기"],
     ["reclean", "재청소 요청"],
 ];
@@ -140,16 +140,17 @@ function renderResults() {
       <div class="rs-td rs-staff">${STAFF_AVATAR(r.staff)}<span>${r.staff}</span></div>
       <div class="rs-td rs-when"><p>${fmtStamp(rsDate, r.at)}</p>${strike}</div>
       <div class="rs-td is-center"><span class="badge rs-badge ${b.cls}">${b.label}</span></div>
-      <div class="rs-td is-center"><button class="rs-more" type="button" data-rs-open="${r.no}">자세히보기</button></div>
+      <div class="rs-td is-center"><button class="rs-more" type="button" data-rs-open="${r.no}">자세히 보기</button></div>
     </div>`;
         })
         .join("");
+    /* 표 머리글은 고정하고, 아래 목록(.rs-tbody)만 스크롤해요 */
     $("#rsTable").innerHTML =
-        head + (rowsHtml || `<p class="floor-empty">조건에 맞는 청소 결과가 없어요.</p>`);
+        head + `<div class="rs-tbody">${rowsHtml || `<p class="floor-empty">조건에 맞는 청소 결과가 없어요.</p>`}</div>`;
 }
 
 /* ---------- 우측 상세 패널 ---------- */
-const CHECK_ITEMS = ["침구정리", "욕실 물기 제거", "비품 보충", "바닥 청소", "환기"];
+const CHECK_ITEMS = ["침구 정리", "욕실 물기 제거", "비품 보충", "바닥 청소", "환기"];
 const PHOTO_GROUPS = [
     { name: "침구 정리 상태", desc: "침대 전체와 베개가 보이도록 촬영해 주세요.", n: 2, fresh: 1 },
     { name: "욕실 청소 상태", desc: "세면대와 변기, 바닥 상태가 보이도록 촬영해 주세요.", n: 4, fresh: 2 },
@@ -240,7 +241,7 @@ function renderResultDetail() {
         )
         : "";
 
-    /* 하단 버튼: 검수대기 = 재청소 요청 + 검수 완료 / 청소완료 = 재청소 요청 / 재청소 요청 = 요청 취소 + 검수 완료 */
+    /* 하단 버튼: 검수 대기 = 재청소 요청 + 검수 완료 / 청소 완료 = 재청소 요청 / 재청소 요청 = 요청 취소 + 검수 완료 */
     const foot =
         r.status === "reclean"
             ? `<div class="rs-d-foot">
@@ -271,13 +272,24 @@ function renderResultDetail() {
     fitRsDetail();
 }
 
-/* 패널은 화면 맨 아래(여백 20px)까지 채우고, 스크롤하면 헤더 아래(120px)에 붙어요 */
+/* 목록 패널과 상세 패널은 화면 맨 아래(여백 20px)까지 같은 높이로 채워요.
+   → 페이지 자체는 스크롤되지 않아서, 탭을 눌러 목록 길이가 바뀌어도 화면 폭이 흔들리지 않아요 */
 function fitRsDetail() {
     const cell = $(".rs-cell");
-    const panel = $("#rsDetail");
     if (!cell) return;
-    const top = Math.max(120, cell.getBoundingClientRect().top);
-    panel.style.height = Math.max(480, window.innerHeight - top - 20) + "px";
+    const top = cell.getBoundingClientRect().top + window.scrollY;
+    const h = Math.max(480, window.innerHeight - top - 20) + "px";
+    $("#rsDetail").style.height = h;
+    $(".rs-panel").style.height = h;
+}
+
+/* 상세 패널을 닫으면 청소 완료(초록) 결과는 확인한 것으로 보고 회색으로 바꿔요 */
+function closeRsDetail() {
+    const r = currentRows().find((x) => x.no === rsSelected);
+    if (r && r.status === "done" && !r.confirmed) r.confirmed = true;
+    rsSelected = null;
+    renderResults();
+    renderResultDetail();
 }
 
 function handleResultsClick(e) {
@@ -304,9 +316,7 @@ function handleResultsClick(e) {
         return true;
     }
     if (e.target.closest("[data-rs-close]")) {
-        rsSelected = null;
-        renderResults();
-        renderResultDetail();
+        closeRsDetail();
         return true;
     }
     const acc = e.target.closest("[data-rs-acc]");
@@ -376,9 +386,9 @@ function openRsModal(kind) {
     const ok = kind === "cancelAsk";
     const danger = ok;
     const title =
-        kind === "requested" ? "재청소 요청이 완료 되었습니다."
-            : kind === "cancelAsk" ? "재청소 요청을 취소 하시겠습니까?"
-                : "재청소 요청이 취소 되었습니다.";
+        kind === "requested" ? "재청소 요청이 완료되었습니다."
+            : kind === "cancelAsk" ? "재청소 요청을 취소하시겠습니까?"
+                : "재청소 요청이 취소되었습니다.";
     const sub = kind === "requested" ? "재청소가 시작되기 전까지 요청을 취소할 수 있습니다." : "";
     rsModalEl.innerHTML = `
     <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="${title}">
@@ -510,7 +520,6 @@ $("#rsSearch").addEventListener("input", (e) => {
     renderResults();
 });
 
-window.addEventListener("scroll", fitRsDetail, { passive: true });
 window.addEventListener("resize", fitRsDetail);
 updateFilterButtons();
 renderResults();

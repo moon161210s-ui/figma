@@ -369,8 +369,33 @@ function closePopover() {
     } /* 수정 중에 바뀐 패널 반영 */
 }
 
+/* 팝오버도 열려 있는 동안 기준 버튼이 움직이면(창 크기 조절, 스크롤바 생김/사라짐, 목록 갱신 등) 바로 따라가요 */
+let popTrackOn = false;
+function trackPopover() {
+    if (popTrackOn) return;
+    popTrackOn = true;
+    let last = "";
+    const tick = () => {
+        if (!pop || !popAnchor) {
+            popTrackOn = false;
+            return;
+        }
+        if (document.contains(popAnchor)) {
+            const a = popAnchor.getBoundingClientRect();
+            const key = [a.left, a.top, a.width, a.height, pop.offsetWidth, pop.offsetHeight, window.innerWidth, window.innerHeight].join();
+            if (key !== last) {
+                last = key;
+                placePopover();
+            }
+        }
+        requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+}
+
 function placePopover() {
     if (!pop || !popAnchor || !document.contains(popAnchor)) return;
+    trackPopover();
     const a = popAnchor.getBoundingClientRect();
     /* 떠 있는 시간 목록이 팝오버 아래로 삐져나오면 그만큼도 화면 안에 들어오게 해요 */
     const pn = pop.querySelector(".tp-panel:not([hidden])");
@@ -798,8 +823,31 @@ function closeFilterMenu() {
     fmenu = fmenuBtn = fmenuKind = null;
 }
 
+/* 메뉴가 열려 있는 동안에는 버튼 자리가 바뀌면(창 크기 조절, 스크롤바 생김/사라짐, 목록 갱신 등) 메뉴도 바로 따라가요 */
+let fmTrackOn = false;
+function trackFilterMenu() {
+    if (fmTrackOn) return;
+    fmTrackOn = true;
+    let last = "";
+    const tick = () => {
+        if (!fmenu || !fmenuBtn || !fmenuBtn.isConnected) {
+            fmTrackOn = false;
+            return;
+        }
+        const a = fmenuBtn.getBoundingClientRect();
+        const key = [a.left, a.top, a.width, a.height, window.innerHeight].join();
+        if (key !== last) {
+            last = key;
+            placeFilterMenu();
+        }
+        requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+}
+
 function placeFilterMenu() {
     if (!fmenu || !fmenuBtn) return;
+    trackFilterMenu();
     const a = fmenuBtn.getBoundingClientRect();
     fmenu.style.width = Math.max(180, a.width) + "px";
     let top = a.bottom + 4;
@@ -970,11 +1018,7 @@ document.addEventListener("keydown", (e) => {
         else if (fmenu) closeFilterMenu();
         else if (pop) closePopover();
         else if (document.getElementById("rsModal")?.hidden === false) { /* 청소 결과 모달이 열려 있으면 모달만 닫아요 (result.js) */ }
-        else if (typeof rsSelected !== "undefined" && rsSelected) {
-            rsSelected = null;
-            renderResults();
-            renderResultDetail();
-        } else if (selectedNo) {
+        else if (typeof rsSelected !== "undefined" && rsSelected) closeRsDetail(); else if (selectedNo) {
             selectedNo = null;
             renderFloors();
             renderDetail();
