@@ -647,8 +647,8 @@ button { font-family: inherit; }
  line-height: var(--lh-h6); font-weight: var(--fw-bold); color: var(--color-gray-900); } 
 .noti-close { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--radius-sm); background: var(--color-base-inverse); cursor: pointer; } 
 .noti-close:hover { background: var(--color-bg-disable); } 
-.noti-tabs { display: flex; gap: 6px; flex-shrink: 0; margin-top: -1px; /* 탭 위쪽 빨간 점이 잘리지 않게 1px 여유를 두고 그만큼 당겨요 */
- padding-top: 1px; overflow-x: auto; scrollbar-width: none; } 
+.noti-tabs { display: flex; gap: 6px; flex-shrink: 0; min-width: 0; width: 100%; margin-top: -1px; padding-top: 1px; overflow-x: auto; scrollbar-width: none; cursor: grab; user-select: none; touch-action: pan-x; }
+.noti-tabs.is-dragging { cursor: grabbing; }
 .noti-tabs::-webkit-scrollbar { display: none; } 
 .noti-tab { position: relative; flex-shrink: 0; height: 40px; padding: 0 16px; border: 1px solid var(--color-line-normal); border-radius: var(--radius-md); background: var(--color-base-inverse); font: inherit; font-size: var(--fs-body1); line-height: var(--lh-body1); font-weight: var(--fw-bold); color: var(--color-gray-900); white-space: nowrap; cursor: pointer; } 
 .noti-tab.is-active { border-color: var(--color-gray-900); background: var(--color-gray-900); color: var(--color-base-inverse); /* 라이트: 흰 글자 / 다크: 검은 글자 */ } 
