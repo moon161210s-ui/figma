@@ -3271,9 +3271,29 @@ main[hidden] {
     pointer-events: none;
 }
 
-.rs-vw-slide .rs-new {
-    top: 10px;
-    left: 10px;
+/* 이전 / 다음 버튼: 큰 사진 오른쪽 아래 (40×40, 간격 10, 가장자리에서 24) */
+.rs-vw-nav {
+    position: absolute;
+    right: 24px;
+    bottom: 24px;
+    display: flex;
+    gap: 10px;
+}
+
+.rs-vw-btn {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-low);
+    cursor: pointer;
+}
+
+.rs-vw-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
 /* 아래 작은 사진: 지금 보는 사진만 선명 / 스크롤바 없이, 넘치면 지금 사진 쪽으로 옮겨 가요 */

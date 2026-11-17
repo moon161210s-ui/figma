@@ -1272,6 +1272,7 @@ setTimeout(function tick() {
        알림 1건 = { id, type, title, date, text, actions: [{ label, room? }], read }
        type : issue(특이사항) / reassign(재배정 필요) / todo(청소 필요) / review(검수 요청) / notice(시스템 공지)
        actions 의 room 이 있으면 그 객실을 선택해서 보여줘요 (없으면 읽음 처리만 해요 → 서버 연결 시 처리 동작을 넣으세요)
+       actions 의 href 가 있으면 그 주소로 이동해요 (특이사항 '자세히 보기' → thread.html)
        actions 의 result({ room, date: "YYYY-MM-DD" })가 있으면 청소 결과 화면으로 이동해서 그 날짜의 그 객실 상세를 열어요 (검수 요청 알림)
        읽음 상태를 서버에 저장하려면 markRead() 안의 주석 위치에서 요청을 보내세요
    ========================================================== */
@@ -1291,7 +1292,7 @@ let NOTIFICATIONS = [
         title: "이민지 · 특이사항 등록",
         date: "11월 15일 11:41",
         text: "드라이기 바람이 약해요.\n교체해야 할 것 같아요.",
-        actions: [{ label: "자세히 보기" }, { label: "직접 처리하기" }],
+        actions: [{ label: "자세히 보기", href: "thread.html" }, { label: "직접 처리하기" }],
         read: false,
     },
     {
@@ -1554,7 +1555,10 @@ document.addEventListener("click", (e) => {
         const act = n && n.actions[+btn.dataset.i];
         if (!n) return;
         markRead([n.id]);
-        if (act && act.result) {
+        if (act && act.href) {
+            closeNoti();
+            location.href = act.href;
+        } else if (act && act.result) {
             closeNoti();
             goResult(act.result);
         } else if (act && act.room) {

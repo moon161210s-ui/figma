@@ -424,7 +424,11 @@ function openRsViewer(r, gi, i) {
       <div class="rs-vw-body">
         <div class="rs-vw-main" id="rsVwMain" aria-roledescription="carousel" aria-label="좌우로 끌어서 다음 사진 보기">
           <div class="rs-vw-track" id="rsVwTrack">${rsView.photos.map((p, k) => `
-            <div class="rs-vw-slide" role="group" aria-label="${k + 1} / ${rsView.photos.length}"><img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" />${p.fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</div>`).join("")}
+            <div class="rs-vw-slide" role="group" aria-label="${k + 1} / ${rsView.photos.length}"><img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" /></div>`).join("")}
+          </div>
+          <div class="rs-vw-nav">
+            <button class="rs-vw-btn" type="button" data-rs-step="-1" aria-label="이전 사진"><img class="i20" src="${ICON("arrow-left")}" alt="" /></button>
+            <button class="rs-vw-btn" type="button" data-rs-step="1" aria-label="다음 사진"><img class="i20" src="${ICON("arrow-right")}" alt="" /></button>
           </div>
         </div>
         <div class="rs-vw-list" id="rsVwList" aria-hidden="true">${rsView.photos.map((p) => `
@@ -444,6 +448,10 @@ function paintRsViewer(animate = true) {
     track.style.transform = `translateX(calc(${-rsView.i * 100}% + ${rsView.dx}px))`;
     const ths = [...rsModalEl.querySelectorAll(".rs-vw-th")];
     ths.forEach((t, k) => t.classList.toggle("is-on", k === rsView.i));
+    /* 처음/마지막 사진에서는 더 갈 수 없는 쪽 버튼을 흐리게 */
+    const prev = rsModalEl.querySelector('[data-rs-step="-1"]'), next = rsModalEl.querySelector('[data-rs-step="1"]');
+    if (prev) prev.disabled = rsView.i === 0;
+    if (next) next.disabled = rsView.i === rsView.photos.length - 1;
     /* 작은 사진이 많아 넘치면, 지금 사진이 보이도록 목록을 옮겨 줘요 */
     const list = $("#rsVwList"), cur = ths[rsView.i];
     if (list && cur) list.scrollTo({ left: cur.offsetLeft - (list.clientWidth - cur.offsetWidth) / 2, behavior: animate ? "smooth" : "auto" });
@@ -459,7 +467,7 @@ function stepRsViewer(d) {
 /* 큰 사진 드래그: 사진이 손을 따라 움직이고, 놓을 때 충분히 끌었거나(너비의 15%) 빠르게 튕기면 다음 사진으로 넘어가요 */
 rsModalEl.addEventListener("pointerdown", (e) => {
     const main = e.target.closest("#rsVwMain");
-    if (!main || !rsView || e.button > 0) return;
+    if (!main || !rsView || e.button > 0 || e.target.closest(".rs-vw-nav")) return;
     const x0 = e.clientX, t0 = performance.now();
     const w = main.clientWidth;
     main.setPointerCapture(e.pointerId);
@@ -490,6 +498,11 @@ rsModalEl.addEventListener("pointerdown", (e) => {
 
 rsModalEl.addEventListener("click", (e) => {
     if (e.target === rsModalEl) return closeRsModal();
+    const step = e.target.closest("[data-rs-step]");
+    if (step) {
+        stepRsViewer(Number(step.dataset.rsStep));
+        return;
+    }
     const m = e.target.closest("[data-rs-m]");
     if (!m) return;
     if (m.dataset.rsM === "cancel-ok") {
