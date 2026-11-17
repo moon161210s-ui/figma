@@ -367,8 +367,11 @@ function closePopover() {
 function placePopover() {
     if (!pop || !popAnchor || !document.contains(popAnchor)) return;
     const a = popAnchor.getBoundingClientRect();
+    /* 떠 있는 시간 목록이 팝오버 아래로 삐져나오면 그만큼도 화면 안에 들어오게 해요 */
+    const pn = pop.querySelector(".tp-panel:not([hidden])");
+    const extra = pn ? Math.max(0, pn.getBoundingClientRect().bottom - pop.getBoundingClientRect().bottom) : 0;
     const w = pop.offsetWidth,
-        h = pop.offsetHeight;
+        h = pop.offsetHeight + extra;
     const left = Math.max(8, a.right - w); /* 버튼 오른쪽 끝에 맞춤 */
     let top = a.bottom + 4; /* 버튼 아래 4px */
     if (top + h > window.innerHeight - 4)
@@ -403,9 +406,9 @@ function openPopover(kind, anchor, room) {
                 .join("")}</div>`;
         return `
     <div class="tp" id="tp-${id}">
-      <div class="tp-field">${icon("time")}<span class="tp-text">${t}</span></div>
+      <button type="button" class="tp-field" aria-haspopup="listbox" aria-expanded="false">${icon("time")}<span class="tp-text">${t}</span></button>
       <input id="${id}" type="hidden" value="${t}" />
-      <div class="tp-panel">
+      <div class="tp-panel" hidden>
         ${col("ap", [["AM", "오전"], ["PM", "오후"]], h24 < 12 ? "AM" : "PM")}
         ${col("h", Array.from({ length: 12 }, (_, i) => [String(i + 1), pad(i + 1)]), String(h12))}
         ${col("m", Array.from({ length: 60 }, (_, i) => [String(i), pad(i)]), String(+t.slice(3)))}
@@ -634,9 +637,39 @@ function initTimePicker(root) {
         if (focus) btn.focus();
         sync();
     };
+    /* 시간 칸을 누르면 아래로 목록이 펼쳐지고, 다시 누르거나 바깥을 누르면 접혀요 */
+    const field = $(".tp-field", tp);
+    const panel = $(".tp-panel", tp);
+    const center = () =>
+        Object.values(cols).forEach((c) => {
+            const b = $(".tp-item.is-selected", c);
+            c.scrollTop = b.offsetTop - (c.clientHeight - b.offsetHeight) / 2;
+        });
+    const setOpen = (on) => {
+        panel.hidden = !on;
+        field.setAttribute("aria-expanded", String(on));
+        if (on) {
+            center();
+        }
+        placePopover(); /* 목록이 화면 아래로 넘치면 팝오버를 그만큼 위로 올려요 */
+    };
+    field.addEventListener("click", () => setOpen(panel.hidden));
     tp.addEventListener("click", (e) => {
         const b = e.target.closest(".tp-item");
-        if (b) pick(b, false);
+        if (!b) return;
+        pick(b, false);
+        /* 분까지 고르면 목록이 닫혀요 */
+        if (b.parentElement.dataset.col === "m") setOpen(false);
+    });
+    root.addEventListener("click", (e) => {
+        if (!panel.hidden && !tp.contains(e.target)) setOpen(false);
+    });
+    root.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !panel.hidden) {
+            e.stopPropagation();
+            setOpen(false);
+            field.focus();
+        }
     });
     tp.addEventListener("keydown", (e) => {
         const b = e.target.closest(".tp-item");
@@ -644,10 +677,6 @@ function initTimePicker(root) {
         e.preventDefault();
         const n = e.key === "ArrowDown" ? b.nextElementSibling : b.previousElementSibling;
         if (n) pick(n, true);
-    });
-    Object.values(cols).forEach((c) => {
-        const b = $(".tp-item.is-selected", c);
-        c.scrollTop = b.offsetTop - (c.clientHeight - b.offsetHeight) / 2;
     });
 }
 

@@ -1426,47 +1426,13 @@ button {
     box-shadow: var(--shadow-popover);
 }
 
-/* 요일/시간 설정 모달: 높이 400px 고정 / 넘치는 내용은 .pop-body 에서 스크롤 (스크롤바는 알림 센터와 같은 디자인) */
+/* 퇴실 예정 팝오버: 달력이 5주 이상이면 아래로 늘어나요 (시간 목록은 위에 떠서 열려요) */
 .popover.is-fixed {
-    display: flex;
-    flex-direction: column;
-    height: min(400px, calc(100vh - 8px));
+    max-height: calc(100vh - 8px);
 }
 
 .pop-body {
-    flex: 1;
-    min-height: 0;
-    margin-right: -11px;
-    /* 스크롤바가 모달 안쪽 여백에 놓여서 내용 폭은 그대로예요 */
-    padding-right: 3px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-}
-
-.popover.is-fixed .pop-actions {
-    flex-shrink: 0;
-}
-
-.pop-body::-webkit-scrollbar {
-    width: var(--scroll-width);
-}
-
-.pop-body::-webkit-scrollbar-track {
-    margin: var(--scroll-inset) 0;
-    background: transparent;
-}
-
-.pop-body::-webkit-scrollbar-thumb {
-    border-radius: 100px;
-    background: var(--color-gray-200);
-}
-
-@supports not selector(::-webkit-scrollbar) {
-    .pop-body {
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-gray-200) transparent;
-    }
+    overflow: visible;
 }
 
 .pop-label {
@@ -1486,6 +1452,7 @@ button {
 
 /* ---------- 시간 선택 (오전/오후 · 시 · 분 목록) ---------- */
 .tp {
+    position: relative;
     margin-top: 8px;
 }
 
@@ -1495,18 +1462,36 @@ button {
     gap: 8px;
     height: 40px;
     padding: 0 12px;
-    border: 1px solid var(--color-gray-900);
+    width: 100%;
+    border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-sm);
     background: var(--color-base-inverse);
+    font: inherit;
     font-size: var(--fs-body1);
     color: var(--color-gray-900);
+    text-align: left;
+    cursor: pointer;
+}
+
+.tp-field[aria-expanded="true"] {
+    border-color: var(--color-gray-900);
+}
+
+.tp-panel[hidden] {
+    display: none;
 }
 
 .tp-panel {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    height: 216px;
-    margin-top: 4px;
+    /* 시간 칸 아래 4px 간격으로 떠서 열려요 (모달 높이는 그대로, 숫자 3개 정도 보임) */
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 4px);
+    z-index: 2;
+    height: 124px;
+    box-shadow: var(--shadow-popover);
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-sm);
     background: var(--color-base-inverse);
