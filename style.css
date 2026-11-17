@@ -459,7 +459,7 @@ button {
 }
 
 .header-date {
-    margin-right: 12px;
+    margin-right: 16px;
     font-size: var(--fs-body2);
     color: var(--color-gray-300);
 }
