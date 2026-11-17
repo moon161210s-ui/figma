@@ -224,7 +224,7 @@ function renderResultDetail() {
                 }).join("")}</div>
           </div>
           <div class="rs-textarea">
-            <label for="rsMsg">직원에게 전달할 내용</label>
+            <label for="rsMsg">${editable ? "직원에게 전달할 내용" : "직원에게 전달한 내용"}</label>
             <textarea id="rsMsg" placeholder="직원에게 요청할 내용을 작성해 주세요."${editable ? "" : " readonly"}>${editable ? "" : r.msg || ""}</textarea>
           </div>`
             )

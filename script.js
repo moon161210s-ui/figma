@@ -1559,7 +1559,9 @@ document.addEventListener("click", (e) => {
             goResult(act.result);
         } else if (act && act.room) {
             closeNoti();
-            showRoom(act.room);
+            /* 청소 결과 화면에서 누르면 실시간 현황 화면으로 이동해서 그 객실을 보여줘요 */
+            if (typeof openResultFor === "function") location.href = `index.html?room=${encodeURIComponent(act.room)}`;
+            else showRoom(act.room);
         }
         return;
     }
@@ -1766,4 +1768,11 @@ hm.addEventListener("keydown", (e) => {
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") set(false);
     });
+})();
+
+/* 다른 화면(청소 결과)의 알림에서 넘어오면 그 객실을 바로 선택해서 보여줘요 (?room=201) */
+(function () {
+    if (!$("#roomSearch")) return;
+    const room = new URLSearchParams(location.search).get("room");
+    if (room) showRoom(room);
 })();
