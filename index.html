@@ -25,30 +25,38 @@
             </button>
 
             <nav class="nav" aria-label="주 메뉴">
-                <a class="nav-item is-active" href="#">
-                    <img class="i20" src="img/icon/soap.svg" alt="" />청소관리
-                </a>
-                <div class="nav-sub">
-                    <a class="is-active" href="#" aria-current="page">실시간 객실 청소 현황</a>
-                    <a href="#">청소 기준 설정</a>
-                    <a href="#">청소 결과</a>
+                <div class="nav-group">
+                    <a class="nav-item is-active" href="#">
+                        <img class="i20" src="img/icon/soap.svg" alt="" />청소 관리
+                    </a>
+                    <div class="nav-sub">
+                        <a class="is-active" href="#" aria-current="page">실시간 객실 청소 현황</a>
+                        <a href="#">청소 기준 설정</a>
+                        <a href="#">청소 결과</a>
+                    </div>
                 </div>
 
-                <a class="nav-item" href="#">
-                    <img class="i20" src="img/icon/calender.svg" alt="" />예약 현황
-                </a>
-
-                <a class="nav-item" href="#">
-                    <img class="i20" src="img/icon/users-profiles.svg" alt="" />직원관리
-                </a>
-                <div class="nav-sub">
-                    <a href="#">직원 정보 설정</a>
-                    <a href="#">직원 배정</a>
+                <div class="nav-group">
+                    <a class="nav-item" href="#">
+                        <img class="i20" src="img/icon/calender.svg" alt="" />예약 현황
+                    </a>
                 </div>
 
-                <a class="nav-item" href="#">
-                    <img class="i20" src="img/icon/message.svg" alt="" />업무 특이사항
-                </a>
+                <div class="nav-group">
+                    <a class="nav-item" href="#">
+                        <img class="i20" src="img/icon/users-profiles.svg" alt="" />직원 관리
+                    </a>
+                    <div class="nav-sub">
+                        <a href="#">직원 정보 설정</a>
+                        <a href="#">직원 배정</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <a class="nav-item" href="#">
+                        <img class="i20" src="img/icon/message.svg" alt="" />업무 특이사항
+                    </a>
+                </div>
             </nav>
 
             <div class="sidebar-bottom">
@@ -64,25 +72,29 @@
             <!-- Header (스크롤해도 상단에 고정) -->
             <div class="header-wrap">
                 <header class="header">
-                    <!-- 날짜·시간은 script.js 가 접속한 기기의 현재 시각으로 채워요 -->
-                    <span class="header-date" id="headerDate">2026년 11월 5일 목요일 · 14:24</span>
-                    <div class="header-actions">
-                        <!-- 빨간 점(has-dot)은 확인하지 않은 알림이 있을 때만 script.js 가 붙여요 -->
-                        <button class="icon-btn" id="bellBtn" type="button" aria-label="알림">
-                            <img class="i20" src="img/icon/bell.svg" alt="" />
-                        </button>
-                        <button class="icon-btn" id="themeBtn" type="button" aria-label="다크 모드로 변경"
-                            aria-pressed="false">
-                            <img class="i20" id="themeIcon" src="img/icon/sun.svg" alt="" />
+                    <!-- 현재 보고 있는 메뉴 이름 (사이드바의 1depth 메뉴와 같아요) -->
+                    <span class="header-title">청소 관리</span>
+                    <div class="header-right">
+                        <!-- 날짜·시간은 script.js 가 접속한 기기의 현재 시각으로 채워요 -->
+                        <span class="header-date" id="headerDate">2026년 11월 5일 목요일 · 14:24</span>
+                        <div class="header-actions">
+                            <!-- 빨간 점(has-dot)은 확인하지 않은 알림이 있을 때만 script.js 가 붙여요 -->
+                            <button class="icon-btn" id="bellBtn" type="button" aria-label="알림">
+                                <img class="i20" src="img/icon/bell.svg" alt="" />
+                            </button>
+                            <button class="icon-btn" id="themeBtn" type="button" aria-label="다크 모드로 변경"
+                                aria-pressed="false">
+                                <img class="i20" id="themeIcon" src="img/icon/sun.svg" alt="" />
+                            </button>
+                        </div>
+                        <span class="header-divider"></span>
+                        <button class="profile" id="profileBtn" type="button" aria-haspopup="menu" aria-expanded="false"
+                            aria-label="프로필 메뉴">
+                            <!-- 프로필 사진: img/avatar.png -->
+                            <img class="avatar" src="img/avatar.png" alt="프로필" />
+                            <img class="i16" src="img/icon/arrow-down.svg" alt="" />
                         </button>
                     </div>
-                    <span class="header-divider"></span>
-                    <button class="profile" id="profileBtn" type="button" aria-haspopup="menu" aria-expanded="false"
-                        aria-label="프로필 메뉴">
-                        <!-- 프로필 사진: img/avatar.png -->
-                        <img class="avatar" src="img/avatar.png" alt="프로필" />
-                        <img class="i16" src="img/icon/arrow-down.svg" alt="" />
-                    </button>
                 </header>
             </div>
 

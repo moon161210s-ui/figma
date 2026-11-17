@@ -323,20 +323,21 @@ button {
     flex-shrink: 0;
     width: 240px;
     height: 100vh;
-    padding: 41px 18px 20px;
+    padding: 40px 18px 20px;
     background: var(--color-base-inverse);
     overflow-y: auto;
 }
 
 .logo {
     display: block;
-    height: 26px;
-    margin-bottom: 17px;
+    height: 28px;
+    /* 시안: 로고 138 x 28 */
+    margin-bottom: 16px;
 }
 
 .logo img {
     display: block;
-    height: 26px;
+    height: 28px;
     width: auto;
 }
 
@@ -361,10 +362,18 @@ button {
 .nav {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
+    /* 시안: 메뉴 그룹 사이 8 */
     margin-top: 24px;
 }
 
+.nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 시안: 1depth ↔ 2depth 사이 4 */
 .nav-item {
     display: flex;
     align-items: center;
@@ -390,7 +399,9 @@ button {
     display: flex;
     align-items: center;
     height: 42px;
-    padding-left: 42px;
+    padding: 10px 16px 8px 42px;
+    /* 시안: 위 10 / 아래 8 / 왼쪽 42 / 오른쪽 16 */
+    border-radius: var(--radius-xs);
     font-size: var(--fs-body1);
     color: var(--color-gray-300);
     text-decoration: none;
@@ -425,11 +436,25 @@ button {
 .header {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     height: 68px;
-    padding: 0 20px;
-    border-radius: var(--radius-xl);
+    padding: 0 21px;
+    border-radius: var(--radius-md);
+    /* 시안: header radius 10 */
     background: var(--color-base-inverse);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.header-title {
+    font-size: var(--fs-h6);
+    /* 시안 Heading 6 (PC 20px / 30px) */
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
 }
 
 .header-date {
@@ -459,9 +484,9 @@ button {
 .icon-btn.has-dot::after {
     content: "";
     position: absolute;
-    top: 8px;
-    /* 시안: 점 5px, 버튼 안쪽 기준 위 8 / 오른쪽 11 */
-    right: 11px;
+    top: 9px;
+    /* 시안: 점 5px, 버튼 안쪽 기준 위 9 / 왼쪽 19 */
+    left: 19px;
     width: 5px;
     height: 5px;
     border-radius: 50%;
@@ -470,8 +495,9 @@ button {
 
 .header-divider {
     width: 1px;
-    height: 28px;
+    height: 31px;
     margin: 0 24px;
+    border-radius: 100px;
     background: var(--color-line-normal);
 }
 
@@ -489,7 +515,7 @@ button {
     width: 38px;
     height: 38px;
     border-radius: var(--radius-sm);
-    background: var(--color-gray-100);
+    background: var(--color-primary-50);
     object-fit: cover;
 }
 
