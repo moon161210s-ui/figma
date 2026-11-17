@@ -3217,7 +3217,7 @@ main[hidden] {
 
 /* ---------- 인증사진 뷰어 (1200 / 큰 사진 600 / 썸네일 145×110) ---------- */
 .rs-vw {
-    width: 1200px;
+    width: min(1200px, calc(100vw - 32px));
 }
 
 .rs-vw-body {
@@ -3232,40 +3232,55 @@ main[hidden] {
 .rs-vw-main {
     position: relative;
     flex-shrink: 0;
-    height: min(600px, calc(100dvh - 300px));
+    height: min(600px, calc(100dvh - 280px));
     min-height: 160px;
     overflow: hidden;
     border: 1px solid var(--color-line-low);
     border-radius: var(--radius-sm);
     background: var(--color-bg-disable);
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
 }
 
-.rs-vw-main img {
+.rs-vw-main.is-grabbing {
+    cursor: grabbing;
+}
+
+/* 사진들이 가로로 한 줄로 이어져 있고, 좌우로 끌면 한 장씩 밀려요 */
+.rs-vw-track {
+    display: flex;
+    height: 100%;
+    transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.rs-vw-track.is-dragging {
+    transition: none;
+}
+
+.rs-vw-slide {
+    position: relative;
+    flex: 0 0 100%;
+    height: 100%;
+}
+
+.rs-vw-slide img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
 }
 
-.rs-vw-main .rs-new {
+.rs-vw-slide .rs-new {
     top: 10px;
     left: 10px;
 }
 
-.rs-vw-lw {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
+/* 아래 작은 사진: 지금 보는 사진만 선명 / 스크롤바 없이, 넘치면 지금 사진 쪽으로 옮겨 가요 */
 .rs-vw-list {
     display: flex;
     gap: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.rs-vw-list::-webkit-scrollbar {
-    display: none;
+    overflow: hidden;
 }
 
 .rs-vw-th {
@@ -3273,17 +3288,15 @@ main[hidden] {
     flex: 0 0 145px;
     width: 145px;
     height: 110px;
-    padding: 0;
     overflow: hidden;
     border: 1px solid var(--color-line-low);
     border-radius: var(--radius-sm);
     background: var(--color-bg-disable);
     opacity: 0.4;
-    cursor: pointer;
+    transition: opacity 0.3s ease;
 }
 
-.rs-vw-th.is-on,
-.rs-vw-th:hover {
+.rs-vw-th.is-on {
     opacity: 1;
 }
 
@@ -3291,33 +3304,12 @@ main[hidden] {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
 }
 
 .rs-vw-th .rs-new {
     top: 9px;
     left: 9px;
-}
-
-/* 가로 스크롤바 (8px): 넘칠 때만 보이고, 안 넘쳐도 자리는 그대로 */
-.rs-vw-bar {
-    position: relative;
-    height: 8px;
-    border-radius: 100px;
-    background: var(--color-gray-50);
-    cursor: pointer;
-}
-
-.rs-vw-bar.is-off {
-    visibility: hidden;
-}
-
-.rs-vw-thumb {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 8px;
-    border-radius: 100px;
-    background: var(--color-gray-900);
 }
 
 @media (max-width: 900px) {

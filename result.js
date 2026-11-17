@@ -409,11 +409,12 @@ function openRsModal(kind) {
     rsModalEl.querySelector(".btn-primary").focus();
 }
 
-/* 인증사진 뷰어: 큰 사진 1장 + 썸네일 목록 (많으면 가로 스크롤 / 스크롤바 자리는 항상 비워둬요) */
+/* 인증사진 뷰어: 큰 사진을 좌우로 끌면(드래그) 끈 방향의 다음 사진으로 넘어가요.
+   아래 작은 사진들은 지금 보는 사진만 선명하고 나머지는 흐려요 (눌러서 바꾸는 게 아니라 위치 표시예요) */
 let rsView = null;
 function openRsViewer(r, gi, i) {
     const g = PHOTO_GROUPS[gi];
-    rsView = { photos: Array.from({ length: g.n }, (_, k) => rsPhoto(r, gi, k)), i };
+    rsView = { photos: Array.from({ length: g.n }, (_, k) => rsPhoto(r, gi, k)), i, dx: 0 };
     rsModalEl.innerHTML = `
     <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="인증사진">
       <div class="hm-head">
@@ -421,50 +422,74 @@ function openRsViewer(r, gi, i) {
         <button class="hm-close" type="button" data-rs-m="close" aria-label="닫기"><img class="i20" src="${ICON("close")}" alt="" /></button>
       </div>
       <div class="rs-vw-body">
-        <div class="rs-vw-main"><img id="rsVwImg" alt="" /><span class="badge badge-pr500 rs-new" id="rsVwNew">NEW</span></div>
-        <div class="rs-vw-lw">
-          <div class="rs-vw-list" id="rsVwList">${rsView.photos.map((p, k) => `
-            <button class="rs-vw-th" type="button" data-rs-th="${k}" aria-label="${k + 1}번 사진"><img src="${p.src}" alt="" onerror="this.style.visibility='hidden'" />${p.fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</button>`).join("")}
+        <div class="rs-vw-main" id="rsVwMain" aria-roledescription="carousel" aria-label="좌우로 끌어서 다음 사진 보기">
+          <div class="rs-vw-track" id="rsVwTrack">${rsView.photos.map((p, k) => `
+            <div class="rs-vw-slide" role="group" aria-label="${k + 1} / ${rsView.photos.length}"><img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" />${p.fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</div>`).join("")}
           </div>
-          <div class="rs-vw-bar" id="rsVwBar"><span class="rs-vw-thumb" id="rsVwThumb"></span></div>
+        </div>
+        <div class="rs-vw-list" id="rsVwList" aria-hidden="true">${rsView.photos.map((p) => `
+          <div class="rs-vw-th"><img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" />${p.fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</div>`).join("")}
         </div>
       </div>
     </div>`;
     rsModalEl.hidden = false;
-    paintRsViewer();
-    syncRsBar();
+    paintRsViewer(false);
 }
 
-function paintRsViewer() {
-    const p = rsView.photos[rsView.i];
-    const img = $("#rsVwImg");
-    img.style.visibility = "";
-    img.onerror = () => (img.style.visibility = "hidden");
-    img.src = p.src;
-    $("#rsVwNew").hidden = !p.fresh;
-    rsModalEl.querySelectorAll("[data-rs-th]").forEach((b) => b.classList.toggle("is-on", Number(b.dataset.rsTh) === rsView.i));
+/* 지금 사진으로 이동 (animate=false 면 바로) + 작은 사진 선명도 갱신 */
+function paintRsViewer(animate = true) {
+    const track = $("#rsVwTrack");
+    if (!track || !rsView) return;
+    track.classList.toggle("is-dragging", !animate);
+    track.style.transform = `translateX(calc(${-rsView.i * 100}% + ${rsView.dx}px))`;
+    const ths = [...rsModalEl.querySelectorAll(".rs-vw-th")];
+    ths.forEach((t, k) => t.classList.toggle("is-on", k === rsView.i));
+    /* 작은 사진이 많아 넘치면, 지금 사진이 보이도록 목록을 옮겨 줘요 */
+    const list = $("#rsVwList"), cur = ths[rsView.i];
+    if (list && cur) list.scrollTo({ left: cur.offsetLeft - (list.clientWidth - cur.offsetWidth) / 2, behavior: animate ? "smooth" : "auto" });
 }
 
-/* 가로 스크롤바: 목록이 넘칠 때만 보이고, 안 넘쳐도 자리(높이)는 그대로 */
-function syncRsBar() {
-    const list = $("#rsVwList"), bar = $("#rsVwBar"), th = $("#rsVwThumb");
-    if (!list || !bar) return;
-    const over = list.scrollWidth - list.clientWidth;
-    bar.classList.toggle("is-off", over <= 1);
-    if (over <= 1) return;
-    const w = (bar.clientWidth * list.clientWidth) / list.scrollWidth;
-    th.style.width = w + "px";
-    th.style.transform = `translateX(${((bar.clientWidth - w) * list.scrollLeft) / over}px)`;
+function stepRsViewer(d) {
+    if (!rsView) return;
+    rsView.i = Math.min(Math.max(rsView.i + d, 0), rsView.photos.length - 1);
+    rsView.dx = 0;
+    paintRsViewer(true);
 }
+
+/* 큰 사진 드래그: 사진이 손을 따라 움직이고, 놓을 때 충분히 끌었거나(너비의 15%) 빠르게 튕기면 다음 사진으로 넘어가요 */
+rsModalEl.addEventListener("pointerdown", (e) => {
+    const main = e.target.closest("#rsVwMain");
+    if (!main || !rsView || e.button > 0) return;
+    const x0 = e.clientX, t0 = performance.now();
+    const w = main.clientWidth;
+    main.setPointerCapture(e.pointerId);
+    main.classList.add("is-grabbing");
+    const move = (ev) => {
+        let dx = ev.clientX - x0;
+        const edge = (rsView.i === 0 && dx > 0) || (rsView.i === rsView.photos.length - 1 && dx < 0);
+        rsView.dx = edge ? dx * 0.3 : dx; /* 처음/마지막에서는 저항감 */
+        paintRsViewer(false);
+    };
+    const up = (ev) => {
+        main.removeEventListener("pointermove", move);
+        main.removeEventListener("pointerup", up);
+        main.removeEventListener("pointercancel", up);
+        main.classList.remove("is-grabbing");
+        const dx = ev.clientX - x0;
+        const fast = Math.abs(dx) / Math.max(performance.now() - t0, 1) > 0.5 && Math.abs(dx) > 30;
+        if (Math.abs(dx) > w * 0.15 || fast) stepRsViewer(dx < 0 ? 1 : -1);
+        else {
+            rsView.dx = 0;
+            paintRsViewer(true);
+        }
+    };
+    main.addEventListener("pointermove", move);
+    main.addEventListener("pointerup", up);
+    main.addEventListener("pointercancel", up);
+});
 
 rsModalEl.addEventListener("click", (e) => {
     if (e.target === rsModalEl) return closeRsModal();
-    const th = e.target.closest("[data-rs-th]");
-    if (th) {
-        rsView.i = Number(th.dataset.rsTh);
-        paintRsViewer();
-        return;
-    }
     const m = e.target.closest("[data-rs-m]");
     if (!m) return;
     if (m.dataset.rsM === "cancel-ok") {
@@ -485,38 +510,10 @@ rsModalEl.addEventListener("click", (e) => {
     }
     closeRsModal();
 });
-rsModalEl.addEventListener("scroll", syncRsBar, true);
-rsModalEl.addEventListener("wheel", (e) => {
-    const list = e.target.closest?.("#rsVwList");
-    if (list && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        list.scrollLeft += e.deltaY;
-        e.preventDefault();
-    }
-}, { passive: false });
-/* 스크롤바 막대 끌기 / 트랙 누르기 */
-rsModalEl.addEventListener("pointerdown", (e) => {
-    const bar = e.target.closest("#rsVwBar");
-    if (!bar || bar.classList.contains("is-off")) return;
-    const list = $("#rsVwList"), th = $("#rsVwThumb");
-    const over = list.scrollWidth - list.clientWidth;
-    const room = bar.clientWidth - th.offsetWidth;
-    const toScroll = (x, grab) => {
-        const left = Math.min(Math.max(x - bar.getBoundingClientRect().left - grab, 0), room);
-        list.scrollLeft = (left / room) * over;
-    };
-    const grab = e.target === th ? e.clientX - th.getBoundingClientRect().left : th.offsetWidth / 2;
-    toScroll(e.clientX, grab);
-    const move = (ev) => toScroll(ev.clientX, grab);
-    const up = () => {
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-});
-window.addEventListener("resize", syncRsBar);
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !rsModalEl.hidden) closeRsModal();
+    /* 키보드: 사진이 열려 있으면 ← → 로도 넘겨요 */
+    if (!rsModalEl.hidden && $("#rsVwTrack") && (e.key === "ArrowLeft" || e.key === "ArrowRight")) stepRsViewer(e.key === "ArrowRight" ? 1 : -1);
 });
 
 /* 알림의 '결과 검수'로 들어오면: 그 날짜로 바꾸고, 검색·필터를 풀고, 그 객실 상세를 열어요 */
