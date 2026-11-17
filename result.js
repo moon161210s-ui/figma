@@ -281,11 +281,16 @@ function fitRsDetail() {
     panel.style.height = Math.max(480, window.innerHeight - top - 20) + "px";
 }
 
+/* 선택한 줄이 바뀌면(다른 줄로 옮기거나 닫으면) 이전에 보던 청소 완료(초록) 결과는 확인한 것으로 보고 회색으로 바꿔요 */
+function moveRsSelection(next) {
+    const prev = currentRows().find((x) => x.no === rsSelected);
+    if (prev && prev.no !== next && prev.status === "done" && !prev.confirmed) prev.confirmed = true;
+    rsSelected = next;
+}
+
 /* 상세 패널을 닫으면 청소 완료(초록) 결과는 확인한 것으로 보고 회색으로 바꿔요 */
 function closeRsDetail() {
-    const r = currentRows().find((x) => x.no === rsSelected);
-    if (r && r.status === "done" && !r.confirmed) r.confirmed = true;
-    rsSelected = null;
+    moveRsSelection(null);
     renderResults();
     renderResultDetail();
 }
@@ -306,9 +311,10 @@ function handleResultsClick(e) {
         renderResults();
         return true;
     }
-    const open = e.target.closest("[data-rs-open]");
-    if (open) {
-        rsSelected = open.dataset.rsOpen;
+    /* 가로줄 어디를 눌러도 오른쪽에 상세가 열려요 ('자세히 보기' 버튼 포함) */
+    const row = e.target.closest("[data-rs-row]");
+    if (row) {
+        moveRsSelection(row.dataset.rsRow);
         renderResults();
         renderResultDetail();
         return true;
@@ -522,7 +528,7 @@ function openResultFor(room, date) {
     $("#rsSearch").value = "";
     filters.rtype.clear();
     updateFilterButtons();
-    rsSelected = currentRows().some((x) => x.no === room) ? room : null;
+    moveRsSelection(currentRows().some((x) => x.no === room) ? room : null);
     renderResults();
     renderResultDetail();
     const row = $(`[data-rs-row="${room}"]`);

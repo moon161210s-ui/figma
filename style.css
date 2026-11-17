@@ -2649,6 +2649,14 @@ main[hidden] {
     border-top-right-radius: var(--radius-sm);
 }
 
+.rs-tr[data-rs-row] {
+    cursor: pointer;
+}
+
+.rs-tr[data-rs-row]:hover .rs-td {
+    background: var(--color-bg-low);
+}
+
 .rs-tr.is-active:not(.rs-th) .rs-td {
     background: var(--color-bg-low);
 }
