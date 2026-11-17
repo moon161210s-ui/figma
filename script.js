@@ -243,7 +243,7 @@ function renderFloors() {
             if (!list.length) return "";
             return `
       <section class="floor">
-        <h2 class="floor-title">${f}F <small>(${list.length})</small></h2>
+        <h2 class="floor-title">${f}F <small>(${list.length}실)</small></h2>
         <div class="room-grid">${list.map(roomCard).join("")}</div>
       </section>`;
         })
@@ -883,9 +883,19 @@ $("#roomSearch").addEventListener("input", (e) => {
     renderFloors();
 });
 
+/* 검색·필터 줄이 화면 위에 붙었는지(is-stuck) 알려줘요.
+   붙기 전: 필터 상자 바로 아래에 층 제목이 이어져요(간격 0) / 붙은 뒤: 아래로 20px 더 흰 배경을 깔아 스크롤되는 타일을 가려요 */
+function updateToolbarStuck() {
+    const bar = $(".toolbar");
+    const stickyTop = parseFloat(getComputedStyle(bar).top) || 0;
+    bar.classList.toggle("is-stuck", bar.getBoundingClientRect().top <= stickyTop + 0.5);
+}
+updateToolbarStuck();
+
 window.addEventListener(
     "scroll",
     () => {
+        updateToolbarStuck();
         fitDetail();
         placePopover();
         placeFilterMenu();
@@ -893,6 +903,7 @@ window.addEventListener(
     { passive: true }
 );
 window.addEventListener("resize", () => {
+    updateToolbarStuck();
     fitDetail();
     placePopover();
     placeFilterMenu();
@@ -1110,10 +1121,10 @@ setTimeout(function tick() {
 }, 60000 - (Date.now() % 60000));
 
 /* ==========================================================
-   알림센터 (헤더 종 아이콘)
+   알림 센터 (헤더 종 아이콘)
    - 종 아이콘의 빨간 점 : 확인하지 않은 알림(read: false)이 하나라도 있을 때만 보여요
    - 탭의 빨간 점 : 그 탭에 확인하지 않은 알림이 있을 때만 보여요 ('전체' 탭은 어느 탭이든 하나라도 있으면 보여요)
-   - 읽음 처리 : 알림의 버튼을 누르면 그 알림이, 알림센터를 닫으면 보고 있던 탭의 알림이 모두 읽음이 돼요
+   - 읽음 처리 : 알림의 버튼을 누르면 그 알림이, 알림 센터를 닫으면 보고 있던 탭의 알림이 모두 읽음이 돼요
    - 서버 연결 : 서버에서 받은 알림 목록으로 setNotifications(list) 를 호출하세요
        알림 1건 = { id, type, title, date, text, actions: [{ label, room? }], read }
        type : issue(특이사항) / reassign(재배정 필요) / todo(청소 필요) / review(검수 요청) / notice(시스템 공지)
@@ -1243,7 +1254,7 @@ function renderNoti() {
         : `<p class="noti-empty">알림이 없어요.</p>`;
     list.scrollTop = top;
 
-    // 알림센터 탭 마우스 드래그 코드추가
+    // 알림 센터 탭 마우스 드래그 코드추가
     const tabs = document.querySelector("#notiTabs");
     let isDragging = false;
     let startX = 0;
@@ -1314,12 +1325,17 @@ function markAllRead() {
     markRead(NOTIFICATIONS.map((n) => n.id));
 }
 
-/* 알림센터 위치: 종 버튼 맨 아래에서 4px 아래, 종 버튼 맨 오른쪽 끝선에 맞춰요 */
+/* 알림 센터 위치: 알림 버튼(종) 맨 아래에서 4px 아래,
+   알림 버튼의 맨 오른쪽 선에 알림 센터의 오른쪽 끝을 맞춰요 */
 function placeNoti() {
     const r = $("#bellBtn").getBoundingClientRect();
     const panel = $("#notiPanel");
     panel.style.setProperty("--noti-top", r.bottom + 4 + "px");
-    panel.style.setProperty("--noti-right", window.innerWidth - r.right + "px");
+    /* 세로 스크롤바가 있으면 그 폭만큼 화면이 좁아지므로, 스크롤바를 뺀 폭(clientWidth)으로 계산해요 */
+    panel.style.setProperty(
+        "--noti-right",
+        document.documentElement.clientWidth - r.right + "px"
+    );
 }
 window.addEventListener("resize", () => {
     if (notiOpen) placeNoti();

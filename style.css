@@ -116,7 +116,7 @@
     --shadow-tooltip: 0 0 25px rgba(0, 0, 0, 0.08);
     /* Figma 툴팁 시안 값 */
 
-    /* ---------- Scrollbar (알림센터 / 우측 상세 패널) ---------- */
+    /* ---------- Scrollbar (알림 센터 / 우측 상세 패널) ---------- */
     --scroll-width: 8px;
     /* 막대 두께 (시안 scroll bar 8px) */
     --scroll-inset: 16px;
@@ -482,7 +482,7 @@ button {
     cursor: pointer;
 }
 
-/* 시안 icon_btn 상태: Hover = 테두리 gray-100 / Click(누르는 중·알림센터가 열려 있는 동안) = 배경 low-bg + 기본 테두리 */
+/* 시안 icon_btn 상태: Hover = 테두리 gray-100 / Click(누르는 중·알림 센터가 열려 있는 동안) = 배경 low-bg + 기본 테두리 */
 .icon-btn:hover {
     border-color: var(--color-gray-100);
 }
@@ -715,9 +715,16 @@ button {
     /* 시안: 검색 + 필터 두 개가 오른쪽 정렬 */
     gap: 8px;
     margin: -20px -24px 0;
-    padding: 20px 24px;
+    /* 시안: 필터 상자와 아래 층 제목 사이 가로 간격 0 */
+    padding: 20px 24px 0;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     background: var(--color-base-inverse);
+}
+
+/* 스크롤해서 위에 붙었을 때만 아래로 20px 더 덮어요 (예전 스크롤 모습 그대로 / 아래 내용 위치는 그대로) */
+.toolbar.is-stuck {
+    padding-bottom: 20px;
+    margin-bottom: -20px;
 }
 
 /* 스크롤해서 패널의 원래 윗부분이 헤더 뒤로 올라가도 위쪽 모서리 radius 가 유지되도록,
@@ -1729,7 +1736,7 @@ button {
 }
 
 /* ==========================================================
- 알림센터 (알림리스트 시안: 394 x 699)
+ 알림 센터 (알림리스트 시안: 394 x 699)
  - 테두리 1px + 안쪽 여백 = 시안 여백(위 20 / 좌우 24 / 아래 40)
  ========================================================== */
 .noti {
@@ -1989,7 +1996,7 @@ button {
     pointer-events: none;
 }
 
-/* ---------- 스크롤바 (알림센터 목록 / 우측 상세 패널) ----------
+/* ---------- 스크롤바 (알림 센터 목록 / 우측 상세 패널) ----------
  스크롤바 디자인은 직원 목록과 같아요: 배경 없이 막대만, 8px, 회색 둥근 막대
  막대가 다니는 길(track)만 위·아래로 --scroll-inset 만큼 줄이면 막대 길이도 같은 비율로 줄어요 */
 .noti-list::-webkit-scrollbar,
@@ -2274,7 +2281,7 @@ button {
     flex: 1;
 }
 
-/* 모달 안 스크롤바는 알림센터와 같은 디자인 */
+/* 모달 안 스크롤바는 알림 센터와 같은 디자인 */
 .hm-body::-webkit-scrollbar {
     width: var(--scroll-width);
 }
