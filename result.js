@@ -144,9 +144,9 @@ function renderResults() {
     </div>`;
         })
         .join("");
-    /* 표 머리글은 고정하고, 아래 목록(.rs-tbody)만 스크롤해요 */
-    $("#rsTable").innerHTML =
-        head + `<div class="rs-tbody">${rowsHtml || `<p class="floor-empty">조건에 맞는 청소 결과가 없어요.</p>`}</div>`;
+    /* 표 머리글은 위쪽 고정 영역(.rs-sticky)에, 목록만 스크롤돼요 */
+    $("#rsHead").innerHTML = head;
+    $("#rsTable").innerHTML = rowsHtml || `<p class="floor-empty">조건에 맞는 청소 결과가 없어요.</p>`;
 }
 
 /* ---------- 우측 상세 패널 ---------- */
@@ -272,15 +272,13 @@ function renderResultDetail() {
     fitRsDetail();
 }
 
-/* 목록 패널과 상세 패널은 화면 맨 아래(여백 20px)까지 같은 높이로 채워요.
-   → 페이지 자체는 스크롤되지 않아서, 탭을 눌러 목록 길이가 바뀌어도 화면 폭이 흔들리지 않아요 */
+/* 상세 패널은 화면 맨 아래(여백 20px)까지 채우고, 스크롤하면 헤더 아래(120px)에 붙어요 */
 function fitRsDetail() {
     const cell = $(".rs-cell");
+    const panel = $("#rsDetail");
     if (!cell) return;
-    const top = cell.getBoundingClientRect().top + window.scrollY;
-    const h = Math.max(480, window.innerHeight - top - 20) + "px";
-    $("#rsDetail").style.height = h;
-    $(".rs-panel").style.height = h;
+    const top = Math.max(120, cell.getBoundingClientRect().top);
+    panel.style.height = Math.max(480, window.innerHeight - top - 20) + "px";
 }
 
 /* 상세 패널을 닫으면 청소 완료(초록) 결과는 확인한 것으로 보고 회색으로 바꿔요 */
@@ -520,6 +518,7 @@ $("#rsSearch").addEventListener("input", (e) => {
     renderResults();
 });
 
+window.addEventListener("scroll", fitRsDetail, { passive: true });
 window.addEventListener("resize", fitRsDetail);
 updateFilterButtons();
 renderResults();

@@ -2472,8 +2472,6 @@ main[hidden] {
 .rs-panel {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    min-height: 480px;
     padding: 20px;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
@@ -2549,46 +2547,50 @@ main[hidden] {
     color: var(--color-base-inverse);
 }
 
-/* 표: 머리글은 고정, 목록만 스크롤 (스크롤바는 다른 영역과 같은 디자인 / 오른쪽 패널 여백 안쪽에 둬서 머리글과 줄이 맞아요) */
+/* 위쪽 고정 영역: 날짜 / 검색 / 드롭다운 / 칩 / 표 머리글
+   (페이지를 스크롤하면 제목은 헤더 뒤로 가려지고, 이 영역이 헤더 바로 아래(120px)에 붙어요) */
+.rs-sticky {
+    position: sticky;
+    top: 120px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: -20px -20px 0;
+    padding: 20px 20px 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    background: var(--color-base-inverse);
+}
+
+/* 패널의 윗부분이 헤더 뒤로 올라가도 위쪽 모서리 radius 가 유지되게 두 모서리 바깥을 배경색으로 덮어요 */
+.rs-sticky::before,
+.rs-sticky::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: var(--radius-xl);
+    height: var(--radius-xl);
+    pointer-events: none;
+}
+
+.rs-sticky::before {
+    left: 0;
+    background: radial-gradient(circle at 100% 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
+}
+
+.rs-sticky::after {
+    right: 0;
+    background: radial-gradient(circle at 0 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
+}
+
+.rs-head {
+    display: flex;
+    flex-direction: column;
+}
+
 .rs-table {
     display: flex;
-    flex: 1;
     flex-direction: column;
-    min-height: 0;
-}
-
-.rs-th {
-    flex-shrink: 0;
-}
-
-.rs-tbody {
-    flex: 1;
-    min-height: 0;
-    margin-right: -12px;
-    padding-right: 4px;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-}
-
-.rs-tbody::-webkit-scrollbar {
-    width: var(--scroll-width);
-}
-
-.rs-tbody::-webkit-scrollbar-track {
-    margin: var(--scroll-inset) 0;
-    background: transparent;
-}
-
-.rs-tbody::-webkit-scrollbar-thumb {
-    border-radius: 100px;
-    background: var(--color-gray-200);
-}
-
-@supports not selector(::-webkit-scrollbar) {
-    .rs-tbody {
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-gray-200) transparent;
-    }
 }
 
 .rs-tr {
@@ -2812,6 +2814,10 @@ main[hidden] {
     font-size: var(--fs-h5);
     line-height: var(--lh-h5);
     font-weight: var(--fw-bold);
+}
+
+.rs-d-text {
+    word-break: keep-all;
 }
 
 .rs-d-text span {
@@ -3309,4 +3315,9 @@ main[hidden] {
         position: static;
         height: auto !important;
     }
+}
+
+/* 결과 화면은 목록 길이가 바뀌어도 세로 스크롤바 자리가 그대로라서 화면 폭이 흔들리지 않아요 */
+html:has(#viewResults) {
+    scrollbar-gutter: stable;
 }

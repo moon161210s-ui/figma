@@ -107,29 +107,33 @@
 
                 <div class="rs-layout">
                     <section class="rs-panel">
-                        <div class="rs-bar">
-                            <!-- 누르면 달력(시간 없는 퇴실 예정 모달과 같은 모양)이 떠요 -->
-                            <button class="rs-date" id="rsDate" type="button" aria-haspopup="dialog"
-                                aria-expanded="false">
-                                <img class="i20" src="resource/icon/calender.svg" alt="" />
-                                <span id="rsDateText">2026. 11. 10. (화)</span>
-                            </button>
-                            <div class="rs-bar-right">
-                                <label class="search">
-                                    <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
-                                    <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
-                                        aria-hidden="true" />
-                                    <input id="rsSearch" type="text" placeholder="호실로 검색" />
-                                </label>
-                                <button class="select" type="button" data-filter="rtype" aria-haspopup="listbox"
+                        <!-- 스크롤하면 헤더 바로 아래에 붙어요: 날짜 / 검색 / 드롭다운 / 칩 / 표 머리글 -->
+                        <div class="rs-sticky">
+                            <div class="rs-bar">
+                                <!-- 누르면 달력(시간 없는 퇴실 예정 모달과 같은 모양)이 떠요 -->
+                                <button class="rs-date" id="rsDate" type="button" aria-haspopup="dialog"
                                     aria-expanded="false">
-                                    <span class="select-label">객실 유형</span>
-                                    <img class="i24" src="resource/icon/arrow-down.svg" alt="" />
+                                    <img class="i20" src="resource/icon/calender.svg" alt="" />
+                                    <span id="rsDateText">2026. 11. 10. (화)</span>
                                 </button>
+                                <div class="rs-bar-right">
+                                    <label class="search">
+                                        <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
+                                        <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
+                                            aria-hidden="true" />
+                                        <input id="rsSearch" type="text" placeholder="호실로 검색" />
+                                    </label>
+                                    <button class="select" type="button" data-filter="rtype" aria-haspopup="listbox"
+                                        aria-expanded="false">
+                                        <span class="select-label">객실 유형</span>
+                                        <img class="i24" src="resource/icon/arrow-down.svg" alt="" />
+                                    </button>
+                                </div>
                             </div>
+                            <!-- 칩(전체 / 청소 완료 / 검수 대기 / 재청소 요청)과 목록은 script.js 가 그려요 -->
+                            <div class="rs-chips" id="rsChips" role="tablist" aria-label="결과 상태"></div>
+                            <div class="rs-head" id="rsHead"></div>
                         </div>
-                        <!-- 칩(전체 / 청소 완료 / 검수 대기 / 재청소 요청)과 목록은 script.js 가 그려요 -->
-                        <div class="rs-chips" id="rsChips" role="tablist" aria-label="결과 상태"></div>
                         <div class="rs-table" id="rsTable"></div>
                     </section>
 
