@@ -1272,6 +1272,7 @@ setTimeout(function tick() {
        알림 1건 = { id, type, title, date, text, actions: [{ label, room? }], read }
        type : issue(특이사항) / reassign(재배정 필요) / todo(청소 필요) / review(검수 요청) / notice(시스템 공지)
        actions 의 room 이 있으면 그 객실을 선택해서 보여줘요 (없으면 읽음 처리만 해요 → 서버 연결 시 처리 동작을 넣으세요)
+       actions 의 result({ room, date: "YYYY-MM-DD" })가 있으면 청소 결과 화면으로 이동해서 그 날짜의 그 객실 상세를 열어요 (검수 요청 알림)
        읽음 상태를 서버에 저장하려면 markRead() 안의 주석 위치에서 요청을 보내세요
    ========================================================== */
 const NOTI_TYPES = {
@@ -1314,10 +1315,10 @@ let NOTIFICATIONS = [
     {
         id: 4,
         type: "review",
-        title: "306호 · 검수 요청",
+        title: "305호 · 검수 요청",
         date: "11월 15일 11:41",
-        text: "306호 청소가 끝났어요.\n검수가 필요해요.",
-        actions: [{ label: "결과 검수", room: "306" }],
+        text: "305호 청소가 끝났어요.\n검수가 필요해요.",
+        actions: [{ label: "결과 검수", result: { room: "305", date: "2026-11-10" } }],
         read: true,
     },
     {
@@ -1520,6 +1521,12 @@ function showRoom(no) {
     if (card) card.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
+/* 청소 결과 화면으로 이동해서 해당 날짜의 객실 상세까지 열어요 (이미 결과 화면이면 이동 없이 바로 열어요) */
+function goResult({ room, date }) {
+    if (typeof openResultFor === "function") openResultFor(room, date);
+    else location.href = `result.html?room=${encodeURIComponent(room)}&date=${encodeURIComponent(date)}`;
+}
+
 document.addEventListener("click", (e) => {
     const bell = e.target.closest("#bellBtn");
     if (bell) {
@@ -1547,7 +1554,10 @@ document.addEventListener("click", (e) => {
         const act = n && n.actions[+btn.dataset.i];
         if (!n) return;
         markRead([n.id]);
-        if (act && act.room) {
+        if (act && act.result) {
+            closeNoti();
+            goResult(act.result);
+        } else if (act && act.room) {
             closeNoti();
             showRoom(act.room);
         }

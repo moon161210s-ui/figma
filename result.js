@@ -513,6 +513,22 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !rsModalEl.hidden) closeRsModal();
 });
 
+/* 알림의 '결과 검수'로 들어오면: 그 날짜로 바꾸고, 검색·필터를 풀고, 그 객실 상세를 열어요 */
+function openResultFor(room, date) {
+    const [y, m, d] = String(date).split("-").map(Number);
+    if (y && m && d) rsDate = new Date(y, m - 1, d);
+    rsChip = "all";
+    rsQuery = "";
+    $("#rsSearch").value = "";
+    filters.rtype.clear();
+    updateFilterButtons();
+    rsSelected = currentRows().some((x) => x.no === room) ? room : null;
+    renderResults();
+    renderResultDetail();
+    const row = $(`[data-rs-row="${room}"]`);
+    if (row) row.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
 $("#rsSearch").addEventListener("input", (e) => {
     rsQuery = e.target.value;
     renderResults();
@@ -523,3 +539,7 @@ window.addEventListener("resize", fitRsDetail);
 updateFilterButtons();
 renderResults();
 renderResultDetail();
+{
+    const q = new URLSearchParams(location.search);
+    if (q.get("room")) openResultFor(q.get("room"), q.get("date"));
+}
