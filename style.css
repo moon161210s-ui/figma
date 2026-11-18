@@ -3600,43 +3600,39 @@ body.as-dragging * {
 }
 
 /* ---- 배정 가능 객실 목록 ---- */
+/* 이 카드 안에서만 스크롤돼요 (페이지는 안 움직여요).
+   제목("배정 가능 객실 목록")은 스크롤하면 위로 올라가 가려지고, 오늘·내일 / 검색 / 배정 상태 줄이 카드 맨 위에 붙어요 */
 .as-rooms {
-    display: flex;
-    flex-direction: column;
+    display: block;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
-/* 제목 / 오늘·내일 / 검색 / 배정 상태 줄: 스크롤하면 헤더(120px) 바로 아래에 붙어요 (객실 목록만 아래로 지나가요) */
+.as-rooms::-webkit-scrollbar {
+    width: var(--scroll-width);
+}
+
+.as-rooms::-webkit-scrollbar-track {
+    margin: var(--scroll-inset) 0;
+    background: transparent;
+}
+
+.as-rooms::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: var(--color-gray-200);
+}
+
+/* 오른쪽 여백 12px + 스크롤바 자리 8px = 20px */
+.as-rooms-head {
+    padding: 20px 12px 0 20px;
+}
+
 .as-sticky {
     position: sticky;
-    top: 120px;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px 20px 20px;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    background: var(--color-base-inverse);
-}
-
-/* 카드 윗부분이 헤더 뒤로 올라가도 위쪽 모서리 radius 가 유지되게 두 모서리 바깥을 배경색으로 덮어요 */
-.as-sticky::before,
-.as-sticky::after {
-    content: "";
-    position: absolute;
     top: 0;
-    width: var(--radius-xl);
-    height: var(--radius-xl);
-    pointer-events: none;
-}
-
-.as-sticky::before {
-    left: 0;
-    background: radial-gradient(circle at 100% 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
-}
-
-.as-sticky::after {
-    right: 0;
-    background: radial-gradient(circle at 0 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
+    z-index: 10;
+    padding: 20px 12px 20px 20px;
+    background: var(--color-base-inverse);
 }
 
 .as-filter {
@@ -3665,7 +3661,7 @@ body.as-dragging * {
     display: flex;
     flex-direction: column;
     gap: 28px;
-    padding: 0 20px 20px;
+    padding: 0 12px 20px 20px;
 }
 
 .as-floor h3 {
