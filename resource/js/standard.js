@@ -8,25 +8,14 @@
 const RL_KEY = "cleanRules";
 const RL_COMMON = "common";
 
-/* 샘플 데이터 (시안): 전체 공통 / 스탠다드는 값이 들어 있고, 디럭스 / 스위트는 비어 있어요 (데이터 없음 상태) */
+/* 기본값: 데이터 없음 상태 (타입 목록만 있고 기준·이미지는 비어 있어요) */
 const RL_DEFAULT = () => ({
     types: [
         { id: "std", name: "스탠다드" },
         { id: "dlx", name: "디럭스" },
         { id: "sui", name: "스위트" },
     ],
-    data: {
-        common: {
-            images: ["resource/img/room-1.png"],
-            checks: ["침실 정리하기", "화장실 청소하기"],
-            proofs: [{ t: "침구 정리 상태", g: "침대 전체와 베개가 보이도록 촬영해 주세요." }],
-        },
-        std: {
-            images: ["resource/img/room-1.png", "resource/img/room-2.png", "resource/img/room-3.png", "resource/img/room-4.png"],
-            checks: ["안마의자 청소", "스타일러 청소"],
-            proofs: [{ t: "", g: "" }],
-        },
-    },
+    data: {},
 });
 
 /* ★ 서버 연결 지점 ★  GET /api/clean-rules  /  PUT /api/clean-rules */
@@ -148,11 +137,11 @@ function renderCard() {
                 (src, i) => `
             <button class="rl-img" type="button" data-del-img="${i}" aria-label="이미지 삭제">
               <img src="${esc(src)}" alt="청소 참고 이미지 ${i + 1}" draggable="false" />
-              <span class="rl-img-dim">${icon("trash", 36)}</span>
+              <span class="rl-img-dim">${icon("trash-white", 36)}</span>
             </button>`
             )
             .join("")}
-          <button class="rl-add" type="button" id="rlAddImg" aria-label="청소 참고 이미지 추가">${icon("plus", 36)}</button>
+          <button class="rl-add" type="button" id="rlAddImg" aria-label="청소 참고 이미지 추가">${icon("plus-gray", 36)}</button>
         </div>
       </section>
 

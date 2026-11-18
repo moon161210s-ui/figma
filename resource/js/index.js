@@ -1841,3 +1841,62 @@ hm.addEventListener("keydown", (e) => {
     const room = new URLSearchParams(location.search).get("room");
     if (room) showRoom(room);
 })();
+
+
+/* ==========================================================
+   스크롤 중 잘리는 카드의 모서리 (코너 radius 유지)
+   카드가 헤더 · 고정 툴바 · 스크롤 영역 가장자리에 걸쳐 잘릴 때, 잘리는 선에서도
+   카드 본래의 radius 로 둥글게 잘려 보이도록 clip-path 를 걸어요.
+   (잘리지 않는 카드는 clip-path 를 비워 둬요)
+   테두리 선이 있는 카드(객실 카드 등)는 흰 영역 아래로 곧게 들어가는 게 자연스러워서, 배경색이 있는 카드만 걸어요.
+   ========================================================== */
+const _edge = (sel, side) => {
+    const el = document.querySelector(sel);
+    return el ? el.getBoundingClientRect()[side] : null;
+};
+const SOFT_CLIPS = [
+    { sel: ".summary-card", top: () => _edge(".header-wrap", "bottom") },
+    { sel: ".rl-card", top: () => _edge(".header-wrap", "bottom") },
+];
+
+function softClip() {
+    SOFT_CLIPS.forEach((c) => {
+        const line = c.top ? c.top() : null;
+        document.querySelectorAll(c.sel).forEach((el) => {
+            const r = el.getBoundingClientRect();
+            let top = line,
+                bottom = null;
+            if (c.box) {
+                const box = el.closest(c.box);
+                if (box) {
+                    const b = box.getBoundingClientRect();
+                    top = b.top;
+                    bottom = b.bottom;
+                }
+            }
+            const cutT = top != null ? top - r.top : 0;
+            const cutB = bottom != null ? r.bottom - bottom : 0;
+            if ((cutT <= 0 && cutB <= 0) || cutT + cutB >= r.height) {
+                if (el.style.clipPath) el.style.clipPath = "";
+                return;
+            }
+            const rad = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
+            const rt = cutT > 0 ? rad : 0;
+            const rb = cutB > 0 ? rad : 0;
+            el.style.clipPath = `inset(${Math.max(cutT, 0)}px 0 ${Math.max(cutB, 0)}px 0 round ${rt}px ${rt}px ${rb}px ${rb}px)`;
+        });
+    });
+}
+let _softQueued = false;
+const softClipSoon = () => {
+    if (_softQueued) return;
+    _softQueued = true;
+    requestAnimationFrame(() => {
+        _softQueued = false;
+        softClip();
+    });
+};
+document.addEventListener("scroll", softClipSoon, { capture: true, passive: true });
+window.addEventListener("resize", softClipSoon);
+new MutationObserver(softClipSoon).observe(document.body, { childList: true, subtree: true });
+softClipSoon();

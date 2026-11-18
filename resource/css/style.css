@@ -4047,7 +4047,6 @@ body.as-dragging * {
 .rl-img-dim img {
     width: 36px;
     height: 36px;
-    filter: brightness(0) invert(1) !important;
 }
 
 .rl-img:hover .rl-img-dim,
