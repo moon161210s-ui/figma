@@ -239,6 +239,11 @@ function applyHours() {
             }
         }
         const h = HOURS[hoursKey(r)];
+        /* 청소가 이미 시작됐거나 끝난 객실은 연장이 확정된 상태라, 규칙을 바꿔도 '연장한 시간'은 그대로 두고 퇴실 시간만 규칙에 맞춰 같이 움직여요 */
+        if (r.outLocked && ["progress", "review", "done"].includes(r.status)) {
+            if (r.extMin == null) r.extMin = Math.max(0, toMin(r.out) - toMin(r.origOut ?? h.out));
+            r.out = addMinutes(h.out, r.extMin);
+        } else r.extMin = null;
         if (!r.outLocked) r.out = h.out;
         /* '연장' 칩은 운영 시간대에 등록한 퇴실 시간과 이 객실 퇴실 시간의 차이로 계산해요
            (규칙을 바꾸면 직접 고친 객실의 연장 시간도 같이 다시 계산돼요) */
