@@ -96,12 +96,16 @@ function renderAssign() {
     $("#asSave").disabled = !asDirty();
 }
 
-/* 객실 목록 카드는 화면 아래(여백 20px)까지 채우고, 이 카드 안에서만 스크롤돼요 */
+/* 두 카드(근무자 / 객실 목록)는 화면 아래(여백 20px)까지 채우고, 카드 안의 목록만 스크롤돼요 (좁은 화면에서는 페이지가 스크롤) */
 function fitAssign() {
-    const card = $("#asRoomsCard");
-    if (!card) return;
-    const top = card.getBoundingClientRect().top + window.scrollY;
-    card.style.height = Math.max(380, window.innerHeight - top - 20) + "px";
+    const body = $("#asBody");
+    if (!body) return;
+    if (window.innerWidth <= 900) {
+        body.style.height = "";
+        return;
+    }
+    const top = body.getBoundingClientRect().top + window.scrollY;
+    body.style.height = Math.max(480, window.innerHeight - top - 20) + "px";
 }
 window.addEventListener("resize", fitAssign);
 
@@ -120,14 +124,13 @@ function startAsDrag(e, card) {
     const box = card.getBoundingClientRect();
     const off = { x: x0 - box.left, y: y0 - box.top };
     let ghost = null, over = null, raf = 0, py = y0;
-    const list = $("#asRoomsCard");
+    const list = $("#asRooms");
 
-    /* 끌어서 카드의 위(고정된 필터 줄 아래)·아래 가장자리에 가면 목록이 알아서 스크롤돼요 */
+    /* 끌어서 객실 목록의 위·아래 가장자리에 가면 목록이 알아서 스크롤돼요 */
     const autoScroll = () => {
         const b = list.getBoundingClientRect();
-        const top = $("#asSticky").getBoundingClientRect().bottom;
         const edge = 70, max = 18;
-        if (py < top + edge) list.scrollTop -= Math.ceil((Math.min(edge, top + edge - py) / edge) * max);
+        if (py < b.top + edge) list.scrollTop -= Math.ceil((Math.min(edge, b.top + edge - py) / edge) * max);
         else if (py > b.bottom - edge) list.scrollTop += Math.ceil((Math.min(edge, py - (b.bottom - edge)) / edge) * max);
         raf = requestAnimationFrame(autoScroll);
     };

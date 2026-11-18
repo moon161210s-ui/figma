@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>직원 배정 | VENDY</title>
-    <link rel="stylesheet" href="resource/css/style.css" />
+    <link rel="stylesheet" href="style.css" />
     <link rel="preload" as="image" href="resource/icon/moon.svg" />
     <!-- 저장된 화면 모드를 화면이 그려지기 전에 적용해요 (깜빡임 방지) -->
     <script>try { if (localStorage.getItem("theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) { }</script>
@@ -114,50 +114,53 @@
                     </div>
                 </div>
 
-                <!-- 오늘 근무자 목록: 현재 맡은 객실 수가 적은 사람이 맨 앞 / 한 줄을 넘으면 아래로, 두 줄을 넘으면 세로 스크롤(최대 210px) -->
-                <section class="as-card as-workers">
-                    <div class="as-card-head">
-                        <h2>오늘 근무자 목록</h2>
-                        <label class="search as-worker-search">
-                            <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
-                            <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
-                                aria-hidden="true" />
-                            <input id="asWorkerSearch" type="text" placeholder="이름으로 검색" />
-                        </label>
-                    </div>
-                    <div class="as-workers-list" id="asWorkers"></div>
-                </section>
+                <!-- 왼쪽: 오늘 근무자 목록 / 오른쪽: 배정 가능 객실 목록 (두 카드가 화면 아래까지 채우고, 각 카드 안의 목록만 스크롤돼요) -->
+                <div class="as-body" id="asBody">
+                    <!-- 오늘 근무자 목록: 현재 맡은 객실 수가 적은 사람이 맨 앞 / 세로로 쌓이고 넘치면 목록 안에서 스크롤 -->
+                    <section class="as-card as-workers">
+                        <div class="as-card-head">
+                            <h2>오늘 근무자 목록</h2>
+                            <label class="search as-worker-search">
+                                <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
+                                <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
+                                    aria-hidden="true" />
+                                <input id="asWorkerSearch" type="text" placeholder="이름으로 검색" />
+                            </label>
+                        </div>
+                        <div class="as-workers-list" id="asWorkers"></div>
+                    </section>
 
-                <!-- 배정 가능 객실 목록: 메인의 '청소 필요' · '재배정 필요' 객실만 / 재배정 필요가 맨 앞, 호수가 작은 객실이 더 앞 -->
-                <section class="as-card as-rooms" id="asRoomsCard">
-                    <div class="as-rooms-head">
-                        <h2>배정 가능 객실 목록</h2>
-                    </div>
-                    <div class="as-sticky" id="asSticky">
-                        <div class="as-filter">
-                            <div class="as-tabs" role="tablist" aria-label="배정 날짜">
-                                <button class="rs-chip is-active" type="button" role="tab" aria-selected="true"
-                                    data-as-day="today">오늘</button>
-                                <button class="rs-chip" type="button" role="tab" aria-selected="false"
-                                    data-as-day="tomorrow">내일</button>
-                            </div>
-                            <div class="as-filter-right">
-                                <label class="search">
-                                    <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
-                                    <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
-                                        aria-hidden="true" />
-                                    <input id="asRoomSearch" type="text" placeholder="이름 또는 호실 검색" />
-                                </label>
-                                <button class="select" type="button" data-filter="astatus" aria-haspopup="listbox"
-                                    aria-expanded="false">
-                                    <span class="select-label">배정 상태</span>
-                                    <img class="i24" src="resource/icon/arrow-down.svg" alt="" />
-                                </button>
+                    <!-- 배정 가능 객실 목록: 메인의 '청소 필요' · '재배정 필요' 객실만 / 재배정 필요가 맨 앞, 호수가 작은 객실이 더 앞 -->
+                    <section class="as-card as-rooms" id="asRoomsCard">
+                        <div class="as-rooms-head">
+                            <h2>배정 가능 객실 목록</h2>
+                        </div>
+                        <div class="as-sticky" id="asSticky">
+                            <div class="as-filter">
+                                <div class="as-tabs" role="tablist" aria-label="배정 날짜">
+                                    <button class="rs-chip is-active" type="button" role="tab" aria-selected="true"
+                                        data-as-day="today">오늘</button>
+                                    <button class="rs-chip" type="button" role="tab" aria-selected="false"
+                                        data-as-day="tomorrow">내일</button>
+                                </div>
+                                <div class="as-filter-right">
+                                    <label class="search">
+                                        <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
+                                        <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
+                                            aria-hidden="true" />
+                                        <input id="asRoomSearch" type="text" placeholder="이름 또는 호실 검색" />
+                                    </label>
+                                    <button class="select" type="button" data-filter="astatus" aria-haspopup="listbox"
+                                        aria-expanded="false">
+                                        <span class="select-label">배정 상태</span>
+                                        <img class="i24" src="resource/icon/arrow-down.svg" alt="" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="as-rooms-list" id="asRooms"></div>
-                </section>
+                        <div class="as-rooms-list" id="asRooms"></div>
+                    </section>
+                </div>
             </main>
 
         </div>
@@ -272,8 +275,8 @@
         </div>
     </div>
 
-    <script src="resource/js/index.js"></script>
-    <script src="resource/js/user-assign.js"></script>
+    <script src="index.js"></script>
+    <script src="user-assign.js"></script>
 </body>
 
 </html>

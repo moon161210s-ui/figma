@@ -3445,46 +3445,63 @@ html:has(#viewResults) {
     color: var(--color-gray-900);
 }
 
-/* ---- 오늘 근무자 목록 ---- */
-.as-workers {
+/* ---- 왼쪽 오늘 근무자 / 오른쪽 배정 가능 객실: 두 카드가 화면 아래까지 채워요 (높이는 user-assign.js 의 fitAssign) ---- */
+.as-body {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 16px;
+    min-height: 480px;
+}
+
+.as-body>.as-card {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ---- 오늘 근무자 목록 ---- */
+.as-workers {
+    gap: 28px;
     padding: 20px;
 }
 
 .as-card-head {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .as-worker-search {
-    width: 240px;
+    width: 100%;
 }
 
-/* 한 줄을 넘으면 아래로 이어지고, 두 줄을 넘으면 세로 스크롤 (최대 210px) */
+/* 세로로 쌓이고, 넘치면 이 목록 안에서만 스크롤 (스크롤바는 카드 오른쪽 여백 안쪽) */
 .as-workers-list {
     display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    flex: 1;
+    flex-direction: column;
     gap: 8px;
-    max-height: 210px;
+    min-height: 0;
+    margin-right: -16px;
+    padding-right: var(--scroll-width);
     overflow-y: auto;
     scrollbar-gutter: stable;
 }
 
-.as-workers-list::-webkit-scrollbar {
+.as-workers-list::-webkit-scrollbar,
+.as-rooms-list::-webkit-scrollbar {
     width: var(--scroll-width);
 }
 
-.as-workers-list::-webkit-scrollbar-track {
+.as-workers-list::-webkit-scrollbar-track,
+.as-rooms-list::-webkit-scrollbar-track {
     margin: var(--scroll-inset) 0;
     background: transparent;
 }
 
-.as-workers-list::-webkit-scrollbar-thumb {
+.as-workers-list::-webkit-scrollbar-thumb,
+.as-rooms-list::-webkit-scrollbar-thumb {
     border-radius: 100px;
     background: var(--color-gray-200);
 }
@@ -3492,7 +3509,8 @@ html:has(#viewResults) {
 .as-user {
     display: flex;
     align-items: center;
-    justify-content: center;
+    flex-shrink: 0;
+    justify-content: flex-start;
     gap: 8px;
     padding: 8px 20px 8px 8px;
     border: 1px solid var(--color-line-normal);
@@ -3600,39 +3618,13 @@ body.as-dragging * {
 }
 
 /* ---- 배정 가능 객실 목록 ---- */
-/* 이 카드 안에서만 스크롤돼요 (페이지는 안 움직여요).
-   제목("배정 가능 객실 목록")은 스크롤하면 위로 올라가 가려지고, 오늘·내일 / 검색 / 배정 상태 줄이 카드 맨 위에 붙어요 */
-.as-rooms {
-    display: block;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
-}
-
-.as-rooms::-webkit-scrollbar {
-    width: var(--scroll-width);
-}
-
-.as-rooms::-webkit-scrollbar-track {
-    margin: var(--scroll-inset) 0;
-    background: transparent;
-}
-
-.as-rooms::-webkit-scrollbar-thumb {
-    border-radius: 100px;
-    background: var(--color-gray-200);
-}
-
-/* 오른쪽 여백 12px + 스크롤바 자리 8px = 20px */
+/* 제목 / 오늘·내일 / 검색 / 배정 상태 줄은 그대로 있고, 아래 객실 목록만 스크롤돼요 */
 .as-rooms-head {
-    padding: 20px 12px 0 20px;
+    padding: 20px 20px 0;
 }
 
 .as-sticky {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    padding: 20px 12px 20px 20px;
-    background: var(--color-base-inverse);
+    padding: 20px 20px 20px;
 }
 
 .as-filter {
@@ -3659,9 +3651,13 @@ body.as-dragging * {
 
 .as-rooms-list {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: 28px;
-    padding: 0 12px 20px 20px;
+    min-height: 0;
+    padding: 0 12px 20px 24px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
 .as-floor h3 {
@@ -3758,5 +3754,14 @@ body.as-dragging * {
     .as-top {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    /* 좁은 화면: 위아래로 쌓고 페이지가 스크롤돼요 */
+    .as-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .as-workers-list {
+        max-height: 300px;
     }
 }
