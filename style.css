@@ -585,6 +585,23 @@ button {
     background: var(--color-base-inverse);
 }
 
+/* 클릭하면 필터가 걸리는 카드 (검수 대기 / 재배정 필요) */
+.summary-card.is-clickable {
+    cursor: pointer;
+    box-shadow: inset 0 0 0 0 transparent;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.summary-card.is-clickable.is-selected {
+    background: var(--color-primary-50);
+    box-shadow: inset 0 0 0 1px var(--color-primary-accent);
+}
+
+.summary-card.is-clickable:focus-visible {
+    outline: 2px solid var(--color-primary-300);
+    outline-offset: 2px;
+}
+
 .summary-head {
     display: flex;
     align-items: center;
@@ -1410,8 +1427,8 @@ button {
     flex-direction: column;
     min-height: 480px;
     height: calc(100vh - 140px);
-    /* 실제 높이는 script.js 가 스크롤 위치에 맞춰 조정해요 */
-    padding: 20px;
+    /* 실제 높이는 index.js 가 스크롤 위치에 맞춰 조정해요 */
+    padding: 16px 20px 20px;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
 }
@@ -1420,7 +1437,9 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 28px;
+    height: 36px;
+    margin-right: -8px;
+    /* 닫기 버튼(36px)은 오른쪽 12px 안쪽 */
 }
 
 .detail-head h2,
@@ -1435,7 +1454,7 @@ button {
 .detail-body {
     flex: 1;
     min-height: 0;
-    margin: 20px -16px 0 0;
+    margin: 16px -16px 0 0;
     /* 스크롤바가 패널 안쪽 여백에 놓여서 내용 폭(358px)은 그대로예요 */
     padding-right: var(--scroll-width);
     overflow-y: auto;
@@ -1456,14 +1475,17 @@ button {
 }
 
 .detail-info {
-    margin: 14px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 16px 0 0;
     padding: 0;
 }
 
 .detail-row {
     display: flex;
     align-items: center;
-    height: 36px;
+    height: 32px;
     font-size: var(--fs-body1);
 }
 
@@ -1488,7 +1510,7 @@ button {
 }
 
 .detail-section {
-    margin-top: 27px;
+    margin-top: 28px;
 }
 
 .detail-section small {
@@ -1496,7 +1518,7 @@ button {
 }
 
 .attach-empty {
-    margin-top: 9px;
+    margin-top: 8px;
     padding: 18px 16px;
     border-radius: var(--radius-sm);
     background: var(--color-bg-low);
@@ -1514,7 +1536,7 @@ button {
 .attach-list {
     display: flex;
     gap: 8px;
-    margin-top: 9px;
+    margin-top: 8px;
     overflow-x: auto;
     scrollbar-width: none;
 }
@@ -1900,7 +1922,7 @@ button {
 .noti {
     position: fixed;
     z-index: 40;
-    /* 위치는 script.js 의 placeNoti() 가 종 버튼 기준으로 정해요: 버튼 아래 4px, 오른쪽 끝선 맞춤 */
+    /* 위치는 index.js 의 placeNoti() 가 종 버튼 기준으로 정해요: 버튼 아래 4px, 오른쪽 끝선 맞춤 */
     top: var(--noti-top, 96px);
     right: var(--noti-right, 20px);
     display: flex;
@@ -2761,7 +2783,7 @@ main[hidden] {
     flex-direction: column;
     min-height: 480px;
     height: calc(100vh - 140px);
-    /* 실제 높이는 script.js(fitRsDetail)가 스크롤 위치에 맞춰 조정해요 */
+    /* 실제 높이는 index.js(fitRsDetail)가 스크롤 위치에 맞춰 조정해요 */
     padding-top: 16px;
     overflow: hidden;
     border-radius: var(--radius-xl);
@@ -3346,4 +3368,380 @@ main[hidden] {
 /* 결과 화면은 목록 길이가 바뀌어도 세로 스크롤바 자리가 그대로라서 화면 폭이 흔들리지 않아요 */
 html:has(#viewResults) {
     scrollbar-gutter: stable;
+}
+
+/* ==========================================================
+ 직원 배정 (user-assign.html)
+ ========================================================== */
+#viewAssign {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.as-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.as-top .page-title {
+    padding-bottom: 7px;
+}
+
+.as-btns {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+.as-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 48px;
+    padding: 0 20px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: 12px;
+    background: var(--color-base-inverse);
+    font: inherit;
+    font-size: var(--fs-body1);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.as-btn.is-primary {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-500);
+    color: var(--color-white);
+}
+
+.as-btn.is-primary:hover:not(:disabled) {
+    background: var(--color-primary-600, var(--color-primary-500));
+}
+
+/* 하단에서 배치한 내용이 없을 때 (Disabled) */
+.as-btn:disabled {
+    border-color: var(--color-gray-50);
+    background: var(--color-gray-50);
+    color: var(--color-gray-200);
+    cursor: not-allowed;
+}
+
+.as-card {
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.as-card h2 {
+    margin: 0;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+/* ---- 오늘 근무자 목록 ---- */
+.as-workers {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+}
+
+.as-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.as-worker-search {
+    width: 240px;
+}
+
+/* 한 줄을 넘으면 아래로 이어지고, 두 줄을 넘으면 세로 스크롤 (최대 210px) */
+.as-workers-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 8px;
+    max-height: 210px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.as-workers-list::-webkit-scrollbar,
+.as-rooms-list::-webkit-scrollbar {
+    width: var(--scroll-width);
+}
+
+.as-workers-list::-webkit-scrollbar-track,
+.as-rooms-list::-webkit-scrollbar-track {
+    margin: var(--scroll-inset) 0;
+    background: transparent;
+}
+
+.as-workers-list::-webkit-scrollbar-thumb,
+.as-rooms-list::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: var(--color-gray-200);
+}
+
+.as-user {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 20px 8px 8px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-md);
+    background: var(--color-base-inverse);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    /* 터치로도 끌 수 있게 브라우저 기본 스크롤을 막아요 */
+}
+
+.as-handle {
+    flex-shrink: 0;
+    opacity: 0.35;
+}
+
+/* 프로필 카드 활성화: 테두리 진하게 + 손잡이 진하게 */
+.as-user:hover,
+.as-user:focus-visible,
+.as-ghost {
+    border-color: var(--color-gray-900);
+    outline: 0;
+}
+
+.as-user:hover .as-handle,
+.as-user:focus-visible .as-handle,
+.as-ghost .as-handle {
+    opacity: 1;
+}
+
+.as-user.is-dragging {
+    opacity: 0.4;
+}
+
+/* 프로필 잔상: 끄는 동안 포인터를 따라다니는 복제본 */
+.as-ghost {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 300;
+    margin: 0;
+    pointer-events: none;
+    box-shadow: var(--shadow-popover);
+    cursor: grabbing;
+}
+
+body.as-dragging,
+body.as-dragging * {
+    cursor: grabbing !important;
+    user-select: none;
+}
+
+.as-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.as-avatar {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-50);
+}
+
+.as-avatar-ph {
+    width: 24px;
+    height: 24px;
+}
+
+.as-avatar-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.as-user-tx {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 70px;
+}
+
+.as-user-tx strong {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+    opacity: 0.9;
+    white-space: nowrap;
+}
+
+.as-user-tx span {
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    color: var(--color-gray-300);
+    opacity: 0.9;
+}
+
+/* ---- 배정 가능 객실 목록 ---- */
+.as-rooms {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 0 0;
+    overflow: hidden;
+}
+
+.as-rooms-head,
+.as-filter {
+    padding: 0 20px;
+}
+
+.as-filter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.as-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.as-filter-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.as-filter-right .select {
+    width: 140px;
+}
+
+.as-rooms-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 28px;
+    min-height: 0;
+    padding: 0 16px 20px 24px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.as-floor h3 {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 6px;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5, 36px);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.as-floor h3 span {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-regular, 400);
+    color: var(--color-gray-300);
+}
+
+.as-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+}
+
+.as-room {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 155px;
+    padding: 16px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-lg);
+    background: var(--color-base-inverse);
+}
+
+.as-room.is-need {
+    min-height: 0;
+}
+
+/* 담당자 카드를 끌어서 닿았을 때 (닿는 동안만 / 멀리 치우면 다시 원래대로) */
+.as-room.is-over {
+    border-color: var(--color-primary-500);
+    box-shadow: inset 0 0 0 1px var(--color-primary-500);
+}
+
+.as-room-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.as-room-top strong {
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5, 36px);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.as-room-staff {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+}
+
+.as-room-staff b {
+    margin-right: -4px;
+    font-weight: var(--fw-medium);
+}
+
+.as-room-staff .tag {
+    margin-left: 4px;
+}
+
+.as-drop {
+    margin-top: 9px;
+    padding: 13px 16px;
+    border: 1px dashed var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-low);
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-900);
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .as-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }

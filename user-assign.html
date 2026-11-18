@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>직원 배정 | VENDY</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preload" as="image" href="resource/icon/moon.svg" />
+    <!-- 저장된 화면 모드를 화면이 그려지기 전에 적용해요 (깜빡임 방지) -->
+    <script>try { if (localStorage.getItem("theme") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) { }</script>
+</head>
+
+<body>
+
+    <div class="app">
+        <!-- ============ Sidebar ============ -->
+        <aside class="sidebar">
+            <!-- 로고: img/logo.svg (파일명이 다르면 여기만 바꾸세요) -->
+            <a class="logo" href="#"><img src="resource/logo.svg" alt="VENDY" /></a>
+            <button class="team-select" type="button" aria-haspopup="listbox" aria-expanded="false">
+                벤디호텔
+                <img class="i24" src="resource/icon/arrow-down.svg" alt="이미지" />
+            </button>
+
+            <nav class="nav" aria-label="주 메뉴">
+                <div class="nav-group">
+                    <a class="nav-item" href="#">
+                        <img class="i20" src="resource/icon/soap.svg" alt="" />청소 관리
+                    </a>
+                    <div class="nav-sub">
+                        <a href="index.html">실시간 객실 청소 현황</a>
+                        <a href="rule.html">청소 기준 설정</a>
+                        <a href="result.html">청소 결과</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <a class="nav-item" href="reservation.html">
+                        <img class="i20" src="resource/icon/calender.svg" alt="" />예약 현황
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <a class="nav-item is-active" href="#">
+                        <img class="i20" src="resource/icon/users-profiles.svg" alt="" />직원 관리
+                    </a>
+                    <div class="nav-sub">
+                        <a href="#">직원 정보 설정</a>
+                        <a class="is-active" href="user-assign.html" aria-current="page">직원 배정</a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <a class="nav-item" href="#">
+                        <img class="i20" src="resource/icon/message.svg" alt="" />업무 특이사항
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <a class="nav-item" href="#" id="hoursBtn" aria-haspopup="dialog">
+                    <img class="i20" src="resource/icon/setting.svg" alt="이미지" />운영 시간대 설정
+                </a>
+            </div>
+        </aside>
+
+        <!-- ============ Main ============ -->
+        <div class="main">
+
+            <!-- Header (스크롤해도 상단에 고정) -->
+            <div class="header-wrap">
+                <header class="header">
+                    <!-- 현재 보고 있는 메뉴 이름 (사이드바의 1depth 메뉴와 같아요) -->
+                    <span class="header-title">직원 관리</span>
+                    <div class="header-right">
+                        <!-- 날짜·시간은 index.js 가 접속한 기기의 현재 시각으로 채워요 -->
+                        <span class="header-date" id="headerDate">2026년 11월 5일 목요일 · 14:24</span>
+                        <div class="header-actions">
+                            <!-- 빨간 점(has-dot)은 확인하지 않은 알림이 있을 때만 index.js 가 붙여요 -->
+                            <button class="icon-btn" id="bellBtn" type="button" aria-label="알림">
+                                <img class="i20" src="resource/icon/bell.svg" alt="" />
+                            </button>
+                            <button class="icon-btn" id="themeBtn" type="button" aria-label="다크 모드로 변경"
+                                aria-pressed="false">
+                                <img class="i20" id="themeIcon" src="resource/icon/sun.svg" alt="" />
+                            </button>
+                        </div>
+                        <span class="header-divider"></span>
+                        <button class="profile" id="profileBtn" type="button" aria-haspopup="menu" aria-expanded="false"
+                            aria-label="프로필 메뉴">
+                            <!-- 프로필 사진: resource/img/avatar.png -->
+                            <img class="avatar" src="resource/img/avatar.png" alt="프로필" />
+                            <!-- 시안 icon/arrow-down 24x24: 큰 버전(-big) 아이콘 사용 -->
+                            <img class="i24" src="resource/icon/arrow-down-big.svg" alt="" />
+                        </button>
+                    </div>
+                </header>
+            </div>
+
+            <!-- ============ 직원 배정 (사이드바 '직원 관리 > 직원 배정') ============ -->
+            <main id="viewAssign">
+                <div class="as-top">
+                    <div class="page-title">
+                        <h1>직원 배정</h1>
+                        <p>재배정이 필요한 직원을 관리하고, 드래그를 통해 쉽게 배정을 변경해 보세요.</p>
+                    </div>
+                    <div class="as-btns">
+                        <button class="as-btn is-outline" type="button" id="asAuto">
+                            <img class="i20" src="resource/icon/setting.svg" alt="" />자동 배정 기준 설정
+                        </button>
+                        <!-- 하단에서 배치한 내용이 있을 때만 활성화돼요 -->
+                        <button class="as-btn is-primary" type="button" id="asSave" disabled>변경사항 일괄저장</button>
+                    </div>
+                </div>
+
+                <!-- 오늘 근무자 목록: 현재 맡은 객실 수가 적은 사람이 맨 앞 / 한 줄을 넘으면 아래로, 두 줄을 넘으면 세로 스크롤(최대 210px) -->
+                <section class="as-card as-workers">
+                    <div class="as-card-head">
+                        <h2>오늘 근무자 목록</h2>
+                        <label class="search as-worker-search">
+                            <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
+                            <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
+                                aria-hidden="true" />
+                            <input id="asWorkerSearch" type="text" placeholder="이름으로 검색" />
+                        </label>
+                    </div>
+                    <div class="as-workers-list" id="asWorkers"></div>
+                </section>
+
+                <!-- 배정 가능 객실 목록: 메인의 '청소 필요' · '재배정 필요' 객실만 / 재배정 필요가 맨 앞, 호수가 작은 객실이 더 앞 -->
+                <section class="as-card as-rooms" id="asRoomsCard">
+                    <div class="as-rooms-head">
+                        <h2>배정 가능 객실 목록</h2>
+                    </div>
+                    <div class="as-filter">
+                        <div class="as-tabs" role="tablist" aria-label="배정 날짜">
+                            <button class="rs-chip is-active" type="button" role="tab" aria-selected="true"
+                                data-as-day="today">오늘</button>
+                            <button class="rs-chip" type="button" role="tab" aria-selected="false"
+                                data-as-day="tomorrow">내일</button>
+                        </div>
+                        <div class="as-filter-right">
+                            <label class="search">
+                                <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
+                                <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
+                                    aria-hidden="true" />
+                                <input id="asRoomSearch" type="text" placeholder="이름 또는 호실 검색" />
+                            </label>
+                            <button class="select" type="button" data-filter="astatus" aria-haspopup="listbox"
+                                aria-expanded="false">
+                                <span class="select-label">배정 상태</span>
+                                <img class="i24" src="resource/icon/arrow-down.svg" alt="" />
+                            </button>
+                        </div>
+                    </div>
+                    <div class="as-rooms-list" id="asRooms"></div>
+                </section>
+            </main>
+
+        </div>
+    </div>
+
+    <!-- 알림 센터 (헤더 종 아이콘을 누르면 열려요 / 내용은 index.js 가 NOTIFICATIONS 로 그려요) -->
+    <aside class="noti" id="notiPanel" role="dialog" aria-label="알림 센터" hidden>
+        <div class="noti-head">
+            <h2 class="noti-title">알림 센터</h2>
+            <button class="noti-close" type="button" data-noti-close aria-label="알림 센터 닫기">
+                <!-- 시안 X 표시는 16px 칸에 약 12px 로 꽉 차게 그려져 있어서, 24px 칸 아이콘(X 12px)을 써요 -->
+                <img class="i24" src="resource/icon/close.svg" alt="이미지" />
+            </button>
+        </div>
+        <div class="noti-tabs" id="notiTabs" role="tablist"></div>
+        <div class="noti-list" id="notiList"></div>
+        <div class="noti-dim" aria-hidden="true"></div>
+    </aside>
+
+    <!-- 운영 시간대 설정 (사이드바 하단 '운영 시간대 설정'을 누르면 열려요 / 저장 로직은 index.js 의 HOURS) -->
+    <div class="hm" id="hoursModal" hidden>
+        <div class="hm-box" role="dialog" aria-modal="true" aria-labelledby="hmTitle">
+            <div class="hm-head">
+                <h2 class="hm-title" id="hmTitle">운영 시간대 설정</h2>
+                <button class="hm-close" type="button" data-hm-close aria-label="닫기">
+                    <img class="i20" src="resource/icon/close.svg" alt="이미지" />
+                </button>
+            </div>
+
+            <div class="hm-body">
+                <div class="hm-group is-time">
+                    <div class="hm-group-head">
+                        <h3>입/퇴실 시간 설정</h3>
+                        <div class="hm-tabs" role="tablist">
+                            <button class="hm-tab" type="button" role="tab" data-hm-tab="weekday"
+                                aria-selected="true">평일</button>
+                            <button class="hm-tab" type="button" role="tab" data-hm-tab="weekend"
+                                aria-selected="false">주말</button>
+                        </div>
+                    </div>
+                    <div class="hm-row">
+                        <div class="hm-col">
+                            <span class="hm-label">입실 시간</span>
+                            <label class="hm-input is-time">
+                                <img class="i20" src="resource/icon/time.svg" alt="이미지" />
+                                <input id="hmIn" type="text" inputmode="numeric" maxlength="5" placeholder="00:00"
+                                    autocomplete="off" aria-label="입실 시간" />
+                            </label>
+                        </div>
+                        <div class="hm-col">
+                            <span class="hm-label">퇴실 시간</span>
+                            <label class="hm-input is-time">
+                                <img class="i20" src="resource/icon/time.svg" alt="이미지" />
+                                <input id="hmOut" type="text" inputmode="numeric" maxlength="5" placeholder="00:00"
+                                    autocomplete="off" aria-label="퇴실 시간" />
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hm-group">
+                    <div class="hm-text">
+                        <h3>청소 가능 시간 설정</h3>
+                        <p>직원이 해당 시간 동안 청소를 진행합니다.</p>
+                    </div>
+                    <div class="hm-lines">
+                        <div class="hm-line">
+                            <span class="hm-label">퇴실</span>
+                            <label class="hm-input"><input id="hmCleanOut" type="text" inputmode="numeric" maxlength="2"
+                                    autocomplete="off" aria-label="퇴실 후 청소 가능까지 시간" /></label>
+                            <span class="hm-unit">시간 후</span>
+                        </div>
+                        <div class="hm-line">
+                            <span class="hm-label">입실</span>
+                            <label class="hm-input"><input id="hmCleanIn" type="text" inputmode="numeric" maxlength="2"
+                                    autocomplete="off" aria-label="입실 전 청소 마감까지 시간" /></label>
+                            <span class="hm-unit">시간 전</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hm-group">
+                    <div class="hm-text">
+                        <h3>숙박 전환 기준 설정</h3>
+                        <p>연장이 이 시간을 넘으면 숙박으로 계산합니다.</p>
+                    </div>
+                    <div class="hm-line is-tight">
+                        <span class="hm-label">연장</span>
+                        <label class="hm-input"><input id="hmExtend" type="text" inputmode="numeric" maxlength="2"
+                                autocomplete="off" aria-label="숙박 전환 연장 시간" /></label>
+                        <span class="hm-unit"><span>시간 초과 시, </span><b>1박 추가</b><span>로 변경</span></span>
+                    </div>
+                </div>
+
+                <div class="hm-group">
+                    <div class="hm-text">
+                        <h3>대실 최대 시간 설정</h3>
+                        <p>대실로 이용할 수 있는 최대 시간입니다.</p>
+                    </div>
+                    <div class="hm-line">
+                        <label class="hm-input"><input id="hmDayUse" type="text" inputmode="numeric" maxlength="2"
+                                autocomplete="off" aria-label="대실 최대 시간" /></label>
+                        <span class="hm-unit">시간</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hm-foot">
+                <button class="btn btn-lg btn-outline" type="button" data-hm-close>닫기</button>
+                <button class="btn btn-lg btn-primary" type="button" id="hmSave">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+    <script src="user-assign.js"></script>
+</body>
+
+</html>

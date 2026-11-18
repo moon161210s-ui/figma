@@ -47,7 +47,7 @@
                     </a>
                     <div class="nav-sub">
                         <a href="#">직원 정보 설정</a>
-                        <a href="#">직원 배정</a>
+                        <a href="user-assign.html">직원 배정</a>
                     </div>
                 </div>
 
@@ -74,10 +74,10 @@
                     <!-- 현재 보고 있는 메뉴 이름 (사이드바의 1depth 메뉴와 같아요) -->
                     <span class="header-title">청소 관리</span>
                     <div class="header-right">
-                        <!-- 날짜·시간은 script.js 가 접속한 기기의 현재 시각으로 채워요 -->
+                        <!-- 날짜·시간은 index.js 가 접속한 기기의 현재 시각으로 채워요 -->
                         <span class="header-date" id="headerDate">2026년 11월 5일 목요일 · 14:24</span>
                         <div class="header-actions">
-                            <!-- 빨간 점(has-dot)은 확인하지 않은 알림이 있을 때만 script.js 가 붙여요 -->
+                            <!-- 빨간 점(has-dot)은 확인하지 않은 알림이 있을 때만 index.js 가 붙여요 -->
                             <button class="icon-btn" id="bellBtn" type="button" aria-label="알림">
                                 <img class="i20" src="resource/icon/bell.svg" alt="" />
                             </button>
@@ -128,7 +128,8 @@
                         </div>
                         <div class="summary-value" data-summary="clean">17<small>실</small></div>
                     </div>
-                    <div class="summary-card">
+                    <div class="summary-card is-clickable" data-summary-card="alert" role="button" tabindex="0"
+                        aria-pressed="false">
                         <div class="summary-head">
                             <span class="summary-icon"><img class="i20" src="resource/icon/exclamation-circle.svg"
                                     alt="이미지" /></span>
@@ -170,7 +171,7 @@
                             </button>
                         </div>
 
-                        <!-- 층별 객실 타일은 script.js 의 ROOMS 데이터로 그려져요 -->
+                        <!-- 층별 객실 타일은 index.js 의 ROOMS 데이터로 그려져요 -->
                         <div id="floors"></div>
                     </section>
 
@@ -184,7 +185,7 @@
         </div>
     </div>
 
-    <!-- 알림 센터 (헤더 종 아이콘을 누르면 열려요 / 내용은 script.js 가 NOTIFICATIONS 로 그려요) -->
+    <!-- 알림 센터 (헤더 종 아이콘을 누르면 열려요 / 내용은 index.js 가 NOTIFICATIONS 로 그려요) -->
     <aside class="noti" id="notiPanel" role="dialog" aria-label="알림 센터" hidden>
         <div class="noti-head">
             <h2 class="noti-title">알림 센터</h2>
@@ -198,7 +199,7 @@
         <div class="noti-dim" aria-hidden="true"></div>
     </aside>
 
-    <!-- 운영 시간대 설정 (사이드바 하단 '운영 시간대 설정'을 누르면 열려요 / 저장 로직은 script.js 의 HOURS) -->
+    <!-- 운영 시간대 설정 (사이드바 하단 '운영 시간대 설정'을 누르면 열려요 / 저장 로직은 index.js 의 HOURS) -->
     <div class="hm" id="hoursModal" hidden>
         <div class="hm-box" role="dialog" aria-modal="true" aria-labelledby="hmTitle">
             <div class="hm-head">
@@ -293,7 +294,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="index.js"></script>
 </body>
 
 </html>

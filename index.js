@@ -102,6 +102,7 @@ const RAW_ROOMS = [
     { no: "104", floor: 1, status: "todo", out: "17:00", staff: "한다경" },
     { no: "105", floor: 1, status: "review", out: "15:00", staff: "최하석" },
     { no: "106", floor: 1, status: "done", out: "15:00", staff: "이서영" },
+    { no: "107", floor: 1, status: "review", out: "17:00", staff: "유가은" },
     { no: "108", floor: 1, status: "todo", out: "15:00", staff: "김이레" },
     {
         no: "109",
@@ -183,6 +184,25 @@ function applyHours() {
 }
 
 const ROOMS = RAW_ROOMS.map(normalizeRoom);
+
+/* 직원 배정 화면에서 저장한 담당자를 반영해요 (같은 객실 데이터를 모든 화면이 공유 / 서버 연결 시 서버 값으로 교체)
+   - 재배정 필요였던 객실은 담당자가 정해지면 '청소 필요'로 돌아가요 */
+function applyAssignments() {
+    let saved = null;
+    try {
+        saved = JSON.parse(localStorage.getItem("roomAssign"));
+    } catch (e) { }
+    if (!saved) return;
+    ROOMS.forEach((r) => {
+        if (!saved[r.no] || r.empty) return;
+        r.staff = saved[r.no];
+        r.staffTag = "";
+        if (r.status === "reassign") r.status = "todo";
+    });
+}
+/* 조퇴한 직원 (오늘 근무자 목록에서 빠져요 / 담당자를 바꾸면 객실의 조퇴 표시는 지워지지만 이 목록은 그대로 둬요) */
+const LEFT_EARLY = new Set(RAW_ROOMS.filter((r) => r.staffTag === "조퇴").map((r) => r.staff));
+applyAssignments();
 applyHours();
 
 /* 상단 요약 카드 숫자 (서버 데이터로 교체 대상) */
@@ -224,7 +244,7 @@ function roomCard(r) {
 
 /* 체크된 필터 값 (처음에는 전부 체크 = 전체 / 아래 FILTER_DEFS 뒤에서 채워요) */
 /* 선택한 값만 담아요. 아무것도 선택하지 않으면 필터 없음(= 전체) */
-const filters = { floor: new Set(), status: new Set(), rtype: new Set() };
+const filters = { floor: new Set(), status: new Set(), rtype: new Set(), astatus: new Set() };
 const filterPass = (kind, value) => filters[kind].size === 0 || filters[kind].has(value);
 
 function renderFloors() {
@@ -779,6 +799,13 @@ function initTimePicker(root) {
 const SEARCH_MIN = 20;
 const RESULT_TYPES = ["스탠다드", "디럭스", "프리미엄"];
 const FILTER_DEFS = {
+    astatus: {
+        base: "배정 상태",
+        options: () => [
+            { value: "assigned", label: "배정 완료" },
+            { value: "need", label: "재배정 필요" },
+        ],
+    },
     rtype: {
         base: "객실 유형",
         options: () => RESULT_TYPES.map((t) => ({ value: t, label: t })),
@@ -804,11 +831,33 @@ let fmenu = null,
     fmenuBtn = null,
     fmenuKind = null;
 
+/* 검수 대기 / 재배정 필요 카드: 청소 상태 필터가 딱 이 두 값일 때만 보라색(선택) */
+const ALERT_STATUS = ["review", "reassign"];
+function syncAlertCard() {
+    const card = document.querySelector("[data-summary-card='alert']");
+    if (!card) return;
+    const f = filters.status;
+    const on = f.size === ALERT_STATUS.length && ALERT_STATUS.every((v) => f.has(v));
+    card.classList.toggle("is-selected", on);
+    card.setAttribute("aria-pressed", String(on));
+}
+function toggleAlertCard() {
+    const on = document.querySelector("[data-summary-card='alert']").classList.contains("is-selected");
+    filters.status.clear();
+    if (!on) ALERT_STATUS.forEach((v) => filters.status.add(v));
+    closeFilterMenu();
+    updateFilterButtons();
+    renderFloors();
+}
+
 function updateFilterButtons() {
+    syncAlertCard();
     document.querySelectorAll(".select[data-filter]").forEach((btn) => {
         const kind = btn.dataset.filter,
             def = FILTER_DEFS[kind];
-        const picked = def.options().filter((o) => filters[kind].has(o.value));
+        /* 고른 순서대로 보여줘요 (첫 번째 값 + 외 N) */
+        const opts = def.options();
+        const picked = [...filters[kind]].map((v) => opts.find((o) => o.value === v)).filter(Boolean);
         let text = def.base; /* 아무것도 고르지 않음 = 기본 문구 (Default) */
         if (picked.length)
             text = picked[0].label + (picked.length > 1 ? ` 외 ${picked.length - 1}` : "");
@@ -936,7 +985,8 @@ function openFilterMenu(btn) {
     const apply = () => {
         draw();
         updateFilterButtons();
-        if (kind === "rtype") renderResults();
+        if (kind === "astatus") renderAssignRooms();
+        else if (kind === "rtype") renderResults();
         else renderFloors();
     };
 
@@ -983,6 +1033,10 @@ document.addEventListener("click", (e) => {
     const card = e.target.closest(".room-card[data-room]");
     if (card) {
         selectRoom(card.dataset.room);
+        return;
+    }
+    if (e.target.closest("[data-summary-card='alert']") && !e.target.closest(".tip")) {
+        toggleAlertCard();
         return;
     }
 
@@ -1100,6 +1154,8 @@ async function fetchDashboard() {
 }
 
 function renderSummary() {
+    /* 검수 대기 + 재배정 필요 객실 수는 객실 목록에서 바로 세요 */
+    SUMMARY.alert = ROOMS.filter((r) => ["review", "reassign"].includes(r.status)).length;
     const unit = { checkin: "실", checkout: "실", clean: "실", alert: "건" };
     document.querySelectorAll("[data-summary]").forEach((el) => {
         const k = el.dataset.summary;
@@ -1522,10 +1578,16 @@ function showRoom(no) {
     if (card) card.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
+/* 다른 화면으로 이동 (직원 배정 화면처럼 저장 안 한 변경사항이 있으면 beforeLeave 가 경고 모달을 띄우고 false 를 돌려줘요) */
+function navigateTo(url) {
+    if (typeof beforeLeave === "function" && beforeLeave(url) === false) return;
+    location.href = url;
+}
+
 /* 청소 결과 화면으로 이동해서 해당 날짜의 객실 상세까지 열어요 (이미 결과 화면이면 이동 없이 바로 열어요) */
 function goResult({ room, date }) {
     if (typeof openResultFor === "function") openResultFor(room, date);
-    else location.href = `result.html?room=${encodeURIComponent(room)}&date=${encodeURIComponent(date)}`;
+    else navigateTo(`result.html?room=${encodeURIComponent(room)}&date=${encodeURIComponent(date)}`);
 }
 
 document.addEventListener("click", (e) => {
@@ -1557,14 +1619,14 @@ document.addEventListener("click", (e) => {
         markRead([n.id]);
         if (act && act.href) {
             closeNoti();
-            location.href = act.href;
+            navigateTo(act.href);
         } else if (act && act.result) {
             closeNoti();
             goResult(act.result);
         } else if (act && act.room) {
             closeNoti();
             /* 청소 결과 화면에서 누르면 실시간 현황 화면으로 이동해서 그 객실을 보여줘요 */
-            if (typeof openResultFor === "function") location.href = `index.html?room=${encodeURIComponent(act.room)}`;
+            if (typeof openResultFor === "function" || typeof renderAssignRooms === "function") navigateTo(`index.html?room=${encodeURIComponent(act.room)}`);
             else showRoom(act.room);
         }
         return;
