@@ -90,7 +90,12 @@ function resultRows(date) {
     return (resultCache[key] = rows);
 }
 
-let rsDate = new Date(RESULT_BASE_DATE);
+/* 처음 열면 오늘 날짜로 보여줘요 (달력도 오늘이 선택된 상태로 열려요) */
+let rsDate = (() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+})();
 let rsSelected = null; /* 선택한 객실 호수 */
 let rsChip = "all";
 let rsQuery = "";
