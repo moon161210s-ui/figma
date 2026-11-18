@@ -3475,19 +3475,16 @@ html:has(#viewResults) {
     scrollbar-gutter: stable;
 }
 
-.as-workers-list::-webkit-scrollbar,
-.as-rooms-list::-webkit-scrollbar {
+.as-workers-list::-webkit-scrollbar {
     width: var(--scroll-width);
 }
 
-.as-workers-list::-webkit-scrollbar-track,
-.as-rooms-list::-webkit-scrollbar-track {
+.as-workers-list::-webkit-scrollbar-track {
     margin: var(--scroll-inset) 0;
     background: transparent;
 }
 
-.as-workers-list::-webkit-scrollbar-thumb,
-.as-rooms-list::-webkit-scrollbar-thumb {
+.as-workers-list::-webkit-scrollbar-thumb {
     border-radius: 100px;
     background: var(--color-gray-200);
 }
@@ -3606,14 +3603,40 @@ body.as-dragging * {
 .as-rooms {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 20px 0 0;
-    overflow: hidden;
 }
 
-.as-rooms-head,
-.as-filter {
-    padding: 0 20px;
+/* 제목 / 오늘·내일 / 검색 / 배정 상태 줄: 스크롤하면 헤더(120px) 바로 아래에 붙어요 (객실 목록만 아래로 지나가요) */
+.as-sticky {
+    position: sticky;
+    top: 120px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 20px 20px;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    background: var(--color-base-inverse);
+}
+
+/* 카드 윗부분이 헤더 뒤로 올라가도 위쪽 모서리 radius 가 유지되게 두 모서리 바깥을 배경색으로 덮어요 */
+.as-sticky::before,
+.as-sticky::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: var(--radius-xl);
+    height: var(--radius-xl);
+    pointer-events: none;
+}
+
+.as-sticky::before {
+    left: 0;
+    background: radial-gradient(circle at 100% 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
+}
+
+.as-sticky::after {
+    right: 0;
+    background: radial-gradient(circle at 0 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
 }
 
 .as-filter {
@@ -3640,13 +3663,9 @@ body.as-dragging * {
 
 .as-rooms-list {
     display: flex;
-    flex: 1;
     flex-direction: column;
     gap: 28px;
-    min-height: 0;
-    padding: 0 16px 20px 24px;
-    overflow-y: auto;
-    scrollbar-gutter: stable;
+    padding: 0 20px 20px;
 }
 
 .as-floor h3 {
