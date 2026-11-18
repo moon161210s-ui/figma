@@ -1,7 +1,7 @@
 /* ==========================================================
    청소 결과 화면 (result.html / index.js 뒤에 불러와요)
    - 날짜별 결과 목록 / 상태 칩 필터 / 호실 검색 / 객실 유형 필터
-   - '자세히 보기' → 우측 패널 (검수 이력 · 인증사진 · 체크리스트 · 메모 · 특이사항)
+   - 행 클릭 → 우측 패널 (검수 이력 · 인증사진 · 체크리스트 · 메모 · 특이사항)
    - 재청소 요청 / 검수 완료 (서버 연결 전에는 이 화면 안에서만 바뀌어요)
    ========================================================== */
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -128,7 +128,7 @@ function renderResults() {
     const head = `
     <div class="rs-tr rs-th" role="row">
       <div class="rs-td">객실 정보</div><div class="rs-td">청소 담당자</div><div class="rs-td">청소 완료일</div>
-      <div class="rs-td is-center">상태</div><div class="rs-td is-center">결과</div>
+      <div class="rs-td is-center">상태</div>
     </div>`;
     const rowsHtml = shown
         .map((r) => {
@@ -140,7 +140,6 @@ function renderResults() {
       <div class="rs-td rs-staff">${STAFF_AVATAR(r.staff)}<span>${r.staff}</span></div>
       <div class="rs-td rs-when"><p>${fmtStamp(rsDate, r.at)}</p>${strike}</div>
       <div class="rs-td is-center"><span class="badge rs-badge ${b.cls}">${b.label}</span></div>
-      <div class="rs-td is-center"><button class="rs-more" type="button" data-rs-open="${r.no}">자세히 보기</button></div>
     </div>`;
         })
         .join("");
@@ -311,7 +310,7 @@ function handleResultsClick(e) {
         renderResults();
         return true;
     }
-    /* 가로줄 어디를 눌러도 오른쪽에 상세가 열려요 ('자세히 보기' 버튼 포함) */
+    /* 가로줄 어디를 눌러도 오른쪽에 상세가 열려요 */
     const row = e.target.closest("[data-rs-row]");
     if (row) {
         moveRsSelection(row.dataset.rsRow);

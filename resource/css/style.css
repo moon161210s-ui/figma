@@ -2623,7 +2623,7 @@ main[hidden] {
 
 .rs-tr {
     display: grid;
-    grid-template-columns: minmax(80px, 200px) minmax(120px, 180px) minmax(196px, 1fr) minmax(88px, 140px) 118px;
+    grid-template-columns: minmax(80px, 200px) minmax(120px, 180px) minmax(196px, 1fr) minmax(88px, 140px);
     align-items: stretch;
     min-height: 78px;
 }
@@ -2751,24 +2751,6 @@ main[hidden] {
 .rs-badge {
     min-width: 88px;
     justify-content: center;
-}
-
-.rs-more {
-    height: 40px;
-    padding: 0 12px;
-    border: 1px solid var(--color-line-normal);
-    border-radius: var(--radius-sm);
-    background: var(--color-base-inverse);
-    font: inherit;
-    font-size: var(--fs-body2);
-    font-weight: var(--fw-medium);
-    color: var(--color-gray-900);
-    white-space: nowrap;
-    cursor: pointer;
-}
-
-.rs-more:hover {
-    border-color: var(--color-gray-100);
 }
 
 /* ---------- 우측 상세 패널 ---------- */

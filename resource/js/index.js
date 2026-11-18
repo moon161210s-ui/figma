@@ -103,9 +103,8 @@ const RAW_ROOMS = [
     { no: "105", floor: 1, status: "review", out: "15:00", staff: "최하석" },
     { no: "106", floor: 1, status: "done", out: "15:00", staff: "이서영" },
     { no: "107", floor: 1, status: "review", out: "17:00", staff: "유가은" },
-    { no: "108", floor: 1, status: "todo", out: "15:00", staff: "김이레" },
     {
-        no: "109",
+        no: "108",
         floor: 1,
         status: "reassign",
         out: "15:00",
