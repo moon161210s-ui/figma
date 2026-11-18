@@ -3765,3 +3765,542 @@ body.as-dragging * {
         max-height: 300px;
     }
 }
+
+/* ==========================================================
+ 청소 기준 설정 (standard.html / standard.js)
+ ========================================================== */
+.rl-body {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+/* ---- 왼쪽: 객실 타입 (화면 아래 여백 20px 까지만 커지고, 더 많으면 목록 안에서 스크롤 / 높이는 standard.js 의 fitTypes) ---- */
+.rl-types {
+    position: sticky;
+    top: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.rl-types-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.rl-types-top h2 {
+    margin: 0;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.rl-icon-btn {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+    cursor: pointer;
+}
+
+.rl-icon-btn:hover {
+    border-color: var(--color-gray-100);
+}
+
+.rl-types-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    margin-right: -16px;
+    padding-right: var(--scroll-width);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.rl-types-list::-webkit-scrollbar,
+.rl-tm-list::-webkit-scrollbar {
+    width: var(--scroll-width);
+}
+
+.rl-types-list::-webkit-scrollbar-track,
+.rl-tm-list::-webkit-scrollbar-track {
+    margin: var(--scroll-inset) 0;
+    background: transparent;
+}
+
+.rl-types-list::-webkit-scrollbar-thumb,
+.rl-tm-list::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: var(--color-gray-200);
+}
+
+.rl-type {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    height: 48px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-600);
+    text-align: left;
+    cursor: pointer;
+}
+
+.rl-type span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rl-type:hover {
+    background: var(--color-bg-low);
+}
+
+.rl-type.is-active {
+    background: var(--color-primary-50);
+}
+
+/* ---- 오른쪽: 선택한 타입의 청소 기준 ---- */
+.rl-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 480px;
+    padding: 32px 40px;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.rl-tit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.rl-tit-tx {
+    flex: 1;
+    min-width: 0;
+}
+
+.rl-tit-tx h2 {
+    margin: 0;
+    font-size: var(--fs-h4);
+    line-height: var(--lh-h4);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.rl-tit-tx p,
+.rl-sec-tx p {
+    margin: 4px 0 0;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-300);
+}
+
+.rl-tit-btns {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+.rl-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 48px;
+    padding: 0 20px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: 12px;
+    background: var(--color-base-inverse);
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.rl-btn:hover:not(:disabled) {
+    border-color: var(--color-gray-100);
+}
+
+.rl-btn.is-sm {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: var(--radius-md);
+}
+
+.rl-btn.is-primary {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-500);
+    color: #fff;
+}
+
+.rl-btn.is-primary:hover:not(:disabled) {
+    border-color: var(--color-primary-600, var(--color-primary-500));
+    background: var(--color-primary-600, var(--color-primary-500));
+}
+
+/* 아무 값도 입력하지 않았을 때 (Disabled) */
+.rl-btn:disabled {
+    border-color: var(--color-gray-50);
+    background: var(--color-gray-50);
+    color: var(--color-gray-200);
+    cursor: not-allowed;
+}
+
+.rl-line {
+    width: 100%;
+    height: 1px;
+    margin: 0;
+    border: 0;
+    background: var(--color-line-normal);
+}
+
+.rl-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+}
+
+.rl-sec {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.rl-sec-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.rl-sec-tx h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.rl-sec-tx h3 em {
+    font-style: normal;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-dangerous);
+}
+
+/* ---- 청소 참고 이미지 ---- */
+.rl-imgs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.rl-img,
+.rl-add {
+    position: relative;
+    height: 220px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.rl-img {
+    border: 0;
+    background: var(--color-gray-50);
+}
+
+.rl-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 호버하면 딤드와 함께 가운데에 휴지통 아이콘 (누르면 삭제) */
+.rl-img-dim {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.rl-img-dim img {
+    width: 36px;
+    height: 36px;
+    filter: brightness(0) invert(1) !important;
+}
+
+.rl-img:hover .rl-img-dim,
+.rl-img:focus-visible .rl-img-dim,
+.rl-img.is-on .rl-img-dim {
+    opacity: 1;
+}
+
+/* 이미지가 없는 빈 칸: 누르면 파일 탐색기가 열려요 */
+.rl-add {
+    display: grid;
+    place-items: center;
+    border: 1px dashed var(--color-line-normal);
+    background: var(--color-bg-low);
+}
+
+.rl-add:hover {
+    border-color: var(--color-gray-100);
+}
+
+.rl-add img {
+    width: 36px;
+    height: 36px;
+}
+
+/* ---- 체크리스트 / 인증 사진 입력 ---- */
+.rl-rows,
+.rl-tm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rl-row {
+    display: flex;
+    align-items: center;
+}
+
+.rl-handle {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: grab;
+    touch-action: none;
+}
+
+.rl-input {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    height: 48px;
+    padding: 0 2px 0 12px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+}
+
+.rl-input:focus-within {
+    border-color: var(--color-primary-500);
+}
+
+.rl-input input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+}
+
+.rl-input input::placeholder {
+    color: var(--color-gray-200);
+}
+
+.rl-input:has(input:placeholder-shown:not(:focus)) {
+    border-color: var(--color-line-low);
+}
+
+.rl-in-btn {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+}
+
+.rl-in-btn:hover,
+.rl-del:hover,
+.rl-handle:hover {
+    background: var(--color-bg-disable);
+}
+
+.rl-proofs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.rl-proof {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-lg);
+    background: var(--color-base-inverse);
+}
+
+.rl-proof-fields {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+/* 세로로 쌓인 입력창은 flex:1 이 높이를 0 부터 줄이지 않게 고정 */
+.rl-proof-fields .rl-input {
+    flex: none;
+}
+
+.rl-del {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+}
+
+.rl-row.is-dragging,
+.rl-proof.is-dragging {
+    opacity: 0.6;
+    box-shadow: var(--shadow-popover);
+}
+
+body.rl-dragging,
+body.rl-dragging * {
+    cursor: grabbing !important;
+    user-select: none;
+}
+
+/* ---- 객실 타입 설정 모달 ---- */
+.rl-tm-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    min-height: 0;
+    padding: 16px 24px;
+}
+
+.rl-tm-list {
+    gap: 8px;
+    align-self: stretch;
+    max-height: calc(100dvh - 380px);
+    min-height: 0;
+    padding-right: var(--scroll-width);
+    margin-right: calc(var(--scroll-width) * -1);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.rl-tm-fixed {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    height: 48px;
+    margin-left: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--color-line-low);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-disable);
+    color: var(--color-gray-200);
+}
+
+.rl-tm-add {
+    flex-shrink: 0;
+    margin-right: var(--scroll-width);
+}
+
+.rl-tm-body .rl-row {
+    flex-shrink: 0;
+}
+
+/* 확인 / 완료 안내 모달은 540px */
+.rl-cm {
+    overflow: hidden;
+}
+
+@media (max-width: 900px) {
+    .rl-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .rl-types {
+        position: static;
+    }
+
+    .rl-card {
+        padding: 24px 20px;
+    }
+
+    .rl-tit {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rl-proofs {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .rl-sec-head {
+        align-items: flex-start;
+    }
+}
