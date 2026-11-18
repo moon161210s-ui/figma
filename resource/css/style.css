@@ -1232,14 +1232,6 @@ button {
     gap: 2px;
 }
 
-.room-card.is-empty {
-    cursor: default;
-}
-
-.room-card.is-empty:hover {
-    border-color: var(--color-line-normal);
-}
-
 .room-card:focus-visible {
     outline: 2px solid var(--color-primary-300);
     outline-offset: 2px;
@@ -1588,6 +1580,12 @@ button {
     font-size: var(--fs-body1);
     line-height: 24px;
     font-weight: var(--fw-bold);
+}
+
+.pop-cancel {
+    width: 100%;
+    margin-top: 12px;
+    color: var(--color-dangerous);
 }
 
 .pop-actions {
@@ -2229,7 +2227,7 @@ button {
     display: grid;
     place-items: center;
     padding: 20px;
-    background: rgba(31, 34, 37, 0.4);
+    background: rgba(0, 0, 0, 0.5);
     transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 

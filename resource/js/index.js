@@ -65,13 +65,56 @@ const outTag = (r) => {
         m = diff % 60;
     return `${h ? h + "시간" : ""}${h && m ? " " : ""}${m ? m + "분" : ""} 연장`;
 };
-const cleanText = (r) => `${r.clean} ~ ${addMinutes(r.clean, r.cleanLen)}`;
+const cleanText = (r) => (r.clean ? `${r.clean} ~ ${addMinutes(r.clean, r.cleanLen)}` : "-");
+const staffText = (r) => (r.staff ? `${r.staff}${tagHtml(r.staffTag)}` : "-");
+/* 숙박 중이라 오늘 청소 대상이 아닌 객실 (청소를 등록하기 전까지) */
+const isStayOnly = (r) => r.status === "stay";
+/* 손님 요청으로 청소를 등록할 수 있는 객실: 숙박 중(청소 없음)이거나 빈 객실 (칩이 없는 상태) */
+const canRequest = (r) => isStayOnly(r) || (r.empty && !r.status);
+/* 청소 목록에 올라오는 객실: 숙박 객실이거나, 빈 객실이라도 청소를 요청해 등록된 객실 */
+const inCleanList = (r) => !r.empty || !!r.cleanReq;
+
+/* 요청 청소 취소: 담당자와 청소 가능 시간을 비우고 원래 상태(숙박 중 / 빈 객실)로 돌려요 */
+function cancelRequest(r) {
+    r.staff = "";
+    r.staffTag = "";
+    r.clean = null;
+    r.cleanLocked = false;
+    r.cleanLen = 0;
+    r.cleanReq = false;
+    if (r.empty) delete r.status;
+    else r.status = "stay";
+}
+
+/* 퇴실일에 맞춰 청소 대상 여부를 정리해요
+   - 퇴실일이 오늘이 되면 숙박 중이던 객실도 청소 필요가 되고, 미리 등록한 요청 청소는 퇴실 청소 하나로 합쳐져요
+   - 퇴실일이 오늘이 아니게 되면 (아직 시작 전인) 퇴실 청소는 취소돼요 */
+function syncStayStatus(r) {
+    if (r.empty) return;
+    const today = todayMid();
+    if (r.end <= today) {
+        if (r.cleanReq) {
+            r.cleanReq = false;
+            r.cleanLocked = false; /* 퇴실 청소 규칙의 시간으로 돌아가요 */
+        }
+        if (r.status === "stay") r.status = "todo";
+    } else if (["todo", "reassign"].includes(r.status) && !r.cleanReq) {
+        r.status = "stay";
+        r.staff = "";
+        r.staffTag = "";
+        r.clean = null;
+        r.cleanLocked = false;
+        r.cleanLen = 0;
+    }
+}
 const tagHtml = (t) => (t ? `<span class="tag">${t}</span>` : "");
 
 /* ---------- 샘플 데이터 (실제 서비스에서는 서버 데이터로 교체) ---------- */
 const STAFF = ["이서영", "전재연", "유가은", "한다경", "최하석", "김이레"];
 /* 순서 = 청소 상태 필터 드롭다운에 보이는 순서 (시안) */
 const STATUS = {
+    /* 숙박 중이고 오늘 청소 대상이 아닌 객실: 상태 칩을 보여주지 않아요 */
+    stay: { label: "숙박 중", tile: "", panel: "" },
     todo: { label: "청소 필요", tile: "badge-todo", panel: "badge-todo" },
     progress: { label: "청소 중", tile: "badge-progress", panel: "badge-info" },
     done: { label: "청소 완료", tile: "badge-done", panel: "badge-done" },
@@ -83,67 +126,70 @@ const STATUS = {
     review: { label: "검수 대기", tile: "badge-review", panel: "badge-review" },
 };
 
-const YEAR = 2026;
-const d = (m, day) => new Date(YEAR, m - 1, day);
+/* 객실 카드의 날짜는 항상 오늘 기준이에요 (오늘 입실 · nights 박 뒤 퇴실). 실제 서비스에서는 서버의 예약 날짜로 교체 */
+const todayMid = () => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+};
+const dayAdd = (base, n) => new Date(base.getFullYear(), base.getMonth(), base.getDate() + n);
 
-/* nights: 숙박 박수(기본 1) / extHour: 퇴실 연장 시간 / extNight: 연박 연장 박수 */
+/* 객실 한 건 = 오늘 화면에 보여줄 투숙 정보 (샘플 / 실제 서비스에서는 서버의 예약 데이터로 교체)
+   nights   : 숙박 박수 (1박, 2박 …)
+   stayed   : 오늘 기준으로 이미 지낸 박수 (생략하면 nights 와 같아요 = 오늘 퇴실)
+              → 입실일 = 오늘 - stayed / 퇴실일 = 입실일 + nights  (stayed 가 nights 보다 작으면 연박 중)
+   nextIn   : 퇴실 청소 뒤 오늘 새 손님이 입실하는지 / nextNights : 그 손님의 숙박 박수
+   extHour  : 퇴실 연장 시간 / extNight : 연박 연장 박수 */
 const RAW_ROOMS = [
-    {
-        no: "101",
-        floor: 1,
-        status: "done",
-        out: "17:00",
-        extHour: 2,
-        staff: "전재연",
-        clean: "16:00",
-    },
-    { no: "102", floor: 1, status: "progress", out: "15:00", staff: "유가은" },
-    { no: "103", floor: 1, status: "progress", out: "17:00", staff: "전재연" },
-    { no: "104", floor: 1, status: "todo", out: "17:00", staff: "한다경" },
-    { no: "105", floor: 1, status: "review", out: "15:00", staff: "최하석" },
-    { no: "106", floor: 1, status: "done", out: "15:00", staff: "이서영" },
-    { no: "107", floor: 1, status: "review", out: "17:00", staff: "유가은" },
-    {
-        no: "108",
-        floor: 1,
-        status: "reassign",
-        out: "15:00",
-        staff: "전재연",
-        staffTag: "조퇴",
-    },
-    { no: "201", floor: 2, status: "todo", out: "17:00", staff: "이서영" },
-    { no: "202", floor: 2, status: "done", out: "17:00", staff: "김이레" },
-    { no: "203", floor: 2, status: "progress", out: "17:00", staff: "전재연" },
-    { no: "204", floor: 2, status: "progress", out: "15:00", staff: "유가은" },
-    { no: "301", floor: 3, status: "progress", out: "17:00", staff: "최하석" },
-    {
-        no: "302",
-        floor: 3,
-        status: "todo",
-        out: "16:00",
-        extHour: 1,
-        nights: 3,
-        extNight: 1,
-        staff: "한다경",
-    },
-    { no: "303", floor: 3, status: "todo", out: "17:00", staff: "이서영" },
+    { no: "101", floor: 1, status: "done", out: "17:00", extHour: 2, staff: "전재연", clean: "16:00", nights: 2 },
+    { no: "102", floor: 1, status: "progress", out: "15:00", staff: "유가은", nights: 1, nextIn: true, nextNights: 2 },
+    { no: "103", floor: 1, status: "progress", out: "17:00", staff: "전재연", nights: 3, nextIn: true, nextNights: 1 },
+    { no: "104", floor: 1, status: "todo", out: "17:00", staff: "한다경", nights: 1, nextIn: true, nextNights: 3 },
+    { no: "105", floor: 1, status: "review", out: "15:00", staff: "최하석", nights: 2 },
+    { no: "106", floor: 1, status: "done", out: "15:00", staff: "이서영", nights: 1, nextIn: true, nextNights: 1 },
+    { no: "107", floor: 1, status: "review", out: "17:00", staff: "유가은", nights: 4, nextIn: true, nextNights: 2 },
+    { no: "108", floor: 1, status: "reassign", out: "15:00", staff: "전재연", staffTag: "조퇴", nights: 1, nextIn: true, nextNights: 1 },
+    { no: "201", floor: 2, status: "todo", out: "17:00", staff: "이서영", nights: 2, nextIn: true, nextNights: 2 },
+    { no: "202", floor: 2, status: "done", out: "17:00", staff: "김이레", nights: 1 },
+    { no: "203", floor: 2, status: "progress", out: "17:00", staff: "전재연", nights: 5, nextIn: true, nextNights: 1 },
+    { no: "204", floor: 2, status: "progress", out: "15:00", staff: "유가은", nights: 2, nextIn: true, nextNights: 3 },
+    { no: "301", floor: 3, status: "progress", out: "17:00", staff: "최하석", nights: 1, nextIn: true, nextNights: 1 },
+    { no: "302", floor: 3, status: "stay", out: "16:00", extHour: 1, nights: 3, stayed: 1, extNight: 1 },
+    { no: "303", floor: 3, status: "todo", out: "17:00", staff: "이서영", nights: 3, stayed: 2, clean: "11:00", cleanReq: true },
     { no: "304", floor: 3, empty: true },
 ];
 
+/* 오늘 기준으로 입실일 · 퇴실일을 계산해요 (날짜가 바뀌면 refreshToday 가 다시 불러요) */
+function setStay(r, base) {
+    const nights = r.nights || 1;
+    const stayed = r.stayed ?? nights;
+    r.start = dayAdd(base, -stayed);
+    r.end = dayAdd(r.start, nights);
+    r.origEnd = dayAdd(r.end, -(r.extNight || 0));
+}
+/* 내일 퇴실하는 객실인지: 오늘 새 손님이 입실하면 그 손님의 퇴실일 / 아니면 지금 손님의 퇴실일 (직원 배정 '내일' 탭이 써요) */
+function outDateNext(r) {
+    const base = todayMid();
+    if (r.nextIn) return dayAdd(base, r.nextNights || 1);
+    return r.end > base ? r.end : null;
+}
+
 /* 서버에서 받은 객실 한 건을 화면에서 쓰는 형태(날짜 계산 포함)로 바꿔요 */
 function normalizeRoom(r) {
-    if (r.empty) return r;
-    const nights = r.nights || 1;
     r.type = "스탠다드";
-    r.start = d(11, 10);
-    r.end = d(11, 10 + nights);
-    r.origEnd = d(11, 10 + nights - (r.extNight || 0));
+    if (r.empty) {
+        if (r.cleanReq && r.status === "done") cancelRequest(r); /* 요청 청소가 끝나면 빈 객실로 돌아가요 */
+        return r;
+    }
+    setStay(r, todayMid());
     r.origOut = addMinutes(r.out, -(r.extHour || 0) * 60);
     /* 시안 샘플: 퇴실을 연장한 객실 / 청소 시간을 직접 정한 객실은 '직접 고친 값'으로 취급 */
     r.outLocked = !!r.extHour;
     r.cleanLocked = !!r.clean;
     r.clean = r.clean || r.out;
     r.cleanLen = 0; /* applyHours() 가 운영 시간대 규칙으로 채워요 */
+    syncStayStatus(r);
+    if (r.cleanReq && r.status === "done") cancelRequest(r); /* 요청 청소가 끝나면 다시 숙박 중(칩 없음)으로 돌아가요 */
     return r;
 }
 /* ---------- 운영 시간대 기본 규칙 (모달에서 설정 / 모든 객실 타일의 기본값) ----------
@@ -170,11 +216,38 @@ const hoursKey = (r) => ([0, 6].includes(r.end.getDay()) ? "weekend" : "weekday"
    퇴실 시간 = 규칙의 퇴실 시간 / 청소 시작 = 퇴실 + N시간 후 / 청소 마감 = 입실 시간 - M시간 전 */
 function applyHours() {
     ROOMS.forEach((r) => {
-        if (r.empty) return;
+        if (r.empty) {
+            /* 빈 객실의 요청 청소: 시작 시간은 직접 정한 값, 마감만 규칙(입실 시간 - M시간)으로 */
+            if (r.cleanReq && r.clean) {
+                const hh = HOURS[[0, 6].includes(new Date().getDay()) ? "weekend" : "weekday"];
+                r.cleanLen = Math.max(0, toMin(hh.in) - Number(HOURS.cleanIn) * 60 - toMin(r.clean));
+            }
+            return;
+        }
+        /* 숙박 전환: 퇴실을 "숙박 전환 기준"(시간) 초과해 연장하면 연장 대신 1박 추가로 바꿔요 (0 = 사용 안 함)
+           새 퇴실일의 규칙 퇴실 시간으로 돌아가고, 이미 청소가 시작됐거나 끝난 객실은 건드리지 않아요 */
+        const limit = Number(HOURS.extend) * 60;
+        if (limit > 0 && r.outLocked && !["progress", "review", "done"].includes(r.status)) {
+            const base = HOURS[hoursKey(r)].out;
+            if (toMin(r.out) - toMin(base) > limit) {
+                r.nights = (r.nights || 1) + 1;
+                r.extNight = (r.extNight || 0) + 1;
+                r.extHour = 0;
+                r.end = dayAdd(r.end, 1);
+                r.outLocked = false;
+                syncStayStatus(r); /* 퇴실일이 오늘이 아니게 되면 청소 목록에서 빠져요 */
+            }
+        }
         const h = HOURS[hoursKey(r)];
-        if (!r.outLocked) {
-            r.out = h.out;
-            r.origOut = h.out;
+        if (!r.outLocked) r.out = h.out;
+        /* '연장' 칩은 운영 시간대에 등록한 퇴실 시간과 이 객실 퇴실 시간의 차이로 계산해요
+           (규칙을 바꾸면 직접 고친 객실의 연장 시간도 같이 다시 계산돼요) */
+        r.origOut = h.out;
+        /* 숙박 중인 객실은 청소 시간을 직접 정하기 전까지 청소 가능 시간이 없어요 */
+        if (isStayOnly(r) && !r.cleanLocked) {
+            r.clean = null;
+            r.cleanLen = 0;
+            return;
         }
         if (!r.cleanLocked) r.clean = addMinutes(r.out, Number(HOURS.cleanOut) * 60);
         const end = toMin(h.in) - Number(HOURS.cleanIn) * 60;
@@ -202,10 +275,57 @@ function applyAssignments() {
 /* 조퇴한 직원 (오늘 근무자 목록에서 빠져요 / 담당자를 바꾸면 객실의 조퇴 표시는 지워지지만 이 목록은 그대로 둬요) */
 const LEFT_EARLY = new Set(RAW_ROOMS.filter((r) => r.staffTag === "조퇴").map((r) => r.staff));
 applyAssignments();
+
+/* 청소 결과 화면과 공유하는 오늘의 검수 상태 (같은 객실 데이터를 두 화면이 함께 써요 / 서버 연결 시 서버 값으로 교체)
+   - 결과 화면에서 검수 완료 · 재청소 요청 · 요청 취소를 하면 여기에 저장하고, 메인의 객실 상태도 같이 바뀌어요 */
+const RESULT_KEY = "roomResult";
+const todayKey = () => {
+    const t = todayMid();
+    return `${t.getFullYear()}-${t.getMonth()}-${t.getDate()}`;
+};
+function loadResultState() {
+    try {
+        const s = JSON.parse(localStorage.getItem(RESULT_KEY));
+        if (s && s.date === todayKey()) return s.rooms || {};
+    } catch (e) { }
+    return {};
+}
+function saveResultState(no, row) {
+    const rooms = loadResultState();
+    rooms[no] = {
+        status: row.status, confirmed: !!row.confirmed, hist: row.hist, req: row.req || null,
+        msg: row.msg || null, first: row.first || null, prev: row.prev || null,
+    };
+    try {
+        localStorage.setItem(RESULT_KEY, JSON.stringify({ date: todayKey(), rooms }));
+    } catch (e) { }
+}
+/* 재청소 요청 = 메인에서는 다시 '청소 필요' / 검수 완료 = '청소 완료' / 검수 대기 = '검수 대기' */
+function applyResultState() {
+    const saved = loadResultState();
+    ROOMS.forEach((r) => {
+        const v = saved[r.no];
+        if (!v || r.empty) return;
+        r.status = v.status === "reclean" ? "todo" : v.status;
+    });
+}
+applyResultState();
 applyHours();
 
 /* 상단 요약 카드 숫자 (서버 데이터로 교체 대상) */
-let SUMMARY = { checkin: 12, checkout: 15, clean: 17, alert: 3 };
+/* 서버가 주는 요약 숫자가 없으면 객실 목록에서 바로 세요 (입실 · 퇴실 · 청소 대상 · 확인 필요) */
+let SUMMARY = { checkin: 0, checkout: 0, clean: 0, alert: 0 };
+let SUMMARY_AUTO = true;
+function deriveSummary() {
+    const today = todayMid().getTime();
+    const rooms = ROOMS.filter(inCleanList);
+    return {
+        checkin: rooms.filter((r) => r.nextIn || (r.start && r.start.getTime() === today)).length /* 오늘 입실 예정 */,
+        checkout: rooms.filter((r) => r.end && r.end.getTime() === today).length /* 오늘 퇴실 예정 */,
+        clean: rooms.filter((r) => !isStayOnly(r)).length /* 오늘 청소 대상 = 숙박 중(청소 없음) 객실은 빼요 */,
+        alert: rooms.filter((r) => ["review", "reassign"].includes(r.status)).length,
+    };
+}
 
 /* ---------- 상태 ---------- */
 let selectedNo = null;
@@ -214,13 +334,14 @@ let query = "";
 /* ---------- 객실 타일 ---------- */
 function roomCard(r) {
     if (r.empty) {
+        const reg = !!r.status; /* 청소를 요청해 등록된 빈 객실 */
         return `
-      <article class="room-card is-empty">
-        <div class="room-top"><span class="room-no">${r.no}호</span></div>
+      <article class="room-card is-empty${r.no === selectedNo ? " is-selected" : ""}" data-room="${r.no}" tabindex="0" role="button" aria-pressed="${r.no === selectedNo}">
+        <div class="room-top"><span class="room-no">${r.no}호</span>${reg ? `<span class="badge ${STATUS[r.status].tile}">${STATUS[r.status].label}</span>` : ""}</div>
         <dl class="room-info">
           <div><dt>일정</dt><dd>-</dd></div>
           <div><dt>퇴실</dt><dd>-</dd></div>
-          <div><dt>담당</dt><dd>-</dd></div>
+          <div><dt>담당</dt><dd>${staffText(r)}</dd></div>
         </dl>
       </article>`;
     }
@@ -231,12 +352,12 @@ function roomCard(r) {
         }">
         <div class="room-top">
           <span class="room-no">${r.no}호</span>
-          <span class="badge ${s.tile}">${s.label}</span>
+          ${isStayOnly(r) ? "" : `<span class="badge ${s.tile}">${s.label}</span>`}
         </div>
         <dl class="room-info">
           <div><dt>일정</dt><dd>${stayText(r)}</dd></div>
           <div><dt>퇴실</dt><dd>${r.out}${tagHtml(outTag(r))}</dd></div>
-          <div><dt>담당</dt><dd>${r.staff}${tagHtml(r.staffTag)}</dd></div>
+          <div><dt>담당</dt><dd>${staffText(r)}</dd></div>
         </dl>
       </article>`;
 }
@@ -286,8 +407,10 @@ function renderDetail() {
     }
 
     const done = r.status === "done";
+    /* 청소가 이미 시작됐거나 끝난 객실은 퇴실(연장)을 바꿀 수 없어요 → 연장은 새 예약으로 들어와요 */
+    const outLockedNow = ["progress", "review", "done"].includes(r.status);
     const edit = (kind, label) =>
-        done
+        done || (r.empty && kind === "checkout") || (kind === "checkout" && outLockedNow)
             ? ""
             : `<button class="btn-icon" type="button" data-edit="${kind}" aria-label="${label} 수정">${icon(
                 "pen"
@@ -295,7 +418,7 @@ function renderDetail() {
     const row = (label, value, kind) => `
       <div class="detail-row">
         <dt>${label}</dt>
-        <dd${kind && !done ? ' class="has-edit"' : ""}>${value}</dd>
+        <dd${kind && !done && !(r.empty && kind === "checkout") && !(kind === "checkout" && outLockedNow) ? ' class="has-edit"' : ""}>${value}</dd>
         ${kind ? edit(kind, label) : ""}
       </div>`;
 
@@ -310,15 +433,16 @@ function renderDetail() {
     <div class="detail-body">
       <div class="detail-room">
         <span class="detail-room-no">${r.no}호</span>
-        <span class="badge ${STATUS[r.status].panel}">${STATUS[r.status].label
-        }</span>
+        ${(r.empty && !r.status) || isStayOnly(r) ? "" : `<span class="badge ${STATUS[r.status].panel}">${STATUS[r.status].label}</span>`}
       </div>
       <dl class="detail-info">
         ${row("객실 유형", r.type)}
-        ${row("숙박 일정", `${stayText(r)}${tagHtml(stayTag(r))}`)}
+        ${r.empty
+            ? `${row("숙박 일정", "-")}${row("퇴실 예정", "-")}${row("청소 가능 시간", cleanText(r), "clean")}${row("담당 직원", staffText(r), "staff")}`
+            : `${row("숙박 일정", `${stayText(r)}${tagHtml(stayTag(r))}`)}
         ${row("퇴실 예정", `${r.out}${tagHtml(outTag(r))}`, "checkout")}
         ${row("청소 가능 시간", cleanText(r), "clean")}
-        ${row("담당 직원", `${r.staff}${tagHtml(r.staffTag)}`, "staff")}
+        ${row("담당 직원", staffText(r), "staff")}`}
       </dl>
       ${done
             ? `
@@ -337,7 +461,7 @@ function renderDetail() {
         </div>`
         }
     </div>
-    <button class="btn btn-lg btn-primary" type="button" data-result ${done ? "" : "disabled"
+    <button class="btn btn-lg btn-primary" type="button" data-result ${done || r.status === "review" ? "" : "disabled"
         }>청소 결과 확인하기</button>`;
 
     fitDetail();
@@ -463,7 +587,13 @@ function openPopover(kind, anchor, room) {
     pop.className = "popover";
     pop.setAttribute("role", "dialog");
 
+    /* 손님 요청으로 등록한 청소는 담당자 · 청소 가능 시간 팝오버에서 취소할 수 있어요 (아직 시작 전일 때만) */
+    const cancelBtn =
+        room && room.cleanReq && ["todo", "reassign"].includes(room.status) && ["clean", "staff"].includes(kind)
+            ? `<button class="btn btn-sm btn-outline pop-cancel" type="button" data-pop-cancel>청소 요청 취소</button>`
+            : "";
     const actions = `
+    ${cancelBtn}
     <div class="pop-actions">
       <button class="btn btn-sm btn-outline" type="button" data-pop-close>닫기</button>
       <button class="btn btn-sm btn-primary" type="button" data-pop-save>저장하기</button>
@@ -484,7 +614,7 @@ function openPopover(kind, anchor, room) {
     if (kind === "clean") {
         pop.innerHTML = `
       <p class="pop-label">청소 가능 시간</p>
-      ${timeField("popTime", room.clean)}
+      ${timeField("popTime", room.clean || "10:00")}
       ${actions}`;
         save = () => {
             const t = readTime();
@@ -492,6 +622,7 @@ function openPopover(kind, anchor, room) {
             room.clean = t;
             room.cleanLocked = true; /* 직접 고친 시간이 기본 규칙보다 우선 */
             applyHours();
+            maybeRegisterClean(room);
             return true;
         };
     }
@@ -572,7 +703,9 @@ function openPopover(kind, anchor, room) {
             room.end = sel;
             room.out = t;
             room.outLocked = true; /* 직접 고친 시간이 기본 규칙보다 우선 */
+            syncStayStatus(room); /* 퇴실일이 바뀌면 청소 대상 여부도 바뀌어요 */
             applyHours();
+            renderSummary(); /* 퇴실일이 바뀌면 위쪽 요약 카드 숫자도 같이 바뀌어요 */
             return true;
         };
     }
@@ -617,6 +750,7 @@ function openPopover(kind, anchor, room) {
                 if (room.status === "reassign")
                     room.status = "todo"; /* 재배정 완료 → 청소 필요 */
             }
+            maybeRegisterClean(room);
             return true;
         };
     }
@@ -681,6 +815,13 @@ function openPopover(kind, anchor, room) {
 
     pop.addEventListener("click", (e) => {
         if (e.target.closest("[data-pop-close]")) closePopover();
+        if (e.target.closest("[data-pop-cancel]")) {
+            cancelRequest(room);
+            closePopover();
+            renderSummary();
+            renderFloors();
+            renderDetail();
+        }
         if (e.target.closest("[data-pop-save]")) {
             if (save()) {
                 closePopover();
@@ -1069,6 +1210,14 @@ document.addEventListener("click", (e) => {
         return;
     }
 
+    /* 청소 결과 확인하기 → 청소 결과 화면에서 이 객실의 상세까지 열어요 */
+    const resBtn = e.target.closest("[data-result]");
+    if (resBtn && !resBtn.disabled) {
+        const t = todayMid();
+        const room = ROOMS.find((x) => x.no === selectedNo);
+        if (room) goResult({ room: room.no, date: `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}` });
+        return;
+    }
     const editBtn = e.target.closest("[data-edit]");
     if (editBtn) {
         const same = pop && popAnchor === editBtn;
@@ -1175,8 +1324,8 @@ async function fetchDashboard() {
 }
 
 function renderSummary() {
-    /* 검수 대기 + 재배정 필요 객실 수는 객실 목록에서 바로 세요 */
-    SUMMARY.alert = ROOMS.filter((r) => ["review", "reassign"].includes(r.status)).length;
+    if (SUMMARY_AUTO) Object.assign(SUMMARY, deriveSummary());
+    else SUMMARY.alert = ROOMS.filter((r) => ["review", "reassign"].includes(r.status)).length;
     const unit = { checkin: "실", checkout: "실", clean: "실", alert: "건" };
     document.querySelectorAll("[data-summary]").forEach((el) => {
         const k = el.dataset.summary;
@@ -1194,9 +1343,18 @@ function rerenderDetail() {
     if (next) next.scrollTop = top;
 }
 
+/* 숙박 중인 객실에 담당자와 청소 가능 시간을 모두 정하면 '손님 요청 청소'로 등록돼요 (청소 필요) */
+function maybeRegisterClean(r) {
+    if (canRequest(r) && r.staff && r.cleanLocked) {
+        r.status = "todo";
+        r.cleanReq = true;
+    }
+    renderSummary();
+}
+
 /* 서버 데이터를 화면에 반영해요. changed = 바뀐 객실 번호 목록 (없으면 전체 비교) */
 function applyLive(changed) {
-    const sel = selectedNo && ROOMS.find((x) => x.no === selectedNo && !x.empty);
+    const sel = selectedNo && ROOMS.find((x) => x.no === selectedNo);
     if (selectedNo && !sel) {
         closePopover();
         selectedNo = null;
@@ -1232,6 +1390,7 @@ async function refreshData() {
         keepAllFilters(() => {
             ROOMS.splice(0, ROOMS.length, ...data.rooms);
             SUMMARY = data.summary;
+            SUMMARY_AUTO = false;
             setNotifications(data.notifications);
         });
         applyLive(null);
@@ -1260,6 +1419,7 @@ const LIVE_HANDLERS = {
         keepAllFilters(() => {
             ROOMS.splice(0, ROOMS.length, ...data.rooms.map(normalizeRoom));
             SUMMARY = data.summary;
+            SUMMARY_AUTO = false;
             setNotifications(data.notifications);
         });
         applyLive(null);
@@ -1273,6 +1433,7 @@ const LIVE_HANDLERS = {
     },
     summary(data) {
         SUMMARY = data;
+        SUMMARY_AUTO = false;
         renderSummary();
         lastFetch = Date.now();
     },
@@ -1584,7 +1745,7 @@ function closeNoti() {
 
 /* 알림의 '현황 확인' 같은 버튼: 해당 객실을 선택해서 보여줘요 */
 function showRoom(no) {
-    const room = ROOMS.find((x) => x.no === no && !x.empty);
+    const room = ROOMS.find((x) => x.no === no);
     if (!room) return;
     selectRoom(no);
     if (!$(`.room-card[data-room="${no}"]`)) {
@@ -1930,3 +2091,25 @@ document.addEventListener("scroll", softClipSoon, { capture: true, passive: true
 window.addEventListener("resize", softClipSoon);
 new MutationObserver(softClipSoon).observe(document.body, { childList: true, subtree: true });
 softClipSoon();
+
+/* 날짜가 바뀌면 (자정이 지나거나, 며칠 만에 탭으로 돌아오면) 객실 카드의 일정을 새 오늘 기준으로 다시 계산해요 */
+let _dayKey = todayMid().getTime();
+function refreshToday() {
+    const now = todayMid().getTime();
+    if (now === _dayKey) return;
+    _dayKey = now;
+    const base = todayMid();
+    ROOMS.forEach((r) => {
+        if (r.empty) return;
+        setStay(r, base);
+        syncStayStatus(r);
+    });
+    applyHours();
+    if ($("#roomSearch")) {
+        renderSummary();
+        renderFloors();
+        renderDetail();
+    }
+}
+setInterval(refreshToday, 60 * 1000);
+document.addEventListener("visibilitychange", () => !document.hidden && refreshToday());

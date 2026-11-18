@@ -69,6 +69,28 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
 const dayKey = (dt) => `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
 const resultCache = {};
 
+/* 오늘의 결과: 메인의 객실 데이터(청소 완료 · 검수 대기)에서 만들고, 결과 화면에서 바꾼 검수 상태를 덧입혀요 */
+function todayResultRows() {
+    const saved = loadResultState();
+    return ROOMS.filter((r) => !r.empty && (["done", "review"].includes(r.status) || (saved[r.no] && saved[r.no].status === "reclean")))
+        .map((r) => {
+            const at = addMinutes(r.clean || r.out, 50);
+            const row = { no: r.no, type: r.type, staff: r.staff, status: r.status, at, hist: [[at, "최초 청소 완료"]] };
+            return saved[r.no] ? Object.assign(row, clone(saved[r.no])) : row;
+        });
+}
+/* 결과 화면에서 바꾼 오늘의 검수 상태를 저장해요 (메인 객실 상태와 공유) */
+function syncResult(r) {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    if (rsDate.getTime() !== t.getTime()) return;
+    saveResultState(r.no, r);
+    if (typeof applyResultState === "function") {
+        const room = ROOMS.find((x) => x.no === r.no);
+        if (room) room.status = r.status === "reclean" ? "todo" : r.status;
+    }
+}
+
 /* 날짜별 목록: 11.10 은 시안 그대로 / 그보다 이전은 전부 확인 완료 / 이후(오늘까지)는 일부 객실 / 미래는 없음 */
 function resultRows(date) {
     const key = dayKey(date);
@@ -76,7 +98,8 @@ function resultRows(date) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     let rows;
-    if (date.getTime() === RESULT_BASE_DATE.getTime()) rows = clone(RESULT_BASE);
+    if (date.getTime() === today.getTime()) rows = todayResultRows();
+    else if (date.getTime() === RESULT_BASE_DATE.getTime()) rows = clone(RESULT_BASE);
     else if (date > today) rows = [];
     else {
         rows = clone(RESULT_BASE).filter((_, i) => (i + date.getDate()) % 3 !== 0);
@@ -288,7 +311,10 @@ function fitRsDetail() {
 /* 선택한 줄이 바뀌면(다른 줄로 옮기거나 닫으면) 이전에 보던 청소 완료(초록) 결과는 확인한 것으로 보고 회색으로 바꿔요 */
 function moveRsSelection(next) {
     const prev = currentRows().find((x) => x.no === rsSelected);
-    if (prev && prev.no !== next && prev.status === "done" && !prev.confirmed) prev.confirmed = true;
+    if (prev && prev.no !== next && prev.status === "done" && !prev.confirmed) {
+        prev.confirmed = true;
+        syncResult(prev);
+    }
     rsSelected = next;
 }
 
@@ -346,6 +372,7 @@ function handleResultsClick(e) {
         r.confirmed = true;
         r.status = "done";
         r.hist.push([nowHHMM(), "검수 완료"]);
+        syncResult(r);
         renderResults();
         renderResultDetail();
         return true;
@@ -360,6 +387,7 @@ function handleResultsClick(e) {
         r.msg = msg || (req.length ? `${req.join(", ")} 재청소 요청` : "재청소 요청");
         r.first = r.first || r.at;
         r.hist.push([nowHHMM(), "재청소 요청", `요청사유: ${r.msg}`]);
+        syncResult(r);
         renderResults();
         renderResultDetail();
         openRsModal("requested");
@@ -519,6 +547,7 @@ rsModalEl.addEventListener("click", (e) => {
             r.req = null;
             r.msg = null;
             r.hist.push([nowHHMM(), "재청소 요청 취소"]);
+            syncResult(r);
             renderResults();
             renderResultDetail();
         }

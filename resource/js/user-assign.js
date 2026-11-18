@@ -16,12 +16,12 @@ const asStaffOf = (r) => asChanges[r.no] || r.staff;
 
 /* ---------- 내일 근무 객실 (시스템이 사전 규칙으로 미리 배정해 둬요) ----------
    ★ 사전 규칙은 나중에 '자동 배정 기준 설정' 모달에서 직접 등록할 예정이라, 지금은 아래 임의 규칙을 써요 (AS_RULES)
-   1) 내일 퇴실하는 객실이 내일 청소할 객실이에요 (연박 · 연장으로 퇴실일이 바뀐 객실은 알아서 빠지거나 들어와요)
+   1) 내일 퇴실하는 객실이 내일 청소할 객실이에요 (오늘 새로 입실하는 손님의 퇴실일 / 연박 중인 손님의 퇴실일 기준)
    2) 같은 층은 오늘 그 층을 맡던 직원에게 먼저 맡겨요 (floorAffinity)
    3) 직원별 객실 수는 최대 1실 차이로 고르게 나눠요 (balance)
    - 사용자가 드래그로 바꾼 담당자는 asTomSaved 에 저장되고 자동 배정보다 우선해요 */
 const AS_RULES = { floorAffinity: true, balance: true };
-const AS_TODAY = (ROOMS.find((r) => !r.empty) || {}).start || new Date();
+const AS_TODAY = todayMid();
 const AS_TOMORROW = new Date(AS_TODAY.getFullYear(), AS_TODAY.getMonth(), AS_TODAY.getDate() + 1);
 let asTomChanges = {}; /* { 객실번호: 담당자 } — 저장 전 변경사항 (내일) */
 let asTomSaved = {}; /* 저장된 변경사항 (내일) / 서버 연결 시 서버 값으로 교체 */
@@ -29,7 +29,11 @@ try {
     asTomSaved = JSON.parse(localStorage.getItem("roomAssignTomorrow")) || {};
 } catch (e) { }
 
-const asTomRooms = () => ROOMS.filter((r) => !r.empty && r.end.getTime() === AS_TOMORROW.getTime());
+const asTomRooms = () =>
+    ROOMS.filter((r) => {
+        const o = !r.empty && outDateNext(r);
+        return o && o.getTime() === AS_TOMORROW.getTime();
+    });
 const asTomWorkers = () => STAFF.slice(); /* 조퇴는 오늘 일이라 내일은 모두 근무해요 */
 
 function asAutoPlan() {
@@ -67,7 +71,7 @@ const asAvatar = (name) => {
 
 function asCount(name) {
     if (asDay === "tomorrow") return asTomRooms().filter((r) => asTomStaff(r) === name).length;
-    return ROOMS.filter((r) => !r.empty && AS_ACTIVE.includes(r.status) && asStaffOf(r) === name).length;
+    return ROOMS.filter((r) => inCleanList(r) && AS_ACTIVE.includes(r.status) && asStaffOf(r) === name).length;
 }
 
 /* 현재 맡은 객실이 적은 사람이 맨 앞 (같으면 직원 목록 순서) */
@@ -101,7 +105,7 @@ function asRooms() {
             .filter(() => filterPass("astatus", "assigned"))
             .filter((r) => !q || r.no.includes(q) || asTomStaff(r).includes(q))
             .sort((a, b) => a.floor - b.floor || Number(a.no) - Number(b.no));
-    return ROOMS.filter((r) => !r.empty && (r.status === "todo" || r.status === "reassign"))
+    return ROOMS.filter((r) => inCleanList(r) && (r.status === "todo" || r.status === "reassign"))
         .filter((r) => filterPass("astatus", asNeed(r) ? "need" : "assigned"))
         .filter((r) => !q || r.no.includes(q) || asStaffOf(r).includes(q))
         .sort((a, b) => a.floor - b.floor || (b.status === "reassign") - (a.status === "reassign") || Number(a.no) - Number(b.no));
