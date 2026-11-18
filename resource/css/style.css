@@ -2408,6 +2408,10 @@ button {
     gap: 12px;
 }
 
+.hm-tp .tp {
+    margin-top: 0;
+}
+
 .hm-input {
     position: relative;
     display: block;

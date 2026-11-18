@@ -11,8 +11,52 @@ let asRoomQuery = "";
 let asChanges = {}; /* { 객실번호: 새 담당자 } — 저장 전 변경사항 */
 
 const AS_ACTIVE = ["todo", "progress", "reassign"]; /* '현재 n실' 로 세는 객실 상태 */
-const asDirty = () => Object.keys(asChanges).length > 0;
+const asDirty = () => Object.keys(asChanges).length + Object.keys(asTomChanges).length > 0;
 const asStaffOf = (r) => asChanges[r.no] || r.staff;
+
+/* ---------- 내일 근무 객실 (시스템이 사전 규칙으로 미리 배정해 둬요) ----------
+   ★ 사전 규칙은 나중에 '자동 배정 기준 설정' 모달에서 직접 등록할 예정이라, 지금은 아래 임의 규칙을 써요 (AS_RULES)
+   1) 내일 퇴실하는 객실이 내일 청소할 객실이에요 (연박 · 연장으로 퇴실일이 바뀐 객실은 알아서 빠지거나 들어와요)
+   2) 같은 층은 오늘 그 층을 맡던 직원에게 먼저 맡겨요 (floorAffinity)
+   3) 직원별 객실 수는 최대 1실 차이로 고르게 나눠요 (balance)
+   - 사용자가 드래그로 바꾼 담당자는 asTomSaved 에 저장되고 자동 배정보다 우선해요 */
+const AS_RULES = { floorAffinity: true, balance: true };
+const AS_TODAY = (ROOMS.find((r) => !r.empty) || {}).start || new Date();
+const AS_TOMORROW = new Date(AS_TODAY.getFullYear(), AS_TODAY.getMonth(), AS_TODAY.getDate() + 1);
+let asTomChanges = {}; /* { 객실번호: 담당자 } — 저장 전 변경사항 (내일) */
+let asTomSaved = {}; /* 저장된 변경사항 (내일) / 서버 연결 시 서버 값으로 교체 */
+try {
+    asTomSaved = JSON.parse(localStorage.getItem("roomAssignTomorrow")) || {};
+} catch (e) { }
+
+const asTomRooms = () => ROOMS.filter((r) => !r.empty && r.end.getTime() === AS_TOMORROW.getTime());
+const asTomWorkers = () => STAFF.slice(); /* 조퇴는 오늘 일이라 내일은 모두 근무해요 */
+
+function asAutoPlan() {
+    const rooms = asTomRooms().sort((a, b) => a.floor - b.floor || Number(a.no) - Number(b.no));
+    const workers = asTomWorkers();
+    const cap = AS_RULES.balance ? Math.ceil(rooms.length / workers.length) : Infinity;
+    const load = Object.fromEntries(workers.map((n) => [n, 0]));
+    /* 오늘 층별로 누가 몇 실을 맡았는지 */
+    const hist = {};
+    ROOMS.filter((r) => !r.empty && r.staff).forEach((r) => {
+        hist[r.floor] = hist[r.floor] || {};
+        hist[r.floor][r.staff] = (hist[r.floor][r.staff] || 0) + 1;
+    });
+    const plan = {};
+    rooms.forEach((r) => {
+        const open = workers.filter((n) => load[n] < cap);
+        const score = (n) => (AS_RULES.floorAffinity ? (hist[r.floor] || {})[n] || 0 : 0);
+        const pick = open.slice().sort((a, b) => score(b) - score(a) || load[a] - load[b] || workers.indexOf(a) - workers.indexOf(b))[0];
+        plan[r.no] = pick;
+        load[pick]++;
+    });
+    return plan;
+}
+const AS_PLAN = asAutoPlan();
+const asTomBase = (r) => asTomSaved[r.no] || AS_PLAN[r.no];
+const asTomStaff = (r) => asTomChanges[r.no] || asTomBase(r);
+const asTomManual = (r) => !!(asTomChanges[r.no] || asTomSaved[r.no]);
 const asNeed = (r) => r.status === "reassign" && !asChanges[r.no]; /* 아직 담당자를 못 정한 재배정 필요 객실 */
 
 /* ---------- 오늘 근무자 ---------- */
@@ -22,12 +66,13 @@ const asAvatar = (name) => {
 };
 
 function asCount(name) {
+    if (asDay === "tomorrow") return asTomRooms().filter((r) => asTomStaff(r) === name).length;
     return ROOMS.filter((r) => !r.empty && AS_ACTIVE.includes(r.status) && asStaffOf(r) === name).length;
 }
 
 /* 현재 맡은 객실이 적은 사람이 맨 앞 (같으면 직원 목록 순서) */
 function asWorkers() {
-    return STAFF.filter((n) => !LEFT_EARLY.has(n))
+    return STAFF.filter((n) => asDay === "tomorrow" || !LEFT_EARLY.has(n))
         .map((name, i) => ({ name, n: asCount(name), i }))
         .sort((a, b) => a.n - b.n || a.i - b.i);
 }
@@ -45,13 +90,17 @@ function renderAssignWorkers() {
       </div>`
             )
             .join("")
-        : `<p class="floor-empty">${q ? "검색 결과가 없어요." : "오늘 근무자가 없어요."}</p>`;
+        : `<p class="floor-empty">${q ? "검색 결과가 없어요." : asDay === "tomorrow" ? "내일 근무자가 없어요." : "오늘 근무자가 없어요."}</p>`;
 }
 
 /* ---------- 배정 가능 객실 ---------- */
 function asRooms() {
-    if (asDay !== "today") return []; /* 내일 배정 데이터는 아직 없어요 */
     const q = asRoomQuery.trim();
+    if (asDay === "tomorrow")
+        return asTomRooms()
+            .filter(() => filterPass("astatus", "assigned"))
+            .filter((r) => !q || r.no.includes(q) || asTomStaff(r).includes(q))
+            .sort((a, b) => a.floor - b.floor || Number(a.no) - Number(b.no));
     return ROOMS.filter((r) => !r.empty && (r.status === "todo" || r.status === "reassign"))
         .filter((r) => filterPass("astatus", asNeed(r) ? "need" : "assigned"))
         .filter((r) => !q || r.no.includes(q) || asStaffOf(r).includes(q))
@@ -59,16 +108,19 @@ function asRooms() {
 }
 
 function asRoomCard(r) {
-    const need = asNeed(r);
-    const changed = !!asChanges[r.no];
-    const tag = r.staffTag && !changed ? `<span class="tag">${r.staffTag}</span>` : "";
+    const tom = asDay === "tomorrow";
+    const need = !tom && asNeed(r);
+    const changed = tom ? asTomManual(r) : !!asChanges[r.no];
+    const tag = tom
+        ? changed ? "" : `<span class="tag">자동 배정</span>`
+        : r.staffTag && !changed ? `<span class="tag">${r.staffTag}</span>` : "";
     return `
     <article class="as-room${need ? " is-need" : ""}" data-as-room="${r.no}" aria-label="${r.no}호 ${need ? "재배정 필요" : "배정완료"}">
       <div class="as-room-top">
         <strong>${r.no}호</strong>
         <span class="badge ${need ? "badge-reassign" : "badge-todo"}">${need ? "재배정 필요" : "배정완료"}</span>
       </div>
-      <p class="as-room-staff"><span>담당</span><b>${asStaffOf(r)}</b>${tag}</p>
+      <p class="as-room-staff"><span>담당</span><b>${tom ? asTomStaff(r) : asStaffOf(r)}</b>${tag}</p>
       ${need ? `<div class="as-drop">담당자를 드래그해 배정</div>` : ""}
     </article>`;
 }
@@ -113,6 +165,12 @@ window.addEventListener("resize", fitAssign);
 function assignTo(no, name) {
     const r = ROOMS.find((x) => x.no === no);
     if (!r) return;
+    if (asDay === "tomorrow") {
+        if (asTomBase(r) === name) delete asTomChanges[no]; /* 원래 담당자로 되돌리면 변경 없음 */
+        else asTomChanges[no] = name;
+        renderAssign();
+        return;
+    }
     if (r.status !== "reassign" && r.staff === name) delete asChanges[no]; /* 원래 담당자로 되돌리면 변경 없음 */
     else asChanges[no] = name;
     renderAssign();
@@ -261,6 +319,13 @@ function saveAssign() {
         localStorage.setItem("roomAssign", JSON.stringify(saved));
     } catch (e) { }
     asChanges = {};
+    if (Object.keys(asTomChanges).length) {
+        Object.assign(asTomSaved, asTomChanges);
+        try {
+            localStorage.setItem("roomAssignTomorrow", JSON.stringify(asTomSaved));
+        } catch (e) { }
+        asTomChanges = {};
+    }
     renderAssign();
 }
 
@@ -336,6 +401,8 @@ document.querySelector(".as-tabs").addEventListener("click", (e) => {
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", String(on));
     });
+    $("#asWorkersTitle").textContent = asDay === "tomorrow" ? "내일 근무자 목록" : "오늘 근무자 목록";
+    renderAssignWorkers();
     renderAssignRooms();
 });
 

@@ -119,7 +119,7 @@
                     <!-- 오늘 근무자 목록: 현재 맡은 객실 수가 적은 사람이 맨 앞 / 세로로 쌓이고 넘치면 목록 안에서 스크롤 -->
                     <section class="as-card as-workers">
                         <div class="as-card-head">
-                            <h2>오늘 근무자 목록</h2>
+                            <h2 id="asWorkersTitle">오늘 근무자 목록</h2>
                             <label class="search as-worker-search">
                                 <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
                                 <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt=""
@@ -204,19 +204,11 @@
                     <div class="hm-row">
                         <div class="hm-col">
                             <span class="hm-label">입실 시간</span>
-                            <label class="hm-input is-time">
-                                <img class="i20" src="resource/icon/time.svg" alt="이미지" />
-                                <input id="hmIn" type="text" inputmode="numeric" maxlength="5" placeholder="00:00"
-                                    autocomplete="off" aria-label="입실 시간" />
-                            </label>
+                            <div class="hm-tp" id="hmInTp"></div>
                         </div>
                         <div class="hm-col">
                             <span class="hm-label">퇴실 시간</span>
-                            <label class="hm-input is-time">
-                                <img class="i20" src="resource/icon/time.svg" alt="이미지" />
-                                <input id="hmOut" type="text" inputmode="numeric" maxlength="5" placeholder="00:00"
-                                    autocomplete="off" aria-label="퇴실 시간" />
-                            </label>
+                            <div class="hm-tp" id="hmOutTp"></div>
                         </div>
                     </div>
                 </div>

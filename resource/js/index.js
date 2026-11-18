@@ -412,6 +412,31 @@ function trackPopover() {
     requestAnimationFrame(tick);
 }
 
+/* 시간 선택 목록 HTML: 오전/오후 · 시 · 분 목록에서 골라요 (고른 값은 숨겨진 #id 에 "HH:MM" 으로 들어가요)
+   팝오버(퇴실 시간 등)와 운영 시간대 설정 모달이 같이 써요 */
+function timePickerHtml(id, value) {
+    const t = normTime(value) || "00:00";
+    const h24 = +t.slice(0, 2);
+    const h12 = h24 % 12 || 12;
+    const col = (key, items, cur) =>
+        `<div class="tp-col" data-col="${key}" role="listbox">${items
+            .map(
+                ([v, label]) =>
+                    `<button type="button" class="tp-item${v === cur ? " is-selected" : ""}" data-v="${v}" role="option" aria-selected="${v === cur}" tabindex="${v === cur ? 0 : -1}">${label}</button>`
+            )
+            .join("")}</div>`;
+    return `
+    <div class="tp" id="tp-${id}">
+      <button type="button" class="tp-field" aria-haspopup="listbox" aria-expanded="false">${icon("time")}<span class="tp-text">${t}</span></button>
+      <input id="${id}" type="hidden" value="${t}" />
+      <div class="tp-panel" hidden>
+        ${col("ap", [["AM", "오전"], ["PM", "오후"]], h24 < 12 ? "AM" : "PM")}
+        ${col("h", Array.from({ length: 12 }, (_, i) => [String(i + 1), pad(i + 1)]), String(h12))}
+        ${col("m", Array.from({ length: 60 }, (_, i) => [String(i), pad(i)]), String(+t.slice(3)))}
+      </div>
+    </div>`;
+}
+
 function placePopover() {
     if (!pop || !popAnchor || !document.contains(popAnchor)) return;
     trackPopover();
@@ -443,29 +468,8 @@ function openPopover(kind, anchor, room) {
       <button class="btn btn-sm btn-outline" type="button" data-pop-close>닫기</button>
       <button class="btn btn-sm btn-primary" type="button" data-pop-save>저장하기</button>
     </div>`;
-    /* 시간 선택: 오전/오후 · 시 · 분 목록에서 골라요 (고른 값은 숨겨진 #popTime 에 "HH:MM" 으로 들어가요) */
-    const timeField = (id, value) => {
-        const t = normTime(value) || "00:00";
-        const h24 = +t.slice(0, 2);
-        const h12 = h24 % 12 || 12;
-        const col = (key, items, cur) =>
-            `<div class="tp-col" data-col="${key}" role="listbox">${items
-                .map(
-                    ([v, label]) =>
-                        `<button type="button" class="tp-item${v === cur ? " is-selected" : ""}" data-v="${v}" role="option" aria-selected="${v === cur}" tabindex="${v === cur ? 0 : -1}">${label}</button>`
-                )
-                .join("")}</div>`;
-        return `
-    <div class="tp" id="tp-${id}">
-      <button type="button" class="tp-field" aria-haspopup="listbox" aria-expanded="false">${icon("time")}<span class="tp-text">${t}</span></button>
-      <input id="${id}" type="hidden" value="${t}" />
-      <div class="tp-panel" hidden>
-        ${col("ap", [["AM", "오전"], ["PM", "오후"]], h24 < 12 ? "AM" : "PM")}
-        ${col("h", Array.from({ length: 12 }, (_, i) => [String(i + 1), pad(i + 1)]), String(h12))}
-        ${col("m", Array.from({ length: 60 }, (_, i) => [String(i), pad(i)]), String(+t.slice(3)))}
-      </div>
-    </div>`;
-    };
+    /* 시간 선택: 오전/오후 · 시 · 분 목록 (timePickerHtml / initTimePicker 참고) */
+    const timeField = timePickerHtml;
     /* 저장할 때 시간을 읽어요 (형식이 틀리면 빨간 테두리) */
     const readTime = () => {
         const el = $("#popTime", pop);
@@ -720,8 +724,9 @@ function openPopover(kind, anchor, room) {
 
 /* 시간 선택 목록 동작: 클릭 / 위·아래 방향키로 고르고, 열릴 때 선택된 값이 가운데 오게 스크롤해요 */
 function initTimePicker(root) {
-    const tp = $(".tp", root);
-    if (!tp) return;
+    root.querySelectorAll(".tp").forEach((tp) => initOneTimePicker(root, tp));
+}
+function initOneTimePicker(root, tp) {
     const input = $("input[type=hidden]", tp);
     const text = $(".tp-text", tp);
     const cols = {};
@@ -763,6 +768,23 @@ function initTimePicker(root) {
         placePopover(); /* 목록이 화면 아래로 넘치면 팝오버를 그만큼 위로 올려요 */
     };
     field.addEventListener("click", () => setOpen(panel.hidden));
+    /* 바깥에서 값을 바꿀 때 (예: 평일/주말 탭 전환) */
+    tp._set = (value) => {
+        const t = normTime(value);
+        if (!t) return;
+        const h24 = +t.slice(0, 2);
+        const want = { ap: h24 < 12 ? "AM" : "PM", h: String(h24 % 12 || 12), m: String(+t.slice(3)) };
+        Object.entries(cols).forEach(([key, col]) =>
+            col.querySelectorAll(".tp-item").forEach((b) => {
+                const on = b.dataset.v === want[key];
+                b.classList.toggle("is-selected", on);
+                b.setAttribute("aria-selected", String(on));
+                b.tabIndex = on ? 0 : -1;
+            })
+        );
+        sync();
+        setOpen(false);
+    };
     tp.addEventListener("click", (e) => {
         const b = e.target.closest(".tp-item");
         if (!b) return;
@@ -1696,6 +1718,11 @@ let hmTab = "weekday";
 let hmTrigger = null;
 const hoursOpen = () => !hm.hidden;
 
+/* 입·퇴실 시간은 오전/오후 · 시 · 분 목록에서 골라요 (고른 값은 숨겨진 #hmIn / #hmOut 에 "HH:MM" 으로 들어가요) */
+$("#hmInTp").innerHTML = timePickerHtml("hmIn", HOURS.weekday.in);
+$("#hmOutTp").innerHTML = timePickerHtml("hmOut", HOURS.weekday.out);
+initTimePicker(hm);
+
 /* 탭을 바꾸기 전에 현재 탭의 입·퇴실 시간을 임시 보관해요 */
 const hmDraft = JSON.parse(JSON.stringify(HOURS));
 
@@ -1704,8 +1731,8 @@ function hmShowTab(tab) {
     hm.querySelectorAll("[data-hm-tab]").forEach((b) =>
         b.setAttribute("aria-selected", String(b.dataset.hmTab === tab))
     );
-    $("#hmIn").value = hmDraft[tab].in;
-    $("#hmOut").value = hmDraft[tab].out;
+    $("#tp-hmIn")._set(hmDraft[tab].in);
+    $("#tp-hmOut")._set(hmDraft[tab].out);
     hm.querySelectorAll(".is-error").forEach((el) => el.classList.remove("is-error"));
 }
 
@@ -1726,7 +1753,7 @@ function openHours(trigger) {
     $("#hmExtend").value = HOURS.extend;
     $("#hmDayUse").value = HOURS.dayUse;
     hm.hidden = false;
-    setTimeout(() => $("#hmIn").focus(), 50); /* 나타나는 전환이 시작된 뒤에 포커스 */
+    setTimeout(() => $("#tp-hmIn .tp-field").focus(), 50); /* 나타나는 전환이 시작된 뒤에 포커스 */
 }
 
 function closeHours() {
@@ -1747,7 +1774,7 @@ function saveHours() {
         el.classList.toggle("is-error", !ok);
         return ok;
     });
-    if (!i || !o) return (i ? $("#hmOut") : $("#hmIn")).focus();
+    if (!i || !o) return (i ? $("#tp-hmOut .tp-field") : $("#tp-hmIn .tp-field")).focus();
     const bad = nums.indexOf(false);
     if (bad > -1) return $("#" + ["hmCleanOut", "hmCleanIn", "hmExtend", "hmDayUse"][bad]).focus();
     HOURS = {
@@ -1782,31 +1809,34 @@ hm.addEventListener("click", (e) => {
 });
 $("#hmSave").addEventListener("click", saveHours);
 
-/* 시간 칸: 숫자만 입력하면 HH:MM 으로 자동 정리 / 숫자 칸: 숫자만 */
-["#hmIn", "#hmOut"].forEach((sel) => {
-    const el = $(sel);
-    el.addEventListener("input", () => {
-        const n = el.value.replace(/\D/g, "").slice(0, 4);
-        el.value = n.length > 2 ? `${n.slice(0, 2)}:${n.slice(2)}` : n;
+/* 숫자 칸 (청소 가능 시간 ~ 대실 최대 시간): 키보드로 입력하되 숫자만 들어가요
+   - 글자 키는 입력 단계에서 막고, 붙여넣기 · 한글 입력기(IME)로 들어온 글자도 바로 지워요 */
+function onlyDigits(el) {
+    const clean = () => {
+        const v = el.value.replace(/\D/g, "");
+        if (v !== el.value) el.value = v;
         el.classList.remove("is-error");
+    };
+    el.addEventListener("beforeinput", (e) => {
+        if (e.inputType.startsWith("insert") && e.data != null && /\D/.test(e.data)) e.preventDefault();
     });
-    el.addEventListener("blur", () => {
-        const t = normTime(el.value);
-        if (t) el.value = t;
+    el.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const max = el.maxLength > 0 ? el.maxLength : 99;
+        const t = (e.clipboardData.getData("text") || "").replace(/\D/g, "");
+        el.setRangeText(t, el.selectionStart, el.selectionEnd, "end");
+        el.value = el.value.slice(0, max);
+        clean();
     });
-});
-["#hmCleanOut", "#hmCleanIn", "#hmExtend", "#hmDayUse"].forEach((sel) => {
-    const el = $(sel);
-    el.addEventListener("input", () => {
-        el.value = el.value.replace(/\D/g, "");
-        el.classList.remove("is-error");
-    });
-});
+    el.addEventListener("input", clean);
+    el.addEventListener("compositionend", clean);
+}
+["#hmCleanOut", "#hmCleanIn", "#hmExtend", "#hmDayUse"].forEach((sel) => onlyDigits($(sel)));
 hm.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.matches("input")) saveHours();
     /* 모달 밖으로 포커스가 빠져나가지 않게 Tab 을 가둬요 */
     if (e.key === "Tab") {
-        const f = [...hm.querySelectorAll("button, input")].filter((x) => !x.disabled);
+        const f = [...hm.querySelectorAll("button, input")].filter((x) => !x.disabled && x.type !== "hidden" && x.tabIndex >= 0);
         const first = f[0],
             last = f[f.length - 1];
         if (e.shiftKey && document.activeElement === first) {
