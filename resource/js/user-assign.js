@@ -115,10 +115,10 @@ function asRoomCard(r) {
         ? changed ? "" : `<span class="tag">자동 배정</span>`
         : r.staffTag && !changed ? `<span class="tag">${r.staffTag}</span>` : "";
     return `
-    <article class="as-room${need ? " is-need" : ""}" data-as-room="${r.no}" aria-label="${r.no}호 ${need ? "재배정 필요" : "배정완료"}">
+    <article class="as-room${need ? " is-need" : ""}" data-as-room="${r.no}" aria-label="${r.no}호 ${need ? "재배정 필요" : "배정 완료"}">
       <div class="as-room-top">
         <strong>${r.no}호</strong>
-        <span class="badge ${need ? "badge-reassign" : "badge-todo"}">${need ? "재배정 필요" : "배정완료"}</span>
+        <span class="badge ${need ? "badge-reassign" : "badge-todo"}">${need ? "재배정 필요" : "배정 완료"}</span>
       </div>
       <p class="as-room-staff"><span>담당</span><b>${tom ? asTomStaff(r) : asStaffOf(r)}</b>${tag}</p>
       ${need ? `<div class="as-drop">담당자를 드래그해 배정</div>` : ""}
@@ -266,7 +266,7 @@ const AS_MODALS = {
         icon: "check-purple",
         title: "변경된 내용으로 저장하시겠습니까?",
         sub: ["변경한 객실별 담당 직원 정보가 일괄 저장되며,", "저장 후 해당 직원에게 배정 내용이 반영됩니다."],
-        btns: [["outline", "close", "닫기"], ["primary", "save", "변경사항 저장"]],
+        btns: [["outline", "close", "닫기"], ["primary", "save", "변경 사항 저장"]],
     },
     done: {
         icon: "check-purple",
@@ -276,8 +276,8 @@ const AS_MODALS = {
     leave: {
         icon: "exclamation-red",
         danger: true,
-        title: "저장되지 않은 변경사항이 있습니다!",
-        sub: ["저장하지 않고 페이지를 이동하면 변경사항이 사라지며,", "사라진 내용은 다시 복구할 수 없습니다."],
+        title: "저장되지 않은 변경 사항이 있습니다!",
+        sub: ["저장하지 않고 페이지를 이동하면 변경 사항이 사라지며,", "사라진 내용은 다시 복구할 수 없습니다."],
         btns: [["outline", "leave", "저장하지 않고 나가기"], ["primary", "close", "계속 수정"]],
     },
 };

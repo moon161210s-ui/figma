@@ -3386,7 +3386,7 @@ html:has(#viewResults) {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 6px;
     height: 48px;
     padding: 0 20px;
     border: 1px solid var(--color-line-normal);
