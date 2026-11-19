@@ -105,7 +105,8 @@ SI_STAFF.forEach((s) => {
 const siKey = (d) =>
     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const siWeekStart = (d) => dayAdd(d, -d.getDay());
-let siWeek = siWeekStart(todayMid());
+let siWeek = siWeekStart(todayMid()); /* 왼쪽 목록이 보여주는 주 */
+let siPWeek = siWeekStart(todayMid()); /* 오른쪽 패널이 보여주는 주 (목록과 따로 움직여요) */
 let siSelId = null; /* 수정 중인 직원 */
 let siDraft = null; /* 저장 전 수정 내용 */
 let siDay = null; /* 패널에서 고른 날짜 */
@@ -120,6 +121,7 @@ const siShiftOn = (s, d) => {
     return k in s.over ? s.over[k] : s.pattern[d.getDay()];
 };
 const siWeekDays = () => Array.from({ length: 7 }, (_, i) => dayAdd(siWeek, i));
+const siPanelDays = () => Array.from({ length: 7 }, (_, i) => dayAdd(siPWeek, i));
 
 function siSchedule(s) {
     const worked = siWeekDays()
@@ -138,8 +140,8 @@ function siSchedule(s) {
 const siAvatar = (s, size) => {
     const src = typeof STAFF_PHOTO !== "undefined" && STAFF_PHOTO[s.name];
     return `<span class="ui-avatar is-${size}">${src
-            ? `<img class="ui-avatar-photo" src="${src}" alt="" />`
-            : `<img class="ui-avatar-ic" src="${ICON("user-purple-small")}" alt="" />`
+        ? `<img class="ui-avatar-photo" src="${src}" alt="" />`
+        : `<img class="ui-avatar-ic" src="${ICON("user-purple-small")}" alt="" />`
         }</span>`;
 };
 
@@ -247,7 +249,7 @@ function renderStaffDetail() {
     }
     p.classList.remove("is-empty");
     const d = siDraft;
-    const week = siWeekDays();
+    const week = siPanelDays();
     const keep = p.querySelector(".ui-d-body")?.scrollTop || 0;
     const shiftOf = (day) => {
         const k = siKey(day);
@@ -255,7 +257,6 @@ function renderStaffDetail() {
     };
     const sel = siDay || week[0];
     const selShift = shiftOf(sel);
-    const isToday = siKey(sel) === siKey(todayMid());
     const first = week[0];
 
     p.innerHTML = `<div class="rs-d-head"><h2>직원 정보 수정</h2>
@@ -318,9 +319,8 @@ function renderStaffDetail() {
                         <div><dt>근무 시간</dt><dd>${selShift ? SI_SHIFTS[selShift].time : "-"
         }</dd></div></dl>
                     <div class="ui-daybox-btns">
-                        <button class="btn btn-sm btn-outline" type="button" data-ui="shift">근무 형태 변경</button>
-                        <button class="btn btn-sm btn-outline" type="button" data-ui="early" ${isToday && selShift ? "" : "disabled"
-        }>${d.state === "early" ? "조퇴 취소" : "조퇴 처리"
+                        <button class="btn btn-sm btn-outline" type="button" data-soon>근무 형태 변경</button>
+                        <button class="btn btn-sm btn-outline" type="button" data-soon>${d.state === "early" ? "조퇴 취소" : "조퇴 처리"
         }</button>
                     </div>
                 </div>
@@ -349,7 +349,8 @@ function siSelect(id) {
         state: s.state,
     };
     const today = todayMid();
-    const days = siWeekDays();
+    siPWeek = siWeek; /* 처음 열 때만 목록과 같은 주에서 시작해요 */
+    const days = siPanelDays();
     siDay = days.find((x) => siKey(x) === siKey(today)) || days[0];
     renderStaffInfo();
     renderStaffDetail();
@@ -458,11 +459,17 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !siModal.hidden) closeResign();
 });
 
+/* 왼쪽 목록의 주 이동 (오른쪽 패널은 그대로예요) */
 function siMoveWeek(dir) {
     siWeek = dayAdd(siWeek, 7 * dir);
-    if (siSelId) siDay = dayAdd(siDay || siWeek, 7 * dir);
     renderStaffInfo();
-    if (siSelId) renderStaffDetail();
+}
+
+/* 오른쪽 패널의 주 이동 (왼쪽 목록은 그대로예요) */
+function siMovePanelWeek(dir) {
+    siPWeek = dayAdd(siPWeek, 7 * dir);
+    if (siDay) siDay = dayAdd(siDay, 7 * dir);
+    renderStaffDetail();
 }
 
 document.addEventListener("click", (e) => {
@@ -502,19 +509,9 @@ document.addEventListener("click", (e) => {
     if (a === "close" || a === "cancel") siClose();
     else if (a === "save") openSaveConfirm();
     else if (a === "resign") openResign();
-    else if (a === "prev") siMoveWeek(-1);
-    else if (a === "next") siMoveWeek(1);
-    else if (a === "shift") {
-        const s = SI_STAFF.find((x) => x.id === siSelId);
-        const k = siKey(siDay);
-        const cur = k in siDraft.over ? siDraft.over[k] : s.pattern[siDay.getDay()];
-        siDraft.over[k] =
-            SI_SHIFT_ORDER[(SI_SHIFT_ORDER.indexOf(cur) + 1) % SI_SHIFT_ORDER.length];
-        renderStaffDetail();
-    } else if (a === "early") {
-        siDraft.state = siDraft.state === "early" ? "work" : "early";
-        renderStaffDetail();
-    }
+    else if (a === "prev") siMovePanelWeek(-1);
+    else if (a === "next") siMovePanelWeek(1);
+    /* 근무 형태 변경 · 조퇴 처리는 아직 연결 전이라 data-soon 으로 '준비 중' 모달을 띄워요 */
 });
 
 document.addEventListener("keydown", (e) => {
