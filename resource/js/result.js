@@ -90,6 +90,12 @@ const RESULT_FIXED = {
     },
 };
 
+/* 사용성 테스트용: 107호 재청소 요청 뒤 직원이 올린 재검수 내용 (재청소 요청을 누르면 이 내용으로 바뀌어요)
+   after: 재청소 요청 뒤 몇 분 만에 재검수를 요청하는지 / memo: 직원이 전달한 메모 (시정한 내용) */
+const RESULT_RECLEAN = {
+    107: { after: 25, memo: "욕실 바닥과 세면대에 남아 있던 물기를 다시 닦았어요. 환풍기가 작동하지 않아서 창문을 열어 환기도 했어요." },
+};
+
 /* 오늘의 결과: 메인의 객실 데이터(청소 완료 · 검수 대기)에서 만들고, 결과 화면에서 바꾼 검수 상태를 덧입혀요 */
 function todayResultRows() {
     const saved = loadResultState();
@@ -210,8 +216,13 @@ const PHOTO_GROUPS = [
     { name: "욕실 청소 상태", desc: "세면대와 변기, 바닥 상태가 보이도록 촬영해 주세요.", n: 4, fresh: 2 },
 ];
 
+/* 재검수를 요청하면(r.resub) 새로 올라온 사진이 앞에 와요 */
+const rsFixed = (r, gi, i) => {
+    const pick = (map) => map[r.no] && map[r.no][gi] && map[r.no][gi][i];
+    return (r.resub && pick(FIXED_PHOTOS_REDO)) || pick(FIXED_PHOTOS);
+};
 const rsPhoto = (r, gi, i) => ({
-    src: (FIXED_PHOTOS[r.no] && FIXED_PHOTOS[r.no][gi] && FIXED_PHOTOS[r.no][gi][i]) || ATTACHMENTS[(gi * 2 + i) % ATTACHMENTS.length],
+    src: rsFixed(r, gi, i) || ATTACHMENTS[(gi * 2 + i) % ATTACHMENTS.length],
     fresh: !!(r.resub && i < PHOTO_GROUPS[gi].fresh),
 });
 
@@ -414,6 +425,15 @@ function handleResultsClick(e) {
         r.msg = msg || (req.length ? `${req.join(", ")} 재청소 요청` : "재청소 요청");
         r.first = r.first || r.at;
         r.hist.push([nowHHMM(), "재청소 요청", `요청사유: ${r.msg}`]);
+        /* 사용성 테스트용: 107호는 재청소 요청을 하면 직원이 바로 다시 청소해서 재검수를 요청한 모습으로 바뀌어요 */
+        const rc = RESULT_RECLEAN[r.no];
+        if (rc && !r.redo) {
+            r.redo = { at: r.at };
+            r.resub = true; /* 새 사진에 NEW 배지 · 처음 청소 완료 시각에 취소선 */
+            r.at = addMinutes(nowHHMM(), rc.after);
+            r.hist.push([r.at, "직원 재검수 요청", `전달된 메모: ${rc.memo}`]);
+            r.memo = [r.at, rc.memo];
+        }
         syncResult(r);
         renderResults();
         renderResultDetail();
@@ -573,6 +593,14 @@ rsModalEl.addEventListener("click", (e) => {
             r.prev = null;
             r.req = null;
             r.msg = null;
+            if (r.redo) {
+                /* 요청을 취소하면 직원의 재검수 요청도 없던 일이 돼요 */
+                r.hist = r.hist.filter((h) => h[1] !== "직원 재검수 요청");
+                r.at = r.redo.at;
+                r.resub = false;
+                r.redo = null;
+                r.memo = null;
+            }
             r.hist.push([nowHHMM(), "재청소 요청 취소"]);
             syncResult(r);
             renderResults();

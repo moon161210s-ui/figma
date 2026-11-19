@@ -81,7 +81,10 @@ function renderStaffInfo() {
     const week = siWeekDays();
     $("#uiWeekText").textContent = `(${week[0].getFullYear()} ${pad(week[0].getMonth() + 1)}.${pad(week[0].getDate())} - ${pad(week[6].getMonth() + 1)}.${pad(week[6].getDate())})`;
     const q = siQuery.trim();
-    const list = SI_STAFF.filter((s) => s.account !== "resigned" && (!q || s.name.includes(q)) && (filters.wstatus.size === 0 || (s.state && filters.wstatus.has(s.state))));
+    /* 활성 직원 → 초대 대기 직원 순서 / 같은 그룹 안에서는 가나다순 */
+    const list = SI_STAFF.filter((s) => s.account !== "resigned" && (!q || s.name.includes(q)) && (filters.wstatus.size === 0 || (s.state && filters.wstatus.has(s.state)))).sort(
+        (a, b) => (a.account === "active" ? 0 : 1) - (b.account === "active" ? 0 : 1) || a.name.localeCompare(b.name, "ko")
+    );
     $("#uiCount").textContent = `전체 직원 총 ${SI_STAFF.filter((s) => s.account === "active").length}명`;
     const rows = list
         .map((s) => {

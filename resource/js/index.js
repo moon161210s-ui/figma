@@ -23,6 +23,10 @@ const ATTACHMENTS = [
 const FIXED_PHOTOS = {
     107: { 1: ["resource/img/clean-107-bath.jpg"] },
 };
+/* 107호 재청소 후 직원이 새로 올린 사진 (재검수 요청 상태에서 NEW 배지와 함께 보여요) → resource/img/ 에 넣어 주세요 */
+const FIXED_PHOTOS_REDO = {
+    107: { 1: ["resource/img/clean-107-bath-redo-1.jpg", "resource/img/clean-107-bath-redo-2.jpg"] },
+};
 /* 메인 우측 패널의 첨부파일: 고정 사진이 있는 객실은 그 사진을 맨 앞에 써요 */
 const roomPhotos = (no) => {
     const fixed = Object.values(FIXED_PHOTOS[no] || {}).flat();
@@ -361,6 +365,7 @@ function saveResultState(no, row) {
     rooms[no] = {
         status: row.status, confirmed: !!row.confirmed, hist: row.hist, req: row.req || null,
         msg: row.msg || null, first: row.first || null, prev: row.prev || null,
+        at: row.at, resub: !!row.resub, memo: row.memo || null, redo: row.redo || null,
     };
     try {
         localStorage.setItem(RESULT_KEY, JSON.stringify({ date: todayKey(), rooms }));
@@ -2254,3 +2259,20 @@ function syncScrollLock() {
 }
 new MutationObserver(syncScrollLock).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["hidden"] });
 syncScrollLock();
+
+/* 세로 스크롤바는 스크롤하는 동안만 잠깐 보여요 (멈추고 1.5초 뒤에 사라져요 / CSS 의 .is-scrolling 참고) */
+const scrollTimers = new WeakMap();
+document.addEventListener(
+    "scroll",
+    (e) => {
+        /* 페이지 전체 스크롤은 html 과 body 둘 다 (브라우저가 어느 쪽 스타일을 쓰든 보이게) */
+        const els = e.target === document ? [document.documentElement, document.body] : [e.target];
+        els.forEach((el) => {
+            if (!el || !el.classList) return;
+            el.classList.add("is-scrolling");
+            clearTimeout(scrollTimers.get(el));
+            scrollTimers.set(el, setTimeout(() => el.classList.remove("is-scrolling"), 1500));
+        });
+    },
+    true
+);

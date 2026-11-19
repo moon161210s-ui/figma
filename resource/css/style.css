@@ -1992,6 +1992,15 @@ button {
     touch-action: pan-x;
 }
 
+/* 알림 센터 탭의 가로 스크롤바는 숨겨요 (끌어서 옆으로 넘겨요) */
+.noti-tabs {
+    scrollbar-width: none;
+}
+
+.noti-tabs::-webkit-scrollbar {
+    display: none;
+}
+
 .noti-tabs.is-dragging {
     cursor: grabbing;
 }
@@ -5826,8 +5835,13 @@ body.rl-dragging * {
 }
 
 /* 모달이 열려 있는 동안 뒤쪽 화면은 스크롤되지 않아요 (모달 안쪽만 스크롤) */
-html.is-modal-open,
-html.is-modal-open body {
+/* body 에는 overflow 를 걸지 않아요: 걸면 body 가 스크롤 영역이 돼서 sticky(사이드바 · 헤더)가 풀리고 뒤쪽 화면이 어긋나요 */
+html {
+    scrollbar-gutter: stable;
+    /* 스크롤바 자리를 늘 비워 둬서, 모달이 열려 스크롤바가 사라져도 화면 폭이 변하지 않아요 */
+}
+
+html.is-modal-open {
     overflow: hidden;
 }
 
@@ -6386,8 +6400,8 @@ html.is-modal-open body {
 }
 
 .td-imgs.is-lg .td-img {
-    width: 120px;
-    height: 80px;
+    width: 160px;
+    height: 107px;
     border-radius: var(--radius-sm);
 }
 
@@ -6569,14 +6583,14 @@ html.is-modal-open body {
     opacity: 0.9;
 }
 
+/* 항목 사이 간격(32px)은 안쪽 내용에 줘서, 타임라인 줄이 그 간격까지 이어져요 */
 .td-item {
     display: flex;
     gap: 8px;
-    padding-bottom: 32px;
 }
 
-.td-item:last-child {
-    padding-bottom: 0;
+.td-item:not(:last-child) .td-sec {
+    padding-bottom: 32px;
 }
 
 .td-time {
@@ -6676,5 +6690,17 @@ html.is-modal-open body {
 @supports not selector(::-webkit-scrollbar) {
     .ui-table {
         scrollbar-color: var(--color-gray-200) transparent;
+    }
+}
+
+/* ---------- 세로 스크롤바: 스크롤하는 동안만 보여요 ----------
+ index.js 가 스크롤 중인 영역에 .is-scrolling 을 붙였다가 멈추고 1.5초 뒤에 떼요 (가로 스크롤바는 그대로예요) */
+*:not(.is-scrolling)::-webkit-scrollbar-thumb:vertical {
+    background: transparent !important;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    *:not(.is-scrolling):not(.th-board):not(.ui-table):not(.noti-tabs) {
+        scrollbar-color: transparent transparent;
     }
 }
