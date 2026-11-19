@@ -71,7 +71,7 @@ const resultCache = {};
 
 /* 사용성 테스트용으로 내용을 고정한 객실 (오늘 날짜 / 메인 · 업무 특이사항과 같은 이야기로 이어져요)
    - 105호: 문제없이 꼼꼼하게 끝낸 청소
-   - 107호: 욕실 환풍기가 고장 나서 욕실 물기가 덜 마른 청소 (인증 사진은 FIXED_PHOTOS 로 고정) */
+   - 107호: 욕실 환풍기가 고장 나서 욕실 물기가 덜 마른 청소 · 메모 없이 특이사항 보고만 (인증 사진은 FIXED_PHOTOS 로 고정) */
 const RESULT_FIXED = {
     105: {
         start: 10, /* 청소 가능 시각보다 몇 분 뒤에 시작했는지 */
@@ -84,8 +84,8 @@ const RESULT_FIXED = {
     },
     107: {
         start: 10,
-        hist: (s, e) => [[s, "청소 시작"], [e, "최초 청소 완료", "욕실 환풍기가 작동하지 않아 물기가 완전히 마르지 않았어요."]],
-        memo: "욕실 환풍기가 작동하지 않아서 수건으로 닦아도 바닥에 물기가 조금 남았어요. 시설 점검이 필요해요.",
+        hist: (s, e) => [[s, "청소 시작"], [e, "최초 청소 완료"]],
+        /* 전달된 메모 없이 특이사항 보고만 남겨요 */
         notes: [[0, "16:05", "유가은", "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다."]],
     },
 };
@@ -100,7 +100,7 @@ function todayResultRows() {
             const fx = RESULT_FIXED[r.no];
             if (fx) {
                 row.hist = fx.hist(addMinutes(r.clean || r.out, fx.start), at);
-                row.memo = [at, fx.memo];
+                if (fx.memo) row.memo = [at, fx.memo];
                 row.notes = fx.notes.map(([off, , name, text]) => [off, addMinutes(at, -5), name, text]);
             }
             return saved[r.no] ? Object.assign(row, clone(saved[r.no])) : row;

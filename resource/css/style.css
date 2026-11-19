@@ -5884,3 +5884,312 @@ html.is-modal-open body {
     justify-content: flex-end;
     padding-right: 8px;
 }
+
+/* ---------- 직원 배정: 자동 배정 기준 설정 모달 ---------- */
+.hm-box.as-set {
+    width: 592px;
+}
+
+.as-set .hm-body {
+    gap: 36px;
+}
+
+.as-set h3 {
+    margin: 0;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.as-set-sec {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.as-set-top {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.as-set-tx {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.as-set-tx p {
+    margin: 0;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+}
+
+/* 우선순위 목록 */
+.as-rank-list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.as-rank {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px 14px 8px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-md);
+    background: var(--color-base-inverse);
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.15s ease;
+}
+
+.as-rank.is-drag {
+    position: relative;
+    z-index: 2;
+    box-shadow: var(--shadow-popover);
+    cursor: grabbing;
+    transition: none;
+}
+
+.as-rank-handle {
+    flex-shrink: 0;
+    touch-action: none;
+}
+
+.as-rank-badge {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    height: 32px;
+    padding: 0 12px;
+    margin-right: 4px;
+    border-radius: var(--radius-xs);
+    background: var(--color-primary-50);
+    color: var(--color-primary-500);
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    font-weight: var(--fw-bold);
+    white-space: nowrap;
+}
+
+.as-rank-tx {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    opacity: 0.9;
+}
+
+.as-rank-tx strong {
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.as-rank-tx span {
+    color: var(--color-gray-300);
+}
+
+/* 세부 설정 */
+.as-set-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.as-set-grp {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.as-set-lb {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.as-set-lb strong,
+.as-set-lb-t {
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.as-set-lb span {
+    color: var(--color-gray-300);
+}
+
+.as-max {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-900);
+}
+
+.as-max-in {
+    display: block;
+    width: 160px;
+    height: 40px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+}
+
+.as-max-in:focus-within {
+    border-color: var(--color-primary-500);
+}
+
+.as-max-in input {
+    width: 100%;
+    height: 100%;
+    padding: 0 12px;
+    border: 0;
+    outline: 0;
+    background: none;
+    font: inherit;
+    font-weight: var(--fw-regular);
+    color: var(--color-gray-900);
+}
+
+/* 라디오: 같은 name 이라 하나를 고르면 다른 하나는 자동으로 풀려요 / 오른쪽 글자까지 누를 수 있어요 */
+.as-rd {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.as-rd input,
+.as-chk-row input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+.as-radio {
+    position: relative;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin: 2px 0;
+    border: 1px solid var(--color-line-normal);
+    border-radius: 50%;
+    background: var(--color-base-inverse);
+}
+
+.as-rd input:checked+.as-radio {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-500);
+}
+
+.as-rd input:checked+.as-radio::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--color-base-inverse);
+}
+
+.as-rd input:focus-visible+.as-radio,
+.as-chk-row input:focus-visible+.as-chk {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+}
+
+.as-rd-tx {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.as-rd-tx b {
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-900);
+}
+
+.as-rd-tx span {
+    color: var(--color-gray-300);
+}
+
+.as-rd-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 체크박스: 위의 라디오가 선택됐을 때만 보여요 */
+.as-chk-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 28px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+    cursor: pointer;
+}
+
+.as-chk-row[hidden] {
+    display: none;
+}
+
+.as-chk {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-xs);
+    background: var(--color-base-inverse);
+}
+
+.as-chk img {
+    display: none;
+    width: 16px;
+    height: 16px;
+}
+
+.as-chk-row input:checked+.as-chk {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-500);
+}
+
+.as-chk-row input:checked+.as-chk img {
+    display: block;
+}
+
+.as-notice {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-base);
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+}
+
+.as-notice p {
+    margin: 0;
+}

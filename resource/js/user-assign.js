@@ -14,6 +14,29 @@ const AS_ACTIVE = ["todo", "progress", "reassign"]; /* '현재 n실' 로 세는 
 const asDirty = () => Object.keys(asChanges).length + Object.keys(asTomChanges).length > 0;
 const asStaffOf = (r) => asChanges[r.no] || r.staff;
 
+/* ---------- 자동 배정 기준 (모달에서 바꾸는 값 / 서버 연결 시 서버 설정으로 교체) ---------- */
+const AS_SET_KEY = "assignSettings";
+const AS_CRITERIA = {
+    time: ["청소 가능 시간 균등분배", "객실 수보다 설정된 청소 가능 시간을 기준으로 고르게 나눕니다."],
+    count: ["담당 객실 수를 비슷하게 배정", "직원마다 맡는 객실 수가 비슷하도록 배정합니다."],
+    skill: ["숙련도에 맞춰 배정", "설정된 숙련도를 기준으로"],
+};
+const AS_SET_DEFAULT = { mode: "auto", order: ["time", "count", "skill"], maxMin: 0, apply: "future", keepManual: false };
+function asSettings() {
+    try {
+        const v = JSON.parse(localStorage.getItem(AS_SET_KEY)) || {};
+        const order = Array.isArray(v.order) && v.order.length === 3 && v.order.every((k) => k in AS_CRITERIA) ? v.order : AS_SET_DEFAULT.order;
+        return { ...AS_SET_DEFAULT, ...v, order };
+    } catch (e) {
+        return { ...AS_SET_DEFAULT };
+    }
+}
+const asSaveSettings = (v) => {
+    try {
+        localStorage.setItem(AS_SET_KEY, JSON.stringify(v));
+    } catch (e) { }
+};
+
 /* ---------- 내일 근무 객실 (시스템이 사전 규칙으로 미리 배정해 둬요) ----------
    ★ 사전 규칙은 나중에 '자동 배정 기준 설정' 모달에서 직접 등록할 예정이라, 지금은 아래 임의 규칙을 써요 (AS_RULES)
    1) 내일 퇴실하는 객실이 내일 청소할 객실이에요 (오늘 새로 입실하는 손님의 퇴실일 / 연박 중인 손님의 퇴실일 기준)
@@ -59,7 +82,8 @@ function asAutoPlan() {
     });
     return plan;
 }
-const AS_PLAN = asAutoPlan();
+/* 수동 배정이면 시스템이 미리 배정하지 않아요 (자동 배정 기준 설정 모달에서 바꿔요) */
+let AS_PLAN = asSettings().mode === "manual" ? {} : asAutoPlan();
 /* 퇴사한 직원에게 미리 저장해 둔 담당자는 무시하고, 남은 직원끼리 새로 자동 배정한 값을 써요 */
 const asTomSavedOk = (r) => !!asTomSaved[r.no] && asTomWorkers().includes(asTomSaved[r.no]);
 const asTomBase = (r) => (asTomSavedOk(r) ? asTomSaved[r.no] : AS_PLAN[r.no] || "-");
@@ -400,8 +424,179 @@ window.addEventListener("beforeunload", (e) => {
     }
 });
 
+
+/* ---------- 자동 배정 기준 설정 모달 ---------- */
+const asSetModal = document.createElement("div");
+asSetModal.className = "hm";
+asSetModal.id = "asSetModal";
+asSetModal.hidden = true;
+document.body.appendChild(asSetModal);
+let asSetDraft = null;
+
+const asSetRankHtml = (order) =>
+    order
+        .map(
+            (k, i) => `<div class="as-rank" data-key="${k}">
+        <img class="i24 as-rank-handle" src="${ICON("handle")}" alt="" draggable="false" />
+        <span class="as-rank-badge">${i + 1}순위</span>
+        <div class="as-rank-tx"><strong>${AS_CRITERIA[k][0]}</strong><span>${AS_CRITERIA[k][1]}</span></div>
+    </div>`
+        )
+        .join("");
+
+function openAsSet() {
+    const v = asSettings();
+    asSetDraft = { ...v, order: v.order.slice() };
+    asSetModal.innerHTML = `
+    <div class="hm-box as-set" role="dialog" aria-modal="true" aria-labelledby="asSetTitle">
+      <div class="hm-head">
+        <h2 class="hm-title" id="asSetTitle">자동 배정 기준 설정</h2>
+        <button class="hm-close" type="button" data-as-set="close" aria-label="닫기"><img class="i20" src="${ICON("close")}" alt="" /></button>
+      </div>
+      <div class="hm-body">
+        <section class="as-set-sec as-set-top">
+          <div class="as-set-tx"><h3>직원 자동 배정</h3><p>청소 일정이 생기면, 설정된 배정 기준과<br />직원별 근무 일정을 바탕으로 자동 배정합니다.</p></div>
+          <div class="ui-seg" role="group" aria-label="배정 방식">
+            <button type="button" data-as-mode="auto" class="${v.mode === "auto" ? "is-on" : ""}" aria-pressed="${v.mode === "auto"}">자동 배정</button>
+            <button type="button" data-as-mode="manual" class="${v.mode === "manual" ? "is-on" : ""}" aria-pressed="${v.mode === "manual"}">수동 배정</button>
+          </div>
+        </section>
+        <section class="as-set-sec">
+          <div class="as-set-tx"><h3>배정 우선순위</h3><p>위쪽 기준부터 우선 적용합니다. 순서를 변경해 운영 방식에 맞게 설정하세요.</p></div>
+          <div class="as-rank-list" id="asRankList">${asSetRankHtml(v.order)}</div>
+        </section>
+        <section class="as-set-sec">
+          <h3>세부 배정 설정</h3>
+          <div class="as-set-detail">
+            <div class="as-set-grp">
+              <div class="as-set-lb"><strong>직원당 하루 최대 업무량</strong><span>설정한 최대 업무량을 초과하면 미배정 상태로 남습니다.</span></div>
+              <div class="as-max"><span>최대</span>
+                <label class="as-max-in"><input type="text" inputmode="numeric" id="asMax" value="${v.maxMin}" maxlength="4" aria-label="하루 최대 업무량(분)" /></label>
+                <span>분</span></div>
+            </div>
+            <div class="as-set-grp">
+              <strong class="as-set-lb-t">기준 적용 방식</strong>
+              <label class="as-rd"><input type="radio" name="asApply" value="future"${v.apply === "future" ? " checked" : ""} /><span class="as-radio"></span>
+                <span class="as-rd-tx"><b>앞으로 생성되는 일정부터 적용</b><span>기존 배정은 유지하며 새 일정부터 적용합니다.</span></span></label>
+              <div class="as-rd-item">
+                <label class="as-rd"><input type="radio" name="asApply" value="today"${v.apply === "today" ? " checked" : ""} /><span class="as-radio"></span>
+                  <span class="as-rd-tx"><b>오늘 미시작 업무도 다시 배정</b></span></label>
+                <label class="as-chk-row" id="asKeepRow"${v.apply === "today" ? "" : " hidden"}><input type="checkbox" id="asKeep"${v.keepManual ? " checked" : ""} /><span class="as-chk"><img src="${ICON("check-white")}" alt="" /></span><span>관리자가 수동 변경한 배정은 유지</span></label>
+              </div>
+            </div>
+            <div class="as-notice"><img class="i24" src="${ICON("exclamation-circle-gray")}" alt="" /><p>저장 후 선택한 적용 방식에 따라 반영됩니다.</p></div>
+          </div>
+        </section>
+      </div>
+      <div class="hm-foot">
+        <button class="btn btn-lg btn-outline" type="button" data-as-set="close">닫기</button>
+        <button class="btn btn-lg btn-primary" type="button" data-as-set="save">저장</button>
+      </div>
+    </div>`;
+    asSetModal.hidden = false;
+}
+const closeAsSet = () => {
+    asSetModal.hidden = true;
+    asSetModal.innerHTML = "";
+    asSetDraft = null;
+};
+
+/* 세그먼트: 바꿀 때마다 바로 시스템 값을 바꿔요 */
+function asSetMode(mode) {
+    const cur = asSettings();
+    if (cur.mode === mode) return;
+    asSaveSettings({ ...cur, mode });
+    AS_PLAN = mode === "manual" ? {} : asAutoPlan();
+    asSetModal.querySelectorAll("[data-as-mode]").forEach((b) => {
+        const on = b.dataset.asMode === mode;
+        b.classList.toggle("is-on", on);
+        b.setAttribute("aria-pressed", on);
+    });
+    if (typeof renderAssign === "function") renderAssign();
+}
+
+/* 우선순위: 눌러서 끌면 위치가 바뀌고, 놓을 때마다 순위 숫자가 다시 매겨져요 */
+function asRankDrag(e) {
+    const el = e.target.closest(".as-rank");
+    const list = el && el.parentElement;
+    if (!el || e.button > 0) return;
+    e.preventDefault();
+    const lr = list.getBoundingClientRect();
+    const grab = e.clientY - el.getBoundingClientRect().top; /* 잡은 위치 */
+    el.classList.add("is-drag");
+    el.setPointerCapture(e.pointerId);
+    const numbers = () => list.querySelectorAll(".as-rank").forEach((r, i) => (r.querySelector(".as-rank-badge").textContent = `${i + 1}순위`));
+    const place = (clientY) => {
+        const y = clientY - lr.top - grab;
+        const max = list.offsetHeight - el.offsetHeight;
+        el.style.transform = `translateY(${Math.min(Math.max(y, 0), max) - el.offsetTop}px)`;
+        const mid = Math.min(Math.max(y, 0), max) + el.offsetHeight / 2;
+        const swap = (other, before) => {
+            const was = other.offsetTop;
+            before ? list.insertBefore(el, other) : list.insertBefore(el, other.nextSibling);
+            const d = was - other.offsetTop; /* 밀려난 카드가 부드럽게 제자리로 가요 */
+            other.style.transition = "none";
+            other.style.transform = `translateY(${d}px)`;
+            other.getBoundingClientRect();
+            other.style.transition = "";
+            other.style.transform = "";
+            numbers();
+        };
+        const prev = el.previousElementSibling;
+        const next = el.nextElementSibling;
+        if (prev && mid < prev.offsetTop + prev.offsetHeight / 2) swap(prev, true);
+        else if (next && mid > next.offsetTop + next.offsetHeight / 2) swap(next, false);
+        el.style.transform = `translateY(${Math.min(Math.max(y, 0), max) - el.offsetTop}px)`;
+    };
+    place(e.clientY);
+    const move = (ev) => place(ev.clientY);
+    const up = () => {
+        el.removeEventListener("pointermove", move);
+        el.removeEventListener("pointerup", up);
+        el.removeEventListener("pointercancel", up);
+        el.classList.remove("is-drag");
+        el.style.transform = "";
+        asSetDraft.order = [...list.querySelectorAll(".as-rank")].map((r) => r.dataset.key);
+        numbers();
+    };
+    el.addEventListener("pointermove", move);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+}
+
+asSetModal.addEventListener("pointerdown", (e) => e.target.closest(".as-rank") && asRankDrag(e));
+asSetModal.addEventListener("click", (e) => {
+    if (e.target === asSetModal) return closeAsSet();
+    const m = e.target.closest("[data-as-mode]");
+    if (m) return asSetMode(m.dataset.asMode);
+    const b = e.target.closest("[data-as-set]");
+    if (!b) return;
+    if (b.dataset.asSet === "save") {
+        const cur = asSettings();
+        asSaveSettings({
+            ...cur,
+            order: asSetDraft.order,
+            maxMin: +asSetModal.querySelector("#asMax").value || 0,
+            apply: asSetModal.querySelector("input[name=asApply]:checked").value,
+            keepManual: asSetModal.querySelector("#asKeep").checked,
+        });
+    }
+    closeAsSet();
+});
+/* 라디오는 둘 중 하나만 선택돼요 (같은 name) / 체크박스는 '오늘 미시작 업무도 다시 배정'을 골랐을 때만 보여요 */
+asSetModal.addEventListener("change", (e) => {
+    if (e.target.name !== "asApply") return;
+    asSetModal.querySelector("#asKeepRow").hidden = e.target.value !== "today";
+});
+asSetModal.addEventListener("input", (e) => {
+    if (e.target.id === "asMax") e.target.value = e.target.value.replace(/\D/g, "");
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !asSetModal.hidden) closeAsSet();
+});
+
 /* ---------- 이벤트 ---------- */
-$("#asAuto")?.setAttribute("data-soon", "");
+$("#asAuto")?.addEventListener("click", openAsSet);
 $("#asSave").addEventListener("click", () => asDirty() && openAsModal("save"));
 $("#asWorkerSearch").addEventListener("input", (e) => {
     asWorkerQuery = e.target.value;
