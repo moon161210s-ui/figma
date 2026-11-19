@@ -60,7 +60,10 @@ const RV_RESERVATIONS = [
 ];
 
 /* ---------- 채널 로고 (resource/*.svg) ---------- */
-const rvLogo = (file, name) => `<img class="rv-logo" src="resource/${file}.svg" alt="${name}" />`;
+/* 시안(기업로고): 높이 15.83 상자 안에 로고 / 로고마다 가로폭이 달라요 (야놀자 24 · 여기어때 40 / 나머지는 높이 12 기준 자동) */
+const RV_LOGO_W = { nol: 24, here: 40 };
+const rvLogo = (file, name) =>
+    `<span class="rv-logo"><img src="resource/${file}.svg" alt="${name}"${RV_LOGO_W[file] ? ` style="width:${RV_LOGO_W[file]}px"` : ' class="is-auto"'} /></span>`;
 const RV_CH = {
     nol: { name: "야놀자", html: rvLogo("nol", "야놀자") },
     yeogi: { name: "여기어때", html: rvLogo("here", "여기어때") },
@@ -70,6 +73,13 @@ const RV_CH = {
 };
 
 /* ---------- 계산 ---------- */
+/* 숙박 퇴실 시간: 메인 화면에서 직접 고친 시간이 가장 우선이고, 없으면 '운영 시간대 설정'의 퇴실 시간(평일/주말은 퇴실 날짜 기준)이에요 */
+function rvOut(r) {
+    if (r.type !== "stay") return r.out;
+    const m = ROOMS.find((x) => !x.empty && x.no === r.room && x.end && x.end.getTime() === r.end.getTime() && x.outLocked);
+    if (m) return m.out;
+    return HOURS[hoursKey(r)]?.out || r.out;
+}
 const rvKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const rvSame = (a, b) => rvKey(a) === rvKey(b);
 const rvFmtMD = (d) => `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
@@ -125,7 +135,7 @@ function rvBar(r, d) {
     const span = r.start.getTime() !== r.end.getTime();
     /* 여러 날에 걸친 예약은 한 줄로 이어진 하나의 칸처럼 보여요: 글자는 시작 칸과 (줄이 바뀌는) 일요일 칸에만 써요 */
     const show = !span || first || d.getDay() === 0;
-    const time = !span ? `${r.in} - ${r.out}` : first ? `${r.in} -` : last ? `- ${r.out}` : `${r.in} - ${r.out}`;
+    const time = `${r.in} - ${rvOut(r)}`; /* 숙박도 퇴실 시간까지 모두 보여줘요 */
     const pick = rvPop && rvPop.id === r.id ? " is-picked" : "";
     return `<button class="rv-bar rv-${r.type}${first ? " is-first" : ""}${last ? " is-last" : ""}${show ? "" : " is-cont"}${pick}" type="button" data-rid="${r.id}" data-date="${rvKey(d)}">
         <span class="rv-bar-top"><b>${r.room}</b>${RV_CH[r.ch].html}</span>
@@ -216,7 +226,7 @@ function rvCard(r) {
             <div><dt>일정</dt><dd>${sched}</dd></div>
             <div><dt>인원</dt><dd>${r.guests}명</dd></div>
             <div><dt>입실</dt><dd>${r.in}</dd></div>
-            <div><dt>퇴실</dt><dd>${r.out}${r.ext ? `<em class="rv-mini">${rvExtText(r.ext)}</em>` : ""}</dd></div>
+            <div><dt>퇴실</dt><dd>${rvOut(r)}${r.ext ? `<em class="rv-mini">${rvExtText(r.ext)}</em>` : ""}</dd></div>
             <div><dt>예약</dt><dd>${RV_CH[r.ch].html}</dd></div>
         </dl>
     </div>`;

@@ -5045,6 +5045,7 @@ body.rl-dragging * {
     border: 0;
     border-radius: 0;
     font: inherit;
+    font-weight: var(--fw-regular, 400);
     text-align: left;
     cursor: pointer;
 }
@@ -5105,6 +5106,7 @@ body.rl-dragging * {
 }
 
 .rv-bar-time {
+    font-weight: var(--fw-regular, 400);
     color: var(--color-gray-300);
     font-size: var(--fs-body2);
     line-height: var(--lh-body2);
@@ -5138,18 +5140,35 @@ body.rl-dragging * {
 
 /* 채널 로고 (svg) : 예약 칸 안 24 x 16 / 카드 안 높이 24 */
 .rv-logo {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    width: 24px;
-    height: 16px;
-    object-fit: contain;
+    height: 15.833px;
+    overflow: hidden;
+}
+
+.rv-logo img {
+    display: block;
+    height: auto;
+}
+
+.rv-logo img.is-auto {
+    width: auto;
+    max-width: 40px;
+    height: 12px;
 }
 
 .rv-info .rv-logo {
-    width: auto;
+    justify-content: flex-start;
     max-width: 72px;
     height: 24px;
-    object-position: left center;
+}
+
+.rv-info .rv-logo img {
+    width: auto !important;
+    max-width: 72px;
+    height: 100%;
 }
 
 /* ---------- 우측 '날짜 상세' 패널 ---------- */
@@ -5377,7 +5396,7 @@ body.rl-dragging * {
 
 .ui-body {
     display: grid;
-    grid-template-columns: minmax(0, 984fr) minmax(0, 640fr);
+    grid-template-columns: minmax(0, 980fr) minmax(0, 644fr);
     gap: 16px;
     height: calc(100vh - 236px);
     min-height: 560px;

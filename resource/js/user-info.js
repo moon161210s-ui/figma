@@ -67,7 +67,7 @@ function siSchedule(s) {
 /* ---------- 왼쪽 목록 ---------- */
 const siAvatar = (s, size) => {
     const src = typeof STAFF_PHOTO !== "undefined" && STAFF_PHOTO[s.name];
-    return `<span class="ui-avatar is-${size}">${src ? `<img src="${src}" alt="" />` : icon("user-purple", size === "lg" ? 32 : 20)}</span>`;
+    return `<span class="ui-avatar is-${size}">${src ? `<img src="${src}" alt="" />` : icon("user-purple-small", size === "lg" ? 32 : 20)}</span>`;
 };
 
 function renderStaffInfo() {
