@@ -128,35 +128,6 @@ const tagHtml = (t) => (t ? `<span class="tag">${t}</span>` : "");
 
 /* ---------- 샘플 데이터 (실제 서비스에서는 서버 데이터로 교체) ---------- */
 /* 새 업무를 배정할 수 있는 직원 (퇴사 처리한 직원은 빠져요 / 지난 청소·근무 기록은 그대로 남아요) */
-/* 직원별 요일 근무 형태 (일 ~ 토 / null = 쉬는 날) — 직원 정보 설정 · 직원 배정이 함께 써요 (서버 연결 시 교체)
-   송혜원은 초대 대기라서 아직 근무 일정이 없어요 */
-const STAFF_PATTERN = {
-    최하석: ["night", null, "night", null, "night", "night", "night"],
-    유가은: [null, "day", "day", "day", "day", "day", null],
-    이서영: ["aft", null, "day", "day", "aft", null, "night"],
-    한다경: ["night", "night", null, null, "night", "night", "night"],
-    전재연: [null, "day", null, "day", "day", "day", "day"],
-    김이레: ["aft", "aft", null, "aft", "aft", null, null],
-    송혜원: [null, null, null, null, null, null, null],
-};
-/* 날짜별로 따로 고친 근무 형태 { 이름: { 'YYYY-MM-DD': 형태 | null } } (직원 정보 설정에서 저장하면 여기에 보관해요) */
-const STAFF_OVER_KEY = "staffOver";
-const staffOver = () => {
-    try {
-        return JSON.parse(localStorage.getItem(STAFF_OVER_KEY)) || {};
-    } catch (e) {
-        return {};
-    }
-};
-const staffDateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-/* 그 날 근무하는 직원인지 (휴무일을 바꾸면 이 값이 바뀌고, 그 날의 자동 배정도 새로 계산돼요) */
-function staffWorksOn(name, d) {
-    const o = staffOver()[name];
-    const k = staffDateKey(d);
-    if (o && k in o) return !!o[k];
-    return !!(STAFF_PATTERN[name] || [])[d.getDay()];
-}
-
 const RESIGNED_KEY = "resignedStaff"; /* { 이름: 퇴사 처리한 날짜(YYYY-M-D) } */
 const resignedMap = () => {
     try {
@@ -192,6 +163,38 @@ const todayMid = () => {
 };
 const dayAdd = (base, n) => new Date(base.getFullYear(), base.getMonth(), base.getDate() + n);
 
+/* 직원별 요일 근무 형태 (일 ~ 토 / null = 쉬는 날) — 직원 정보 설정 · 직원 배정이 함께 써요 (서버 연결 시 교체)
+   송혜원은 초대 대기라서 아직 근무 일정이 없어요 */
+const STAFF_PATTERN = {
+    최하석: ["night", null, "night", null, "night", "night", "night"],
+    유가은: [null, "day", "day", "day", "day", "day", null],
+    이서영: ["aft", null, "day", "day", "aft", null, "night"],
+    한다경: ["night", "night", null, null, "night", "night", "night"],
+    전재연: [null, "day", null, "day", "day", "day", "day"],
+    김이레: ["aft", "aft", null, "aft", "aft", null, null],
+    송혜원: [null, null, null, null, null, null, null],
+};
+/* 날짜별로 따로 고친 근무 형태 { 이름: { 'YYYY-MM-DD': 형태 | null } } (직원 정보 설정에서 저장하면 여기에 보관해요) */
+const STAFF_OVER_KEY = "staffOver";
+const staffOver = () => {
+    try {
+        return JSON.parse(localStorage.getItem(STAFF_OVER_KEY)) || {};
+    } catch (e) {
+        return {};
+    }
+};
+const staffDateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/* 그 날 근무하는 직원인지 (휴무일을 바꾸면 이 값이 바뀌고, 그 날의 자동 배정도 새로 계산돼요) */
+function staffWorksOn(name, d) {
+    const o = staffOver()[name];
+    const k = staffDateKey(d);
+    if (o && k in o) return !!o[k];
+    return !!(STAFF_PATTERN[name] || [])[d.getDay()];
+}
+
+/* 사용성 테스트용 '조퇴하는 직원' (108호 담당): 기본은 전재연이고, 그 날 전재연이 휴무면 김이레가 대신해요 (둘 다 다른 객실은 맡지 않아서 나머지 값은 그대로예요) */
+const EARLY_LEAVER = ["전재연", "김이레"].find((n) => staffWorksOn(n, todayMid())) || "전재연";
+
 /* 객실 한 건 = 오늘 화면에 보여줄 투숙 정보 (샘플 / 실제 서비스에서는 서버의 예약 데이터로 교체)
    nights   : 숙박 박수 (1박, 2박 …)
    stayed   : 오늘 기준으로 이미 지낸 박수 (생략하면 nights 와 같아요 = 오늘 퇴실)
@@ -199,14 +202,14 @@ const dayAdd = (base, n) => new Date(base.getFullYear(), base.getMonth(), base.g
    nextIn   : 퇴실 청소 뒤 오늘 새 손님이 입실하는지 / nextNights : 그 손님의 숙박 박수
    extHour  : 퇴실 연장 시간 / extNight : 연박 연장 박수 */
 const RAW_ROOMS = [
-    { no: "101", floor: 1, status: "done", out: "17:00", extHour: 2, staff: "전재연", clean: "16:00", nights: 2 },
+    { no: "101", floor: 1, status: "done", out: "17:00", extHour: 2, staff: EARLY_LEAVER, clean: "16:00", nights: 2 },
     { no: "102", floor: 1, status: "progress", out: "15:00", staff: "유가은", nights: 1, nextIn: true, nextNights: 2 },
     { no: "103", floor: 1, status: "progress", out: "17:00", staff: "한다경", nights: 3, nextIn: true, nextNights: 1 },
     { no: "104", floor: 1, status: "todo", out: "17:00", staff: "한다경", nights: 1, nextIn: true, nextNights: 3 },
     { no: "105", floor: 1, status: "review", out: "15:00", staff: "이서영", nights: 2 },
     { no: "106", floor: 1, status: "done", out: "15:00", staff: "이서영", nights: 1, nextIn: true, nextNights: 1 },
     { no: "107", floor: 1, status: "review", out: "17:00", staff: "유가은", nights: 4, nextIn: true, nextNights: 2 },
-    { no: "108", floor: 1, status: "reassign", out: "15:00", staff: "전재연", staffTag: "조퇴", nights: 1, nextIn: true, nextNights: 1 },
+    { no: "108", floor: 1, status: "reassign", out: "15:00", staff: EARLY_LEAVER, staffTag: "조퇴", nights: 1, nextIn: true, nextNights: 1 },
     { no: "201", floor: 2, status: "todo", out: "17:00", staff: "이서영", nights: 2, nextIn: true, nextNights: 2 },
     { no: "202", floor: 2, status: "done", out: "17:00", staff: "김이레", nights: 1 },
     { no: "203", floor: 2, status: "progress", out: "17:00", staff: "이서영", nights: 5, nextIn: true, nextNights: 1 },
