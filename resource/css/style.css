@@ -6804,6 +6804,7 @@ html.is-modal-open {
 }
 
 .td-rail b.is-cur {
+    border-width: 3px;
     border-color: var(--color-primary-500);
     background: var(--color-primary-50);
 }

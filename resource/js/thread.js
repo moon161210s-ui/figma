@@ -252,6 +252,63 @@ function thGaugeUpdate() {
 thBoardEl.addEventListener("scroll", thGaugeUpdate, { passive: true });
 window.addEventListener("resize", thGaugeUpdate);
 
+/* ---------- 가로 스크롤: 칸 단위로 끊어서, 처음엔 살짝 묵직하게 → 빠르게 → 부드럽게 멈춰요 ---------- */
+let thAnim = 0; /* 진행 중인 이동 (새로 시작하거나 끌면 이전 건 멈춰요) */
+const thEase = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2); /* easeInOutCubic */
+function thSnaps() {
+    const b = thBoardEl.getBoundingClientRect();
+    const max = thBoardEl.scrollWidth - thBoardEl.clientWidth;
+    return [...thBoardEl.querySelectorAll(".th-col")].map((c) => Math.min(max, Math.max(0, Math.round(c.getBoundingClientRect().left - b.left + thBoardEl.scrollLeft))));
+}
+function thGlide(to, ms = 520) {
+    const from = thBoardEl.scrollLeft;
+    const id = ++thAnim;
+    if (Math.abs(to - from) < 1) return;
+    const t0 = performance.now();
+    const step = (now) => {
+        if (id !== thAnim) return;
+        const t = Math.min(1, (now - t0) / ms);
+        thBoardEl.scrollLeft = from + (to - from) * thEase(t);
+        if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+/* dir: 1 = 다음 칸 / -1 = 이전 칸 / 0 = 가장 가까운 칸 */
+function thSnapMove(dir, from) {
+    const pts = [...new Set(thSnaps())].sort((a, b) => a - b);
+    if (!pts.length) return;
+    const cur = from == null ? thBoardEl.scrollLeft : from;
+    let to;
+    if (dir > 0) to = pts.find((x) => x > cur + 8) ?? pts[pts.length - 1];
+    else if (dir < 0) to = [...pts].reverse().find((x) => x < cur - 8) ?? pts[0];
+    else to = pts.reduce((a, b) => (Math.abs(b - cur) < Math.abs(a - cur) ? b : a));
+    thGlide(to);
+}
+/* 마우스를 끌었다 놓으면: 조금만 끌어도 그 방향의 다음 칸으로 넘어가요 */
+thBoardEl.addEventListener("dragx-end", (e) => {
+    const { dx, left } = e.detail;
+    thSnapMove(Math.abs(dx) < 40 ? 0 : dx < 0 ? 1 : -1, left);
+});
+/* 트랙패드 · 시프트+휠: 한 번 밀면 한 칸씩 (관성으로 여러 칸 넘어가지 않게 잠깐 잠가요) */
+let thWheelLock = 0;
+thBoardEl.addEventListener(
+    "wheel",
+    (e) => {
+        const dx = e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
+        if (!dx || Math.abs(dx) < Math.abs(e.deltaY) && !e.shiftKey) return; /* 세로로 밀면 카드 목록이 스크롤돼요 */
+        e.preventDefault();
+        const now = performance.now();
+        if (now < thWheelLock) {
+            thWheelLock = now + 160; /* 관성이 이어지는 동안은 계속 잠겨요 */
+            return;
+        }
+        thWheelLock = now + 160 + 520;
+        thSnapMove(dx > 0 ? 1 : -1);
+    },
+    { passive: false }
+);
+thBoardEl.addEventListener("pointerdown", () => { thAnim++; });
+
 /* ---------- 리스트 설정 모달 (딤드 + 가운데) ---------- */
 const thModalEl = document.createElement("div");
 thModalEl.className = "hm";

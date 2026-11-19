@@ -2901,12 +2901,15 @@ document.addEventListener("pointermove", (e) => {
         dragX.box.classList.add("is-drag-scrolling");
         try { dragX.box.setPointerCapture(dragX.id); } catch (_) { }
     }
+    dragX.dx = dx;
     if (dragX.moved) dragX.box.scrollLeft = dragX.left - dx;
 });
 const stopDragX = () => {
     if (!dragX) return;
     dragX.box.classList.remove("is-drag-scrolling");
     const moved = dragX.moved;
+    /* 끝난 뒤 칸 단위로 맞추고 싶은 영역(보드)이 받아 가요 */
+    if (moved) dragX.box.dispatchEvent(new CustomEvent("dragx-end", { detail: { dx: dragX.dx, left: dragX.left } }));
     dragX = null;
     /* 끌고 난 직후에 생기는 클릭(카드 열기 등)은 막아요 */
     if (moved) {
