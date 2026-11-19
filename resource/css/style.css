@@ -4961,7 +4961,8 @@ body.rl-dragging * {
     position: absolute;
     inset: 0 0 0 1px;
     z-index: -1;
-    background: var(--color-bg-low);
+    background: var(--color-bg-disable);
+    opacity: 0.5;
 }
 
 /* 날짜 줄 (날짜 번호 + '+ 외 N건') = 누르면 우측 상세 패널이 열리는 영역 */
@@ -4989,12 +4990,13 @@ body.rl-dragging * {
 .rv-day {
     display: grid;
     place-items: center;
-    min-width: 28px;
+    width: 28px;
     height: 28px;
     padding: 2px;
     border-radius: var(--radius-sm);
     font-size: var(--fs-body1);
     line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
 }
 
 .rv-day.is-today {
@@ -5009,8 +5011,8 @@ body.rl-dragging * {
     font-weight: var(--fw-bold);
 }
 
-.rv-dayhead.is-other .rv-day:not(.is-sel):not(.is-today) {
-    color: var(--color-gray-200);
+.rv-dayhead.is-other {
+    opacity: 0.5;
 }
 
 .rv-more {
@@ -5031,6 +5033,13 @@ body.rl-dragging * {
 .rv-wcell {
     padding: 12px 6px;
     border-bottom: 1px solid var(--color-line-normal);
+}
+
+/* 여러 날 예약과 줄을 맞추는 빈 자리 */
+.rv-gap {
+    display: block;
+    flex-shrink: 0;
+    height: 48px;
 }
 
 /* ---------- 예약 한 칸 (Schedule_md) ---------- */
@@ -5111,6 +5120,12 @@ body.rl-dragging * {
     white-space: nowrap;
 }
 
+/* 이어지는 칸: 글자는 숨기고 색만 이어 붙여요 */
+.rv-bar.is-cont .rv-bar-top,
+.rv-bar.is-cont .rv-bar-time {
+    visibility: hidden;
+}
+
 /* 시작(왼쪽) / 끝(오른쪽) 끝마디 */
 .rv-cap {
     position: absolute;
@@ -5130,35 +5145,20 @@ body.rl-dragging * {
     border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
 }
 
-/* 채널 로고 (실제 로고 파일로 바꿔도 돼요) */
+/* 채널 로고 (svg) : 예약 칸 안 24 x 16 / 카드 안 높이 24 */
 .rv-logo {
+    display: block;
     flex-shrink: 0;
-    font-size: 12px;
-    line-height: 16px;
-    font-weight: var(--fw-bold);
-    letter-spacing: -0.02em;
-    white-space: nowrap;
+    width: 24px;
+    height: 16px;
+    object-fit: contain;
 }
 
-.rv-logo-nol {
-    color: #0066ff;
-}
-
-.rv-logo-yeogi {
-    color: #ee2a4a;
-}
-
-.rv-logo-agoda {
-    color: #5c6470;
-    font-weight: var(--fw-medium);
-}
-
-.rv-logo-trip {
-    color: #287dfa;
-}
-
-.rv-logo-onda {
-    color: #1a4bd6;
+.rv-info .rv-logo {
+    width: auto;
+    max-width: 72px;
+    height: 24px;
+    object-position: left center;
 }
 
 /* ---------- 우측 '날짜 상세' 패널 ---------- */
@@ -5318,10 +5318,6 @@ body.rl-dragging * {
     color: var(--color-gray-300);
     font-weight: var(--fw-medium);
     line-height: var(--lh-body1);
-}
-
-.rv-info .rv-logo {
-    font-size: 14px;
 }
 
 .rv-mini {

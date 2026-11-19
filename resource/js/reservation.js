@@ -59,13 +59,14 @@ const RV_RESERVATIONS = [
     RV("402", "stay", 29, 2, "trip", "15:00", "11:00"),
 ];
 
-/* ---------- 채널 로고 (실제 로고 SVG 가 생기면 RV_LOGO 의 값만 <img> 로 바꾸세요) ---------- */
+/* ---------- 채널 로고 (resource/*.svg) ---------- */
+const rvLogo = (file, name) => `<img class="rv-logo" src="resource/${file}.svg" alt="${name}" />`;
 const RV_CH = {
-    nol: { name: "야놀자", html: '<b class="rv-logo rv-logo-nol">NOL</b>' },
-    yeogi: { name: "여기어때", html: '<b class="rv-logo rv-logo-yeogi">여기어때</b>' },
-    agoda: { name: "agoda", html: '<b class="rv-logo rv-logo-agoda">agoda</b>' },
-    trip: { name: "Trip.com", html: '<b class="rv-logo rv-logo-trip">Trip.com</b>' },
-    onda: { name: "ONDA", html: '<b class="rv-logo rv-logo-onda">ONDA</b>' },
+    nol: { name: "야놀자", html: rvLogo("nol", "야놀자") },
+    yeogi: { name: "여기어때", html: rvLogo("here", "여기어때") },
+    agoda: { name: "아고다", html: rvLogo("agoda", "아고다") },
+    trip: { name: "트립닷컴", html: rvLogo("trip", "트립닷컴") },
+    onda: { name: "온다", html: rvLogo("onda", "온다") },
 };
 
 /* ---------- 계산 ---------- */
@@ -90,15 +91,43 @@ let rvSel = null; /* 선택한 날짜 (우측 패널) */
 let rvTab = "all";
 let rvPop = null; /* {id, date, el} */
 
+/* 한 주(7칸) 안에서 여러 날에 걸친 예약이 같은 줄(slot)에 놓이도록 줄 번호를 정해요
+   - 날짜 순서대로 훑으면서, 이미 줄이 정해진 예약은 그대로 두고 새 예약은 (대실 → 숙박, 이른 시간 순으로) 빈 줄에 넣어요
+   - 결과: { 날짜키: [slot0, slot1, ...] }  (빈 줄은 null) */
+function rvSlots(days) {
+    const out = {};
+    for (let i = 0; i < days.length; i += 7) {
+        const own = {};
+        days.slice(i, i + 7).forEach((d) => {
+            const list = rvOnDay(d);
+            const row = [];
+            list.forEach((r) => {
+                if (own[r.id] !== undefined) row[own[r.id]] = r;
+            });
+            list.forEach((r) => {
+                if (own[r.id] !== undefined) return;
+                let k = 0;
+                while (row[k]) k++;
+                own[r.id] = k;
+                row[k] = r;
+            });
+            out[rvKey(d)] = Array.from(row, (x) => x || null);
+        });
+    }
+    return out;
+}
+
 /* ---------- 예약 한 칸 ----------
    칸의 왼쪽 끝마디 = 예약이 시작하는 날, 오른쪽 끝마디 = 예약이 끝나는 날. 사이 날짜는 끝마디 없이 이어져요 */
 function rvBar(r, d) {
     const first = rvSame(d, r.start);
     const last = rvSame(d, r.end);
     const span = r.start.getTime() !== r.end.getTime();
-    const time = !span ? `${r.in} - ${r.out}` : first ? `${r.in} -` : last ? `- ${r.out}` : "";
-    const pick = rvPop && rvPop.id === r.id && rvSame(rvPop.date, d) ? " is-picked" : "";
-    return `<button class="rv-bar rv-${r.type}${first ? " is-first" : ""}${last ? " is-last" : ""}${pick}" type="button" data-rid="${r.id}" data-date="${rvKey(d)}">
+    /* 여러 날에 걸친 예약은 한 줄로 이어진 하나의 칸처럼 보여요: 글자는 시작 칸과 (줄이 바뀌는) 일요일 칸에만 써요 */
+    const show = !span || first || d.getDay() === 0;
+    const time = !span ? `${r.in} - ${r.out}` : first ? `${r.in} -` : last ? `- ${r.out}` : `${r.in} - ${r.out}`;
+    const pick = rvPop && rvPop.id === r.id ? " is-picked" : "";
+    return `<button class="rv-bar rv-${r.type}${first ? " is-first" : ""}${last ? " is-last" : ""}${show ? "" : " is-cont"}${pick}" type="button" data-rid="${r.id}" data-date="${rvKey(d)}">
         <span class="rv-bar-top"><b>${r.room}</b>${RV_CH[r.ch].html}</span>
         <span class="rv-bar-time">${time || "&nbsp;"}</span>
         ${first ? '<i class="rv-cap rv-cap-l"></i>' : ""}${last ? '<i class="rv-cap rv-cap-r"></i>' : ""}
@@ -116,10 +145,10 @@ function rvRange() {
     return { start: dayAdd(first, -first.getDay()), end: dayAdd(last, 6 - last.getDay()), first, last };
 }
 
-function rvDayHead(d, n, other) {
+function rvDayHead(d, hidden, other) {
     const today = rvSame(d, todayMid());
     const sel = rvSel && rvSame(d, rvSel);
-    const more = n > RV_MONTH_CAP ? `<span class="rv-more">+ 외 ${n - RV_MONTH_CAP}건</span>` : "";
+    const more = hidden > 0 ? `<span class="rv-more">+ 외 ${hidden}건</span>` : "";
     return `<button class="rv-dayhead${other ? " is-other" : ""}" type="button" data-pick="${rvKey(d)}" aria-label="${rvFmtFull(d)} 상세 열기">
         <span class="rv-day${today ? " is-today" : ""}${sel ? " is-sel" : ""}">${d.getDate()}</span>${more}
     </button>`;
@@ -141,6 +170,12 @@ function renderReserve() {
     const days = [];
     for (let d = start; d <= end; d = dayAdd(d, 1)) days.push(d);
 
+    const slots = rvSlots(days);
+    const slotHtml = (d, cap) =>
+        slots[rvKey(d)]
+            .slice(0, cap)
+            .map((r) => (r ? rvBar(r, d) : '<i class="rv-gap"></i>'))
+            .join("");
     if (rvView === "week") {
         t.className = "rv-table rv-week";
         t.innerHTML =
@@ -152,7 +187,7 @@ function renderReserve() {
                 })
                 .join("")}</div>` +
             `<div class="rv-tbody"><div class="rv-wgrid">${days
-                .map((d) => `<div class="rv-wcell">${rvOnDay(d).map((r) => rvBar(r, d)).join("")}</div>`)
+                .map((d) => `<div class="rv-wcell">${slotHtml(d, 99)}</div>`)
                 .join("")}</div></div>`;
     } else {
         t.className = "rv-table rv-month";
@@ -160,10 +195,11 @@ function renderReserve() {
             `<div class="rv-thead">${RV_DAYS.map((w) => `<div class="rv-th"><span>${w}</span></div>`).join("")}</div>` +
             `<div class="rv-tbody"><div class="rv-mgrid">${days
                 .map((d) => {
-                    const list = rvOnDay(d);
+                    const total = rvOnDay(d).length;
+                    const hidden = slots[rvKey(d)].slice(RV_MONTH_CAP).filter(Boolean).length;
                     const other = d < first || d > last;
-                    return `<div class="rv-cell${other ? " is-other" : ""}">${rvDayHead(d, list.length, other)}
-                        <div class="rv-list">${list.slice(0, RV_MONTH_CAP).map((r) => rvBar(r, d)).join("")}</div></div>`;
+                    return `<div class="rv-cell${other ? " is-other" : ""}">${rvDayHead(d, hidden, other)}
+                        <div class="rv-list">${slotHtml(d, RV_MONTH_CAP)}</div></div>`;
                 })
                 .join("")}</div></div>`;
     }
@@ -234,7 +270,7 @@ function openRvPop(bar) {
     const [y, m, dd] = bar.dataset.date.split("-").map(Number);
     const date = new Date(y, m - 1, dd);
     closeRvPop();
-    bar.classList.add("is-picked");
+    document.querySelectorAll(`.rv-bar[data-rid="${r.id}"]`).forEach((b) => b.classList.add("is-picked"));
     const el = document.createElement("div");
     el.className = "rv-pop";
     el.setAttribute("role", "dialog");
@@ -352,7 +388,7 @@ document.addEventListener("keydown", (e) => {
 });
 addEventListener("resize", () => {
     if (!rvPop) return;
-    const bar = document.querySelector(".rv-bar.is-picked");
+    const bar = document.querySelector(`.rv-bar.is-picked[data-date="${rvKey(rvPop.date)}"]`);
     if (bar) rvPlacePop(bar);
     else closeRvPop();
 });
