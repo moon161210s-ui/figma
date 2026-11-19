@@ -63,7 +63,7 @@ const RV_RESERVATIONS = [
 /* 시안(기업로고): 높이 15.83 상자 안에 로고 / 로고마다 가로폭이 달라요 (야놀자 24 · 여기어때 40 · 트립닷컴 40 / 온다 32 · 아고다 40은 시안 확인 전 임시값) */
 const RV_LOGO_W = { nol: 24, here: 40, trip: 40, onda: 32, agoda: 40 };
 const rvLogo = (file, name) =>
-  `<span class="rv-logo"><img src="resource/${file}.svg" alt="${name}"${
+  `<span class="rv-logo"><img src="resource/logo/${file}.svg" alt="${name}"${
     RV_LOGO_W[file] ? ` style="width:${RV_LOGO_W[file]}px"` : ' class="is-auto"'
   } /></span>`;
 const RV_CH = {

@@ -2881,3 +2881,38 @@ document.addEventListener(
   },
   true
 );
+
+/* 가로로 넘치는 영역(보드 · 표 · 첨부 사진 · 상세 사진)은 마우스로 끌어서도 옮겨요 (알림 탭은 위에서 따로 처리) */
+const DRAG_X_SEL = ".th-board, .ui-table, .attach-list, .td-imgs.is-lg";
+let dragX = null;
+document.addEventListener("pointerdown", (e) => {
+  if (e.pointerType !== "mouse" || e.button !== 0) return;
+  const box = e.target.closest(DRAG_X_SEL);
+  if (!box || box.scrollWidth <= box.clientWidth) return;
+  if (e.target.closest("button, a, input, select, textarea, label, [draggable=true], [contenteditable]")) return;
+  dragX = { box, x: e.clientX, left: box.scrollLeft, moved: false, id: e.pointerId };
+});
+document.addEventListener("pointermove", (e) => {
+  if (!dragX) return;
+  const dx = e.clientX - dragX.x;
+  if (!dragX.moved && Math.abs(dx) > 5) {
+    dragX.moved = true;
+    dragX.box.classList.add("is-drag-scrolling");
+    try { dragX.box.setPointerCapture(dragX.id); } catch (_) {}
+  }
+  if (dragX.moved) dragX.box.scrollLeft = dragX.left - dx;
+});
+const stopDragX = () => {
+  if (!dragX) return;
+  dragX.box.classList.remove("is-drag-scrolling");
+  const moved = dragX.moved;
+  dragX = null;
+  /* 끌고 난 직후에 생기는 클릭(카드 열기 등)은 막아요 */
+  if (moved) {
+    const block = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+    document.addEventListener("click", block, { capture: true, once: true });
+    setTimeout(() => document.removeEventListener("click", block, true), 0);
+  }
+};
+document.addEventListener("pointerup", stopDragX);
+document.addEventListener("pointercancel", stopDragX);

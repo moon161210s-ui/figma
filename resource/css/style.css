@@ -611,7 +611,9 @@ button { font-family: inherit; }
 /* 알림 센터 탭의 가로 스크롤바는 숨겨요 (끌어서 옆으로 넘겨요) */
 .noti-tabs { scrollbar-width: none; } 
 .noti-tabs::-webkit-scrollbar { display: none; } 
-.noti-tabs.is-dragging { cursor: grabbing; } 
+.noti-tabs.is-dragging { cursor: grabbing; }
+.is-drag-scrolling { cursor: grabbing; user-select: none; }
+.is-drag-scrolling * { cursor: grabbing !important; } 
 .noti-tab { position: relative; flex-shrink: 0; height: 40px; padding: 0 16px; border: 1px solid var(--color-line-normal); border-radius: var(--radius-md); background: var(--color-base-inverse); font: inherit; font-size: var(--fs-body1); line-height: var(--lh-body1); font-weight: var(--fw-bold); color: var(--color-gray-900); white-space: nowrap; cursor: pointer; } 
 .noti-tab.is-active { border-color: var(--color-gray-900); background: var(--color-gray-900); color: var(--color-base-inverse); /* 라이트: 흰 글자 / 다크: 검은 글자 */}
 .noti-tab.has-dot::after { content: ""; position: absolute; top: -1px; right: 1px; width: 5px; height: 5px; border-radius: 50%; background: var(--color-dangerous); } 
@@ -1092,7 +1094,7 @@ body.rl-dragging * { cursor: grabbing !important; user-select: none; }
 .th-msg { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; height: 48px; margin: 0; overflow: hidden; font-size: var(--fs-body1); line-height: var(--lh-body1); font-weight: var(--fw-medium); color: var(--color-gray-900); white-space: pre-line; overflow-wrap: anywhere; } 
 .th-user { display: flex; flex-direction: column; gap: 2px; min-height: 42px; } 
 .th-user p { margin: 0; font-size: var(--fs-body2); line-height: var(--lh-body2); color: var(--color-gray-300); } 
-.th-btns { display: flex; gap: 16px; } 
+.th-btns { display: flex; gap: 8px; } 
 .th-btns .btn { flex: 1; min-width: 0; } 
 /* ---- 리스트 설정 모달 ---- */
 .hm-box.th-set { width: 640px; } 
@@ -1427,7 +1429,12 @@ html.is-modal-open { overflow: hidden; }
 .td-imgs { display: flex; gap: 8px; margin-top: 4px; } 
 .td-img { display: block; flex-shrink: 0; overflow: hidden; border: 1px solid var(--color-line-low); background: var(--color-gray-50); } 
 .td-img img { display: block; width: 100%; height: 100%; object-fit: cover; } 
-.td-imgs.is-lg .td-img { width: 160px; height: 107px; border-radius: var(--radius-sm); } 
+.td-imgs.is-lg { margin-top: 0; padding-bottom: 4px; overflow-x: auto; }
+.td-imgs.is-lg .td-img { width: 320px; height: 213px; border-width: 2px; border-radius: var(--radius-xl); }
+/* 맨 위(현재 항목)는 글자를 한 단계 키워요: 내용 20/30, 작성자·처리자 16/24 */
+.td-cur .td-msg { font-size: var(--fs-h6); line-height: var(--lh-h6); }
+.td-cur .td-user { margin-top: 0; font-size: var(--fs-body1); line-height: var(--lh-body1); }
+.td-cur { gap: 16px; }
 .td-imgs.is-sm { margin-top: 8px; } 
 .td-imgs.is-sm .td-img { width: 90px; height: 60px; border-radius: var(--radius-xs); } 
 .td-line { flex-shrink: 0; height: 1px; margin: 0; border: 0; background: var(--color-line-normal); } 
@@ -1471,7 +1478,8 @@ html.is-modal-open { overflow: hidden; }
 .td-sec-tit strong { font-size: var(--fs-body1); font-weight: var(--fw-bold); color: var(--color-gray-900); white-space: nowrap; } 
 .td-sec-tit strong.is-cur { color: var(--color-primary-500); } 
 .popover.is-above { z-index: 120; } 
-.td-btns { display: flex; gap: 8px; margin-top: 12px; } 
+.td-btns { display: flex; gap: 8px; margin-top: 16px; }
+.td-btns .btn { height: 48px; padding: 0 20px; border-radius: var(--radius-lg); font-size: var(--fs-body1); }
 /* 직원 정보 설정 표의 가로 스크롤바는 너무 쨍해서 회색 막대로 둬요 */
 .ui-table::-webkit-scrollbar-track:horizontal { background: transparent; } 
 .ui-table::-webkit-scrollbar-thumb:horizontal { background: var(--color-gray-200); } 
