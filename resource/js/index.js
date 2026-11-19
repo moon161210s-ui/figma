@@ -2140,3 +2140,48 @@ function refreshToday() {
 }
 setInterval(refreshToday, 60 * 1000);
 document.addEventListener("visibilitychange", () => !document.hidden && refreshToday());
+
+
+/* =========================================================
+   준비중 모달 + 모달이 열려 있는 동안 뒤쪽 화면 스크롤 막기
+   - 아직 연결되지 않은 기능은 버튼에 data-soon 만 달면 돼요 (openSoon() 으로 직접 열 수도 있어요)
+   ========================================================= */
+const soonModal = document.createElement("div");
+soonModal.className = "hm";
+soonModal.id = "soonModal";
+soonModal.hidden = true;
+soonModal.innerHTML = `
+  <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="준비 중인 기능이에요">
+    <div class="rs-cm-body">
+      <span class="rs-cm-ic"><img src="${ICON("hourglass")}" alt="" /></span>
+      <div class="rs-cm-tx"><strong>준비 중인 기능이에요</strong><span>더 나은 서비스로 곧 찾아뵐게요.<br />조금만 기다려 주세요.</span></div>
+    </div>
+    <div class="rs-cm-btns"><button class="btn btn-lg btn-primary" type="button" data-soon-close>확인</button></div>
+  </div>`;
+document.body.appendChild(soonModal);
+
+function openSoon() {
+    soonModal.hidden = false;
+    soonModal.querySelector(".btn-primary").focus();
+}
+const closeSoon = () => (soonModal.hidden = true);
+soonModal.addEventListener("click", (e) => {
+    if (e.target === soonModal || e.target.closest("[data-soon-close]")) closeSoon();
+});
+document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-soon]");
+    if (!b) return;
+    e.preventDefault();
+    openSoon();
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !soonModal.hidden) closeSoon();
+});
+
+/* 딤이 깔린 모달(.hm)이 하나라도 열려 있으면 페이지 스크롤을 막아요 (모달 안쪽만 스크롤) */
+function syncScrollLock() {
+    const open = [...document.querySelectorAll(".hm")].some((m) => !m.hidden);
+    document.documentElement.classList.toggle("is-modal-open", open);
+}
+new MutationObserver(syncScrollLock).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["hidden"] });
+syncScrollLock();

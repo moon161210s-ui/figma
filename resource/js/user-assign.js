@@ -61,7 +61,8 @@ const AS_PLAN = asAutoPlan();
 const asTomBase = (r) => asTomSaved[r.no] || AS_PLAN[r.no];
 const asTomStaff = (r) => asTomChanges[r.no] || asTomBase(r);
 const asTomManual = (r) => !!(asTomChanges[r.no] || asTomSaved[r.no]);
-const asNeed = (r) => r.status === "reassign" && !asChanges[r.no]; /* 아직 담당자를 못 정한 재배정 필요 객실 */
+/* 재배정 필요 객실은 일괄 저장을 누르기 전까지 '재배정 필요'로 남아요 (담당자를 끌어다 놔도 배지가 안 사라져요) */
+const asNeed = (r) => r.status === "reassign";
 
 /* ---------- 오늘 근무자 ---------- */
 const asAvatar = (name) => {
@@ -111,10 +112,17 @@ function asRooms() {
         .sort((a, b) => a.floor - b.floor || (b.status === "reassign") - (a.status === "reassign") || Number(a.no) - Number(b.no));
 }
 
+/* 끌어다 놓은 직원 (저장 전) */
+const asDropped = (name) => `
+      <div class="as-dropped">
+        <img class="i24 as-handle" src="${ICON("handle")}" alt="" draggable="false" />
+        <div class="as-profile">${asAvatar(name)}<div class="as-user-tx"><strong>${name}</strong><span>현재 ${asCount(name)}실</span></div></div>
+      </div>`;
+
 function asRoomCard(r) {
     const tom = asDay === "tomorrow";
     const need = !tom && asNeed(r);
-    const changed = tom ? asTomManual(r) : !!asChanges[r.no];
+    const changed = tom ? asTomManual(r) : !need && !!asChanges[r.no];
     const tag = tom
         ? changed ? "" : `<span class="tag">자동 배정</span>`
         : r.staffTag && !changed ? `<span class="tag">${r.staffTag}</span>` : "";
@@ -124,8 +132,8 @@ function asRoomCard(r) {
         <strong>${r.no}호</strong>
         <span class="badge ${need ? "badge-reassign" : "badge-todo"}">${need ? "재배정 필요" : "배정 완료"}</span>
       </div>
-      <p class="as-room-staff"><span>담당</span><b>${tom ? asTomStaff(r) : asStaffOf(r)}</b>${tag}</p>
-      ${need ? `<div class="as-drop">담당자를 드래그해 배정</div>` : ""}
+      <p class="as-room-staff"><span>담당</span><b>${tom ? asTomStaff(r) : need ? r.staff : asStaffOf(r)}</b>${tag}</p>
+      ${need ? (asChanges[r.no] ? asDropped(asChanges[r.no]) : `<div class="as-drop">담당자를 드래그해 배정</div>`) : ""}
     </article>`;
 }
 
@@ -387,6 +395,7 @@ window.addEventListener("beforeunload", (e) => {
 });
 
 /* ---------- 이벤트 ---------- */
+$("#asAuto")?.setAttribute("data-soon", "");
 $("#asSave").addEventListener("click", () => asDirty() && openAsModal("save"));
 $("#asWorkerSearch").addEventListener("input", (e) => {
     asWorkerQuery = e.target.value;

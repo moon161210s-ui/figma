@@ -3726,6 +3726,11 @@ body.as-dragging * {
 }
 
 .as-drop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 60px;
     margin-top: 9px;
     padding: 13px 16px;
     border: 1px dashed var(--color-line-normal);
@@ -5816,4 +5821,30 @@ body.rl-dragging * {
 
 .ui-d-foot .btn {
     flex: 1;
+}
+
+/* 모달이 열려 있는 동안 뒤쪽 화면은 스크롤되지 않아요 (모달 안쪽만 스크롤) */
+html.is-modal-open,
+html.is-modal-open body {
+    overflow: hidden;
+}
+
+.hm {
+    overscroll-behavior: contain;
+}
+
+/* 직원 배정: 끌어다 놓은 직원 (저장 전) */
+.as-dropped {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 9px;
+    padding: 8px 20px 8px 8px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-md);
+    background: var(--color-base-inverse);
+}
+
+.as-dropped .as-handle {
+    opacity: 1;
 }

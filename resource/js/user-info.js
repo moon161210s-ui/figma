@@ -254,3 +254,5 @@ $("#uiSearch").addEventListener("input", (e) => {
 
 renderStaffInfo();
 renderStaffDetail();
+
+["#uiHours", "#uiUpload", "#uiInvite"].forEach((q) => $(q)?.setAttribute("data-soon", ""));
