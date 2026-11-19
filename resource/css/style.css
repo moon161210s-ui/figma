@@ -6401,10 +6401,11 @@ html.is-modal-open {
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 60px;
+    gap: 44px;
     min-height: 0;
     margin-right: 8px;
-    padding: 16px var(--scroll-width) 20px 24px;
+    /* 위쪽 16px 은 위 칸에 줘요: 스크롤 영역 위에 여백이 있으면 내용이 그 틈으로 비쳐 보여요 */
+    padding: 0 var(--scroll-width) 20px 24px;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-gutter: stable;
@@ -6543,6 +6544,7 @@ html.is-modal-open {
 
 .td-cur {
     gap: 16px;
+    padding-top: 16px;
 }
 
 .td-imgs.is-sm {
@@ -6577,6 +6579,7 @@ html.is-modal-open {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    padding-top: 16px;
     padding-bottom: 20px;
     background: var(--color-base-inverse);
 }
