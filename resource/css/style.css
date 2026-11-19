@@ -6663,3 +6663,18 @@ html.is-modal-open body {
     gap: 8px;
     margin-top: 12px;
 }
+
+/* 직원 정보 설정 표의 가로 스크롤바는 너무 쨍해서 회색 막대로 둬요 */
+.ui-table::-webkit-scrollbar-track:horizontal {
+    background: transparent;
+}
+
+.ui-table::-webkit-scrollbar-thumb:horizontal {
+    background: var(--color-gray-200);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .ui-table {
+        scrollbar-color: var(--color-gray-200) transparent;
+    }
+}
