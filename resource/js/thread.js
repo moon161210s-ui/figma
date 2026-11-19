@@ -45,6 +45,30 @@ const T = (cat, room, time, text, by, photos, state, handler, ago = 0, img = nul
     id: ++thSeq, cat, room, time, text, by, photos, state, handler: handler || null, img,
     date: dayAdd(todayMid(), -ago),
 });
+/* ---------- 특이사항 사진 ----------
+   내용에 이 말이 들어 있는 특이사항에 해당 사진을 붙여요 (앞쪽이 카드의 대표 사진 / 사진이 없는 특이사항은 사진 칸이 없어요) */
+const TH_IMG_MAP = [
+    ["샤워기 수압이 약하고", ["특이사항 상세_02", "특이사항 상세_01", "특이사항 상세_03"]],
+    ["샤워기 수압이 약해요", ["특이사항 상세_01", "특이사항 상세_03"]],
+    ["현관 천장등이 계속 깜빡", ["특이사항_13"]],
+    ["현관 천장등이 금 간거", ["특이사항_04", "특이사항_13"]],
+    ["현관 천장등 군데 군데", ["특이사항_13", "특이사항_04"]],
+    ["에어컨", ["특이사항_03"]],
+    ["커튼 레일", ["특이사항_02", "특이사항_07"]],
+    ["전신거울", ["특이사항_01"]],
+    ["매트리스에 얼룩", ["특이사항_12"]],
+    ["빗 파손", ["특이사항_10"]],
+    ["드라이기", ["특이사항_11"]],
+    ["수건이 2장", ["특이사항&특이사항 상세_09"]],
+    ["휴지걸이", ["특이사항_08"]],
+    ["TV 리모컨", ["리모컨4"]],
+    ["창문 틈으로", ["특이사항_07"]],
+];
+const thImgs = (i) => {
+    const hit = TH_IMG_MAP.find(([key]) => i.text.includes(key));
+    return hit ? hit[1].map(IMG) : [];
+};
+
 const TH_ITEMS = [
     /* 처리 대기 14 */
     T("broken", "303", "15:42", "샤워기를 온수 쪽으로 돌려도 찬물만 나와요.\n다음 입실 전 점검 부탁드립니다.", ["작성자", "이서영"], 0, "wait"),
@@ -54,22 +78,22 @@ const TH_ITEMS = [
     T("broken", "107", addMinutes(cleanDoneAt("107"), -5), "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다.", ["담당자", "유가은"], 1, "wait", null, 0, FIXED_PHOTOS[107][1][0]),
     T("broken", "303", "15:42", "침대 왼쪽 콘센트에 꽂으면 전원이 들어오지 않아요.\n콘센트 점검 부탁드립니다.", ["작성자", "한다경"], 0, "wait"),
     T("broken", "303", "15:42", "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n시설 점검 부탁드립니다.", ["작성자", "최하석"], 0, "wait"),
-    T("broken", "104", "17:03", "현관 전신거울 오른쪽 아래가 깨져 금이 갔어요....", ["작성자", "김이레"], 1, "wait"),
+    T("broken", "104", "17:03", "현관 전신거울 오른쪽 아래가 깨져 금이 갔어요.\n파손 위험이 있어 교체 부탁드립니다.", ["작성자", "김이레"], 1, "wait"),
     T("broken", "303", "15:42", "책상 의자에 앉으면 다리 한쪽이 흔들려요.\n다음 입실 전 수리 부탁드립니다.", ["작성자", "유가은"], 0, "wait"),
-    T("clean", "204", "16:42", "시트를 걷어보니 매트리스에 얼룩이 남아 있어요....", ["담당자", "유가은"], 3, "wait"),
+    T("clean", "204", "16:42", "시트를 걷어보니 매트리스에 얼룩이 남아 있어요.\n매트리스 교체 또는 세척 부탁드립니다.", ["담당자", "유가은"], 3, "wait"),
     T("clean", "403", "16:42", "세면대 배수구 주변에 물때가 남아 있어요.\n재청소 부탁드립니다.", ["담당자", "유가은"], 0, "wait"),
     T("supply", "204", "16:47", "빗 파손이요.\n교체 부탁드립니다.", ["담당자", "이서영"], 1, "wait"),
     T("supply", "102", "16:47", "드라이기 선이 끊어지려해요.\n교체해야 할 것 같아요.", ["담당자", "이서영"], 4, "wait"),
     T("supply", "303", "15:42", "빗 파손이요.\n교체 부탁드립니다.", ["작성자", "이서영"], 0, "wait"),
     T("etc", "502", "17:03", "객실 안에서 벽을 타고 웅웅거리는 소리가 반복돼요.\n소음이 어디서 나는지 확인 부탁드립니다.", ["작성자", "한다경"], 0, "wait"),
     /* 처리 중 7 (다른 사람이 처리하는 중이라 버튼 없이 보여요) */
-    T("broken", "303", "15:42", "샤워기 수압이 약하고 물이 한쪽으로만 나와요....", ["작성자", "이서영"], 3, "doing", "유가은"),
+    T("broken", "303", "15:42", "샤워기 수압이 약하고 물이 한쪽으로만 나와요.\n교체가 필요할 것 같아요.", ["작성자", "이서영"], 3, "doing", "유가은"),
     T("broken", "105", "13:57", "현관 천장등이 금 간거 같아요.\n전등 교체 부탁드립니다.", ["담당자", "이서영"], 4, "doing", "한다경"),
     T("clean", "206", "16:42", "욕실 세면대에 물때가 남아 있어요. 재청소 요청했습니다.", ["담당자", "유가은"], 0, "doing", "최하석"),
     T("supply", "204", "16:47", "객실 수건이 2장만 비치되어 있어요.\n추가 비치 부탁드립니다.", ["담당자", "이서영"], 2, "doing", "김이레"),
     T("supply", "102", "16:47", "화장실 휴지걸이가 흔들려요.\n고정이 필요할 것 같아요.", ["담당자", "이서영"], 4, "doing", "유가은"),
     T("supply", "303", "15:42", "객실에 비치할 샴푸 재고가 부족해요.\n추가 보충 요청했습니다.", ["작성자", "이서영"], 0, "doing", "한다경"),
-    T("etc", "502", "17:03", "객실 안에서 벽을 타고 웅웅거리는 소리가 반복돼요....", ["작성자", "한다경"], 1, "doing", "최하석"),
+    T("etc", "502", "17:03", "객실 안에서 벽을 타고 웅웅거리는 소리가 반복돼요.\n소음이 어디서 나는지 확인 부탁드립니다.", ["작성자", "한다경"], 1, "doing", "최하석"),
     /* 처리 완료 2 */
     T("broken", "303", "15:42", "샤워기 수압이 약해요.", ["작성자", "이서영"], 2, "done", "유가은"),
     T("broken", "105", "13:57", "현관 천장등 군데 군데가 불이 안들어와요.", ["담당자", "이서영"], 5, "done", "한다경"),
@@ -150,8 +174,8 @@ function thCard(i) {
     const mine = i.state === "doing" && i.handler === TH_ME;
     const users = [i.by];
     if (mine || i.state === "done") users.push(["처리자", i.handler]);
-    const img = i.photos
-        ? `<div class="th-img"><img src="${i.img || ATTACHMENTS[i.id % ATTACHMENTS.length]}" alt="" onerror="this.style.visibility='hidden'" />${i.photos > 1 ? `<span class="th-img-more">+${i.photos - 1}</span>` : ""}</div>`
+    const img = thImgs(i).length
+        ? `<div class="th-img"><img src="${thImgs(i)[0]}" alt="" onerror="this.style.visibility='hidden'" />${thImgs(i).length > 1 ? `<span class="th-img-more">+${thImgs(i).length - 1}</span>` : ""}</div>`
         : "";
     const btns =
         i.state === "wait"
@@ -209,7 +233,24 @@ function renderThread() {
       </section>`;
         })
         .join("");
+    thGaugeUpdate();
 }
+
+/* 칸 아래의 검은 바: 움직이는 스크롤바가 아니라 '지금 어디를 보고 있는지' 알려 주는 게이지예요
+   (처음에는 보이는 만큼만 차 있다가, 오른쪽으로 갈수록 채워져서 맨 오른쪽에서 꽉 차요) */
+const thBoardEl = $("#thBoard");
+const thGauge = document.createElement("div");
+thGauge.className = "th-gauge";
+thGauge.setAttribute("aria-hidden", "true");
+thGauge.innerHTML = "<i></i>";
+thBoardEl.parentNode.appendChild(thGauge);
+function thGaugeUpdate() {
+    const { scrollLeft, clientWidth, scrollWidth } = thBoardEl;
+    const ratio = scrollWidth > 0 ? Math.min(1, (scrollLeft + clientWidth) / scrollWidth) : 1;
+    thGauge.firstChild.style.width = `${ratio * 100}%`;
+}
+thBoardEl.addEventListener("scroll", thGaugeUpdate, { passive: true });
+window.addEventListener("resize", thGaugeUpdate);
 
 /* ---------- 리스트 설정 모달 (딤드 + 가운데) ---------- */
 const thModalEl = document.createElement("div");
@@ -392,9 +433,9 @@ let tdPick = null; /* 달력에서 고른 날짜 (그 날 내역으로 스크롤
 let tdYears = new Set(); /* 펼쳐 둔 연도 */
 let tdMenu = null; /* 열려 있는 필터 드롭다운 */
 
-const tdImgs = (i, n) => Array.from({ length: n }, (_, k) => (k === 0 && i.img) || ATTACHMENTS[(i.id + k) % ATTACHMENTS.length]);
-const tdImgHtml = (i, cls) => (i.photos ? `<div class="td-imgs ${cls}">${tdImgs(i, Math.min(i.photos, 3)).map((src) => `<span class="td-img"><img src="${src}" alt="" onerror="this.style.visibility='hidden'" /></span>`).join("")}</div>` : "");
-const tdMini = (st) => `<span class="mini-badge ${st === "wait" ? "is-blue" : "is-dark"}">${TD_STATE[st]}</span>`;
+const tdImgs = (i, n) => thImgs(i).slice(0, n);
+const tdImgHtml = (i, cls) => (thImgs(i).length ? `<div class="td-imgs ${cls}">${tdImgs(i, 3).map((src) => `<span class="td-img"><img src="${src}" alt="" onerror="this.style.visibility='hidden'" /></span>`).join("")}</div>` : "");
+const tdMini = (st) => `<span class="mini-badge${st === "wait" ? " is-blue" : ""}">${TD_STATE[st]}</span>`;
 const tdCatName = (id) => (TH_CATS.find((c) => c.id === id) || { name: "기타" }).name;
 const tdWhen = (i) => `${pad(i.date.getMonth() + 1)}.${pad(i.date.getDate())} ${i.time}`;
 
@@ -417,7 +458,7 @@ function tdItemHtml(x, first) {
                 : "";
     return `<div class="td-item" data-td-id="${x.id}">
       <span class="td-time">${x.time}</span>
-      <span class="td-rail"><i class="${first ? "is-blank" : ""}"></i><b></b><i class="is-line"></i></span>
+      <span class="td-rail"><i class="${first ? "is-blank" : ""}"></i><b${cur ? ' class="is-cur"' : ""}></b><i class="is-line"></i></span>
       <div class="td-sec">
         <div class="td-sec-tit"><strong${cur ? ' class="is-cur"' : ""}>${thEsc(tdCatName(x.cat))}</strong>${tdMini(x.state)}</div>
         <p class="td-msg">${thEsc(x.text)}</p>
@@ -457,7 +498,7 @@ const tdSelect = (kind, label, on) =>
 
 function tdRender(keep) {
     const i = tdItem;
-    const users = [`<p>${i.by[0]}: ${thEsc(i.by[1])}</p>`];
+    const users = [`<p>${i.by[0]}: ${thEsc(i.by[1])} (${tdWhen(i)} 등록)</p>`];
     if (i.handler) users.push(`<p>처리자: ${thEsc(i.handler)}</p>`);
     const catLabel = tdF.cat === "all" ? "카테고리 전체" : tdCatName(tdF.cat);
     const stLabel = tdF.state === "all" ? "상태 전체" : TD_STATE[tdF.state];
@@ -468,17 +509,18 @@ function tdRender(keep) {
         <button class="hm-close" type="button" data-td-close aria-label="닫기">${icon("close", 20)}</button></div>
       <div class="td-body">
         <section class="td-cur">
-          <div class="td-cur-tit"><div><strong>${thEsc(tdCatName(i.cat))}</strong><span class="td-state is-${i.state === "wait" ? "wait" : "etc"}">${TD_STATE[i.state]}</span></div><time>${thStamp(i)}</time></div>
+          <div class="td-cur-tit"><div><strong>${thEsc(tdCatName(i.cat))}</strong><span class="td-state is-${i.state === "wait" ? "wait" : "etc"}">${TD_STATE[i.state]}</span></div></div>
           <p class="td-msg">${thEsc(i.text)}</p>
           <div class="td-user">${users.join("")}</div>
           ${tdImgHtml(i, "is-lg")}
         </section>
-        <hr class="td-line" />
         <section class="td-hist">
+          <div class="td-hist-head">
           <h3>특이사항 내역 <span>(${tdHistory().length}건)</span></h3>
           <div class="td-filters">
             <div class="td-dd"><button class="td-date${tdPick ? " is-active" : ""}" type="button" data-td-date-btn aria-haspopup="dialog" aria-expanded="false">${icon("calender", 20)}<span>${perLabel}</span></button></div>
             <div class="td-filters-r">${tdSelect("cat", catLabel, tdF.cat !== "all")}${tdSelect("state", stLabel, tdF.state !== "all")}</div>
+          </div>
           </div>
           <div class="td-accs">${tdHistoryHtml()}</div>
         </section>
@@ -505,7 +547,11 @@ function tdGoDate(d) {
         tdYears.add(new Date(near).getFullYear());
         tdRender(tdEl.querySelector(".td-body").scrollTop);
         const el = tdEl.querySelector(`[data-td-date="${near}"]`);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (el) {
+            const head = tdEl.querySelector(".td-hist-head");
+            el.style.scrollMarginTop = `${head ? head.offsetHeight : 0}px`; /* 위에 붙은 제목·필터에 가리지 않게 */
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
     } else tdRender(tdEl.querySelector(".td-body").scrollTop);
 }
 const closeThDetail = () => {

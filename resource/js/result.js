@@ -222,7 +222,7 @@ const rsFixed = (r, gi, i) => {
     return (r.resub && pick(FIXED_PHOTOS_REDO)) || pick(FIXED_PHOTOS);
 };
 const rsPhoto = (r, gi, i) => ({
-    src: rsFixed(r, gi, i) || ATTACHMENTS[(gi * 2 + i) % ATTACHMENTS.length],
+    src: rsFixed(r, gi, i) || RESULT_PHOTOS[gi][i % RESULT_PHOTOS[gi].length],
     fresh: !!(r.resub && i < PHOTO_GROUPS[gi].fresh),
 });
 
