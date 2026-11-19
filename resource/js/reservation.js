@@ -137,8 +137,10 @@ function rvBar(r, d) {
     const show = !span || first || d.getDay() === 0;
     const time = `${r.in} - ${rvOut(r)}`; /* 숙박도 퇴실 시간까지 모두 보여줘요 */
     const pick = rvPop && rvPop.id === r.id ? " is-picked" : "";
+    /* 기업 로고는 시안처럼 (한 줄로 이어진) 막대의 오른쪽 끝에 둬요: 끝 칸 또는 줄이 바뀌는 토요일 칸 */
+    const logoHere = !span || last || d.getDay() === 6;
     return `<button class="rv-bar rv-${r.type}${first ? " is-first" : ""}${last ? " is-last" : ""}${show ? "" : " is-cont"}${pick}" type="button" data-rid="${r.id}" data-date="${rvKey(d)}">
-        <span class="rv-bar-top"><b>${r.room}</b>${RV_CH[r.ch].html}</span>
+        <span class="rv-bar-top"><b>${r.room}</b>${logoHere ? RV_CH[r.ch].html : ""}</span>
         <span class="rv-bar-time">${time || "&nbsp;"}</span>
         ${first ? '<i class="rv-cap rv-cap-l"></i>' : ""}${last ? '<i class="rv-cap rv-cap-r"></i>' : ""}
     </button>`;

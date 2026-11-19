@@ -4882,6 +4882,7 @@ body.rl-dragging * {
     color: var(--color-gray-300);
     font-size: var(--fs-body1);
     line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
 }
 
 .rv-month .rv-th {
@@ -4906,7 +4907,7 @@ body.rl-dragging * {
     color: var(--color-gray-900);
     font-size: var(--fs-h4);
     line-height: var(--lh-h4);
-    font-weight: var(--fw-regular);
+    font-weight: var(--fw-bold);
 }
 
 .rv-week .rv-th.is-today {
@@ -5114,7 +5115,7 @@ body.rl-dragging * {
 }
 
 /* 이어지는 칸: 글자는 숨기고 색만 이어 붙여요 */
-.rv-bar.is-cont .rv-bar-top,
+.rv-bar.is-cont .rv-bar-top b,
 .rv-bar.is-cont .rv-bar-time {
     visibility: hidden;
 }
