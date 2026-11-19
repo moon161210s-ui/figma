@@ -1006,9 +1006,9 @@ const FILTER_DEFS = {
             { value: "need", label: "재배정 필요" },
         ],
     },
-    /* 직원 정보 설정의 현재 근무상태 (user-info.js 의 SI_WSTATE) */
+    /* 직원 정보 설정의 현재 근무 상태 (user-info.js 의 SI_WSTATE) */
     wstatus: {
-        base: "현재 근무상태",
+        base: "현재 근무 상태",
         options: () => Object.entries(typeof SI_WSTATE !== "undefined" ? SI_WSTATE : {}).map(([value, label]) => ({ value, label })),
     },
     /* 업무 특이사항 카테고리 (thread.js 의 TH_CATS) */

@@ -1,7 +1,7 @@
 /* ==========================================================
    청소 결과 화면 (result.html / index.js 뒤에 불러와요)
    - 날짜별 결과 목록 / 상태 칩 필터 / 호실 검색 / 객실 유형 필터
-   - 행 클릭 → 우측 패널 (검수 이력 · 인증사진 · 체크리스트 · 메모 · 특이사항)
+   - 행 클릭 → 우측 패널 (검수 이력 · 인증 사진 · 체크리스트 · 메모 · 특이사항)
    - 재청소 요청 / 검수 완료 (서버 연결 전에는 이 화면 안에서만 바뀌어요)
    ========================================================== */
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -225,7 +225,7 @@ function renderResultDetail() {
     );
 
     const photos = acc(
-        "인증사진",
+        "인증 사진",
         PHOTO_GROUPS.map(
             (g, gi) => `
         <div class="rs-photo-group">
@@ -406,7 +406,7 @@ function handleResultsClick(e) {
     return false;
 }
 
-/* ---------- 모달 (딤드 + 가운데) : 재청소 요청 완료 / 요청 취소 확인 / 취소 완료 / 인증사진 크게 보기 ---------- */
+/* ---------- 모달 (딤드 + 가운데) : 재청소 요청 완료 / 요청 취소 확인 / 취소 완료 / 인증 사진 크게 보기 ---------- */
 const rsModalEl = document.createElement("div");
 rsModalEl.className = "hm";
 rsModalEl.id = "rsModal";
@@ -441,16 +441,16 @@ function openRsModal(kind) {
     rsModalEl.querySelector(".btn-primary").focus();
 }
 
-/* 인증사진 뷰어: 큰 사진을 좌우로 끌면(드래그) 끈 방향의 다음 사진으로 넘어가요.
+/* 인증 사진 뷰어: 큰 사진을 좌우로 끌면(드래그) 끈 방향의 다음 사진으로 넘어가요.
    아래 작은 사진들은 지금 보는 사진만 선명하고 나머지는 흐려요 (눌러서 바꾸는 게 아니라 위치 표시예요) */
 let rsView = null;
 function openRsViewer(r, gi, i) {
     const g = PHOTO_GROUPS[gi];
     rsView = { photos: Array.from({ length: g.n }, (_, k) => rsPhoto(r, gi, k)), i, dx: 0 };
     rsModalEl.innerHTML = `
-    <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="인증사진">
+    <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="인증 사진">
       <div class="hm-head">
-        <h2 class="hm-title">인증사진</h2>
+        <h2 class="hm-title">인증 사진</h2>
         <button class="hm-close" type="button" data-rs-m="close" aria-label="닫기"><img class="i20" src="${ICON("close")}" alt="" /></button>
       </div>
       <div class="rs-vw-body">

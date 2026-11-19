@@ -1,6 +1,6 @@
 /* ==========================================================
    직원 정보 설정 (user-info.html / index.js 뒤에 불러와요)
-   - 왼쪽: 이번주 근무 일정 (직원 목록 / 이름 검색 / 현재 근무상태 필터 / 주 이동)
+   - 왼쪽: 이번 주 근무 일정 (직원 목록 / 이름 검색 / 현재 근무 상태 필터 / 주 이동)
    - 오른쪽: 직원 정보 수정 패널 (숙련도 · 청소 검수 대상 · 주간 근무 일정)
        · 직원을 고르기 전 / 패널을 닫았을 때는 안내 화면이 떠요
        · 취소 = 수정 내용을 버리고 패널 닫기 / 저장 = 목록에 반영
@@ -14,7 +14,7 @@ const SI_SHIFTS = {
     aft: { label: "오후", time: "15:00~22:00" },
     night: { label: "야간", time: "22:00~07:00" },
 };
-const SI_SHIFT_ORDER = ["day", "aft", "night", null]; /* '근무형태 변경' 을 누를 때 도는 순서 (null = 휴무) */
+const SI_SHIFT_ORDER = ["day", "aft", "night", null]; /* '근무 형태 변경' 을 누를 때 도는 순서 (null = 휴무) */
 
 /* 현재 근무 상태 (목록의 이름 옆 배지 / 필터) */
 const SI_WSTATE = { work: "근무 중", off: "휴무", early: "조퇴" };
@@ -54,7 +54,7 @@ const siShiftOn = (s, d) => {
 };
 const siWeekDays = () => Array.from({ length: 7 }, (_, i) => dayAdd(siWeek, i));
 
-/* 목록의 '근무일정' 칸: 근무하는 요일 + (같은 형태면 형태 이름 / 다르면 '요일별 시간 상이') */
+/* 목록의 '근무 일정' 칸: 근무하는 요일 + (같은 형태면 형태 이름 / 다르면 '요일별 시간 상이') */
 function siSchedule(s) {
     const worked = siWeekDays()
         .map((d) => ({ d, f: siShiftOn(s, d) }))
@@ -78,7 +78,7 @@ function renderStaffInfo() {
     $("#uiWeekText").textContent = `(${week[0].getFullYear()} ${pad(week[0].getMonth() + 1)}.${pad(week[0].getDate())} - ${pad(week[6].getMonth() + 1)}.${pad(week[6].getDate())})`;
     const q = siQuery.trim();
     const list = SI_STAFF.filter((s) => s.account !== "resigned" && (!q || s.name.includes(q)) && (filters.wstatus.size === 0 || (s.state && filters.wstatus.has(s.state))));
-    $("#uiCount").textContent = `전체직원 총 ${SI_STAFF.filter((s) => s.account === "active").length}명`;
+    $("#uiCount").textContent = `전체 직원 총 ${SI_STAFF.filter((s) => s.account === "active").length}명`;
     const rows = list
         .map((s) => {
             const sc = siSchedule(s);
@@ -89,11 +89,11 @@ function renderStaffInfo() {
                 <div class="ui-td ui-sch">${sc ? `<span>${sc.days}</span><span class="is-sub">${sc.kind}</span>` : "-"}</div>
                 <div class="ui-td"><i class="ui-dot${s.account === "active" ? " is-on" : ""}"></i>${s.account === "active" ? "활성" : "초대 대기"}</div>
                 <div class="ui-td">${s.level || "-"}</div>
-                <div class="ui-td">${s.review ? '<span class="badge badge-review ui-review">검수대상</span>' : "-"}</div>
+                <div class="ui-td">${s.review ? '<span class="badge badge-review ui-review">검수 대상</span>' : "-"}</div>
             </div>`;
         })
         .join("");
-    $("#uiTable").innerHTML = `<div class="ui-thead"><div class="ui-th">이름</div><div class="ui-th">전화번호</div><div class="ui-th">근무일정</div><div class="ui-th">계정 상태</div><div class="ui-th">숙련도</div><div class="ui-th">검수 설정</div></div>
+    $("#uiTable").innerHTML = `<div class="ui-thead"><div class="ui-th">이름</div><div class="ui-th">전화번호</div><div class="ui-th">근무 일정</div><div class="ui-th">계정 상태</div><div class="ui-th">숙련도</div><div class="ui-th">검수 설정</div></div>
         <div class="ui-tbody">${rows || '<p class="floor-empty">조건에 맞는 직원이 없어요.</p>'}</div>`;
 }
 
@@ -111,7 +111,7 @@ function renderStaffDetail() {
                 <img class="rs-d-icon" src="${ICON("search-color")}" alt="" />
                 <div class="rs-d-text">
                     <strong>선택한 직원의 상세 정보가 여기에 표시됩니다.</strong>
-                    <span>직원을 선택하면 상세 정보를 확인하고, 근무일정 및 상태를 관리할 수 있습니다.</span>
+                    <span>직원을 선택하면 상세 정보를 확인하고, 근무 일정 및 상태를 관리할 수 있습니다.</span>
                 </div>
             </div>`;
         return;
@@ -135,7 +135,7 @@ function renderStaffDetail() {
             <section class="ui-sec"><h3>기본 설정</h3>
                 <div class="ui-set">
                     <div class="ui-set-row"><div><p>숙련도 설정</p><p class="is-sub">설정한 숙련도는 청소 자동 배정에 반영됩니다.</p></div>${siSeg("level", SI_LEVELS.map((l) => [l, l]), d.level)}</div>
-                    <div class="ui-set-row"><div><p>청소 검수 대상</p><p class="is-sub">검수 대상 직원의 청소는 관리자 확인이 필요합니다.</p></div>${siSeg("review", [["y", "검수대상"], ["n", "대상 아님"]], d.review ? "y" : "n")}</div>
+                    <div class="ui-set-row"><div><p>청소 검수 대상</p><p class="is-sub">검수 대상 직원의 청소는 관리자 확인이 필요합니다.</p></div>${siSeg("review", [["y", "검수 대상"], ["n", "대상 아님"]], d.review ? "y" : "n")}</div>
                 </div>
             </section>
             <hr class="ui-line" />
@@ -155,16 +155,16 @@ function renderStaffDetail() {
                 <div class="ui-daybox">
                     <p class="ui-daybox-tit">${sel.getMonth() + 1}월 ${sel.getDate()}일 (${SI_DAYS[sel.getDay()]})</p>
                     <div class="ui-daybox-row">
-                        <dl><div><dt>근무형태</dt><dd>${selShift ? SI_SHIFTS[selShift].label : "휴무"}</dd></div>
-                            <div><dt>근무시간</dt><dd>${selShift ? SI_SHIFTS[selShift].time : "-"}</dd></div></dl>
+                        <dl><div><dt>근무 형태</dt><dd>${selShift ? SI_SHIFTS[selShift].label : "휴무"}</dd></div>
+                            <div><dt>근무 시간</dt><dd>${selShift ? SI_SHIFTS[selShift].time : "-"}</dd></div></dl>
                         <div class="ui-daybox-btns">
-                            <button class="btn btn-sm btn-outline" type="button" data-ui="shift">근무형태 변경</button>
+                            <button class="btn btn-sm btn-outline" type="button" data-ui="shift">근무 형태 변경</button>
                             <button class="btn btn-sm btn-outline" type="button" data-ui="early" ${isToday && selShift ? "" : "disabled"}>${d.state === "early" ? "조퇴 취소" : "조퇴 처리"}</button>
                         </div>
                     </div>
                 </div>
             </section>
-            <div class="ui-resign"><button class="text-btn" type="button" data-ui="resign">직원 퇴사처리하기</button></div>
+            <div class="ui-resign"><button class="text-btn" type="button" data-ui="resign">직원 퇴사 처리하기</button></div>
         </div>
         <div class="ui-d-foot"><button class="btn btn-lg btn-outline" type="button" data-ui="cancel">취소</button><button class="btn btn-lg btn-primary" type="button" data-ui="save">저장</button></div>`;
     p.querySelector(".ui-d-body").scrollTop = keep;
@@ -212,7 +212,7 @@ function openResign() {
     <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="${s.name} 직원 퇴사 처리">
       <div class="rs-cm-body">
         <span class="rs-cm-ic is-danger"><img src="${ICON("exclamation-red")}" alt="" /></span>
-        <div class="rs-cm-tx"><strong>${s.name} 직원을 퇴사 처리 하시겠습니까?</strong><span>퇴사 처리 후에는 새 청소 업무를 배정할 수 없습니다.<br />근무·업무 이력은 유지되며, 미완료 업무는 재배정이 필요할 수 있습니다.</span></div>
+        <div class="rs-cm-tx"><strong>${s.name} 직원을 퇴사 처리하시겠습니까?</strong><span>퇴사 처리 후에는 새 청소 업무를 배정할 수 없습니다.<br />근무·업무 이력은 유지되며, 미완료 업무는 재배정이 필요할 수 있습니다.</span></div>
       </div>
       <div class="rs-cm-btns">
         <button class="btn btn-lg btn-outline" type="button" data-si-m="close">닫기</button>
