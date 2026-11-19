@@ -111,7 +111,7 @@ function asRooms() {
     return ROOMS.filter((r) => inCleanList(r) && (r.status === "todo" || r.status === "reassign"))
         .filter((r) => filterPass("astatus", asNeed(r) ? "need" : "assigned"))
         .filter((r) => !q || r.no.includes(q) || asStaffOf(r).includes(q))
-        .sort((a, b) => a.floor - b.floor || (b.status === "reassign") - (a.status === "reassign") || Number(a.no) - Number(b.no));
+        .sort((a, b) => a.floor - b.floor || (asNeed(b) ? 1 : 0) - (asNeed(a) ? 1 : 0) || Number(a.no) - Number(b.no));
 }
 
 /* 끌어다 놓은 직원 (저장 전) */
@@ -140,6 +140,7 @@ function asRoomCard(r) {
 }
 
 function renderAssignRooms() {
+    /* 같은 층 안에서는 재배정 필요 객실이 맨 앞(왼쪽)에 오고, 그 안에서는 호실 순서예요 (asRooms 의 정렬) */
     const list = asRooms();
     const byFloor = {};
     list.forEach((r) => (byFloor[r.floor] = byFloor[r.floor] || []).push(r));
