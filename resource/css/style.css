@@ -6881,15 +6881,13 @@ html.is-modal-open {
 }
 
 /* 업무 특이사항 가로 위치 게이지: 기본 스크롤바는 자리만 남기고 안 보이게, 그 자리에 게이지를 그려요 */
-.th-board::-webkit-scrollbar-track:horizontal,
-.th-board::-webkit-scrollbar-thumb:horizontal {
-    background: transparent !important;
+.th-board {
+    scrollbar-width: none;
 }
 
-@supports not selector(::-webkit-scrollbar) {
-    .th-board {
-        scrollbar-color: transparent transparent;
-    }
+.th-board::-webkit-scrollbar {
+    height: 0;
+    display: none;
 }
 
 .th-gauge {
