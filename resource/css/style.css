@@ -42,6 +42,8 @@
     --color-bg-base: #f4f6fb;
     --color-bg-low: #f8f8f9;
     --color-bg-disable: #f2f3f6;
+    --color-bg-hover: #f8faff;
+    /* 호버 배경 (Figma base-bg-low) */
 
     /* ---------- Color / Base ---------- */
     --color-base-inverse: #ffffff;
@@ -158,6 +160,7 @@
     --color-bg-low: #1c1d22;
     /* Figma 값(#f8fafd)은 다크에서 너무 밝아 바꿨어요 */
     --color-bg-disable: #292d31;
+    --color-bg-hover: #1c1d22;
     --color-line-normal: #353a3f;
     --color-line-low: #292d31;
 
@@ -5352,4 +5355,465 @@ body.rl-dragging * {
 .rv-mgrid>.rv-cell:nth-child(7n + 1) .rv-bar,
 .rv-wgrid>.rv-wcell:nth-child(7n + 1) .rv-bar {
     margin-left: 0;
+}
+
+/* ==========================================================
+   직원 정보 설정 (user-info.html)
+   ========================================================== */
+#viewUserInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ui-ico-white {
+    filter: brightness(0) invert(1);
+}
+
+.ui-body {
+    display: grid;
+    grid-template-columns: minmax(0, 984fr) minmax(0, 640fr);
+    gap: 16px;
+    height: calc(100vh - 236px);
+    min-height: 560px;
+}
+
+.ui-list,
+.ui-detail {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+/* ---------- 왼쪽: 직원 목록 ---------- */
+.ui-list {
+    gap: 12px;
+    padding: 20px 0;
+}
+
+.ui-list-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px 0 24px;
+}
+
+.ui-list-top h2 {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    margin: 0;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5);
+    font-weight: var(--fw-bold);
+}
+
+.ui-list-top small {
+    padding-bottom: 4px;
+    font-weight: var(--fw-regular);
+    color: var(--color-gray-300);
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.ui-list-cap {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 20px 0 28px;
+    color: var(--color-gray-300);
+}
+
+.ui-list-cap>span {
+    padding-bottom: 2px;
+}
+
+.ui-list-tools {
+    display: flex;
+    gap: 8px;
+}
+
+.ui-table {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0 20px;
+}
+
+.ui-thead,
+.ui-tr {
+    display: grid;
+    grid-template-columns: 180px 180px minmax(0, 1fr) 120px 120px 120px;
+}
+
+.ui-thead {
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    background: var(--color-bg-low);
+}
+
+.ui-th {
+    font-weight: var(--fw-bold);
+    display: flex;
+    align-items: center;
+    height: 54px;
+    padding: 0 16px;
+}
+
+.ui-tbody {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.ui-tr {
+    align-items: stretch;
+    border-bottom: 1px solid var(--color-line-normal);
+    cursor: pointer;
+}
+
+.ui-tr:hover,
+.ui-tr.is-selected {
+    background: var(--color-bg-base);
+}
+
+.ui-tr:focus-visible {
+    outline: 2px solid var(--color-primary-300);
+    outline-offset: -2px;
+}
+
+.ui-td {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 68px;
+    padding: 4px 16px;
+    white-space: nowrap;
+}
+
+.ui-sch {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+}
+
+.ui-sch .is-sub {
+    color: var(--color-gray-300);
+}
+
+.ui-name>span:not(.ui-avatar):not(.tag) {
+    font-weight: var(--fw-bold);
+}
+
+.ui-name .tag {
+    background: var(--color-bg-base);
+}
+
+.ui-tr.is-selected .ui-name .tag,
+.ui-tr:hover .ui-name>span:not(.ui-avatar):not(.tag) {
+    font-weight: var(--fw-bold);
+}
+
+.ui-name .tag {
+    background: var(--color-gray-50);
+}
+
+.ui-review {
+    min-width: 88px;
+    justify-content: center;
+}
+
+.ui-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-gray-100);
+}
+
+.ui-dot.is-on {
+    background: var(--color-success);
+}
+
+.ui-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-50);
+}
+
+.ui-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ui-avatar.is-sm {
+    width: 38px;
+    height: 38px;
+}
+
+.ui-avatar.is-lg {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+}
+
+/* ---------- 오른쪽: 직원 정보 수정 ---------- */
+.ui-detail {
+    padding-top: 16px;
+}
+
+.ui-detail .rs-d-head {
+    margin-bottom: 20px;
+}
+
+.ui-detail.is-empty .rs-d-head {
+    margin-bottom: 0;
+}
+
+.ui-d-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+    padding: 0 20px 20px;
+    overflow-y: auto;
+}
+
+.ui-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ui-user strong {
+    display: block;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5);
+    font-weight: var(--fw-bold);
+}
+
+.ui-user span:not(.ui-avatar) {
+    display: block;
+    color: var(--color-gray-300);
+}
+
+.ui-sec {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ui-sec h3 {
+    margin: 0;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5);
+    font-weight: var(--fw-bold);
+}
+
+.ui-set {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.ui-set-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ui-set-row>div:first-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.ui-set-row p {
+    margin: 0;
+}
+
+.ui-set-row p:not(.is-sub) {
+    font-weight: var(--fw-bold);
+}
+
+.is-sub {
+    color: var(--color-gray-300);
+}
+
+.ui-line {
+    flex-shrink: 0;
+    width: 100%;
+    height: 1px;
+    margin: 0;
+    border: 0;
+    background: var(--color-line-normal);
+}
+
+/* 세그먼트 (전체 / 숙박 / 대실 과 같은 컴포넌트) */
+.ui-seg {
+    display: flex;
+    flex-shrink: 0;
+    padding: 4px;
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-base);
+}
+
+.ui-seg button {
+    min-width: 54px;
+    height: 40px;
+    padding: 2px 10px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-gray-200);
+    font: inherit;
+    font-size: var(--fs-body1);
+    font-weight: var(--fw-medium);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.ui-seg button.is-on {
+    background: var(--color-white);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.07);
+    color: var(--color-gray-900);
+    font-weight: var(--fw-bold);
+}
+
+.ui-weeknav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ui-weeknav strong {
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5);
+    font-weight: var(--fw-bold);
+}
+
+/* 요일 버튼: 기본 / 호버 / 선택 (Week btn 컴포넌트) */
+.ui-week {
+    display: flex;
+    gap: 8px;
+}
+
+.ui-day {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    height: 123px;
+    padding: 8px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.ui-day:hover {
+    background: var(--color-bg-hover);
+}
+
+.ui-day.is-on {
+    background: var(--color-primary-50);
+}
+
+.ui-day-w,
+.ui-day-s {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.ui-day-w {
+    color: var(--color-gray-300);
+}
+
+.ui-day-s {
+    color: var(--color-gray-900);
+    font-weight: var(--fw-medium);
+}
+
+.ui-day strong {
+    color: var(--color-gray-300);
+    font-size: var(--fs-h4);
+    line-height: var(--lh-h4);
+}
+
+.ui-day.is-on strong {
+    color: var(--color-primary-accent);
+}
+
+.ui-daybox {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-hover);
+}
+
+.ui-daybox-tit {
+    margin: 0;
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5);
+}
+
+.ui-daybox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.ui-daybox dl {
+    margin: 0;
+    color: var(--color-gray-300);
+}
+
+.ui-daybox dl div {
+    display: flex;
+    gap: 8px;
+}
+
+.ui-daybox dd {
+    margin: 0;
+}
+
+.ui-daybox-btns {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+.ui-d-foot {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+    padding: 16px 20px;
+    background: var(--color-base-inverse);
+}
+
+.ui-d-foot .btn {
+    flex: 1;
 }

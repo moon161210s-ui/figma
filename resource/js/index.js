@@ -360,7 +360,7 @@ function roomCard(r) {
           ${isStayOnly(r) ? "" : `<span class="badge ${s.tile}">${s.label}</span>`}
         </div>
         <dl class="room-info">
-          <div><dt>일정</dt><dd>${stayText(r)}</dd></div>
+          <div><dt>일정</dt><dd>${stayText(r)}${tagHtml(stayTag(r))}</dd></div>
           <div><dt>퇴실</dt><dd>${r.out}${tagHtml(outTag(r))}</dd></div>
           <div><dt>담당</dt><dd>${staffText(r)}</dd></div>
         </dl>
@@ -369,7 +369,7 @@ function roomCard(r) {
 
 /* 체크된 필터 값 (처음에는 전부 체크 = 전체 / 아래 FILTER_DEFS 뒤에서 채워요) */
 /* 선택한 값만 담아요. 아무것도 선택하지 않으면 필터 없음(= 전체) */
-const filters = { floor: new Set(), status: new Set(), rtype: new Set(), astatus: new Set(), tcat: new Set() };
+const filters = { floor: new Set(), status: new Set(), rtype: new Set(), astatus: new Set(), tcat: new Set(), wstatus: new Set() };
 const filterPass = (kind, value) => filters[kind].size === 0 || filters[kind].has(value);
 
 function renderFloors() {
@@ -980,6 +980,11 @@ const FILTER_DEFS = {
             { value: "need", label: "재배정 필요" },
         ],
     },
+    /* 직원 정보 설정의 현재 근무상태 (user-info.js 의 SI_WSTATE) */
+    wstatus: {
+        base: "현재 근무상태",
+        options: () => Object.entries(typeof SI_WSTATE !== "undefined" ? SI_WSTATE : {}).map(([value, label]) => ({ value, label })),
+    },
     /* 업무 특이사항 카테고리 (thread.js 의 TH_CATS) */
     tcat: {
         base: "전체",
@@ -1167,6 +1172,7 @@ function openFilterMenu(btn) {
         if (kind === "astatus") renderAssignRooms();
         else if (kind === "rtype") renderResults();
         else if (kind === "tcat") renderThread();
+        else if (kind === "wstatus") renderStaffInfo();
         else renderFloors();
     };
 
