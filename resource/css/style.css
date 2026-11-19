@@ -6759,6 +6759,10 @@ html.is-modal-open {
     padding-bottom: 32px;
 }
 
+.td-list .td-item:last-child .td-sec {
+    padding-bottom: 0;
+}
+
 .td-time {
     flex-shrink: 0;
     width: 50px;

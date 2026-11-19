@@ -2902,7 +2902,11 @@ document.addEventListener("pointermove", (e) => {
         try { dragX.box.setPointerCapture(dragX.id); } catch (_) { }
     }
     dragX.dx = dx;
-    if (dragX.moved) dragX.box.scrollLeft = dragX.left - dx;
+    if (dragX.moved) {
+        /* 칸 단위로 넘기는 영역(보드)은 직접 움직임을 맡아요 */
+        if (dragX.box.dataset.snapDrag) dragX.box.dispatchEvent(new CustomEvent("dragx-move", { detail: { dx, left: dragX.left } }));
+        else dragX.box.scrollLeft = dragX.left - dx;
+    }
 });
 const stopDragX = () => {
     if (!dragX) return;

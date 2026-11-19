@@ -274,7 +274,7 @@ function thGlide(to, ms = 520) {
     requestAnimationFrame(step);
 }
 /* dir: 1 = 다음 칸 / -1 = 이전 칸 / 0 = 가장 가까운 칸 */
-function thSnapMove(dir, from) {
+function thSnapMove(dir, from, ms) {
     const pts = [...new Set(thSnaps())].sort((a, b) => a - b);
     if (!pts.length) return;
     const cur = from == null ? thBoardEl.scrollLeft : from;
@@ -282,12 +282,29 @@ function thSnapMove(dir, from) {
     if (dir > 0) to = pts.find((x) => x > cur + 8) ?? pts[pts.length - 1];
     else if (dir < 0) to = [...pts].reverse().find((x) => x < cur - 8) ?? pts[0];
     else to = pts.reduce((a, b) => (Math.abs(b - cur) < Math.abs(a - cur) ? b : a));
-    thGlide(to);
+    thGlide(to, ms);
 }
 /* 마우스를 끌었다 놓으면: 조금만 끌어도 그 방향의 다음 칸으로 넘어가요 */
-thBoardEl.addEventListener("dragx-end", (e) => {
+/* 끄는 동안: 처음엔 손가락보다 덜 움직여서 저항감이 있다가, 기준선(70px)을 넘으면 다음 칸으로 슥 넘어가요 */
+thBoardEl.dataset.snapDrag = "1";
+let thDragDone = false;
+const TH_DRAG_PULL = 0.35; /* 저항: 끈 거리의 35%만 따라가요 */
+const TH_DRAG_PASS = 70; /* 이만큼 끌면 넘어가요 */
+thBoardEl.addEventListener("dragx-move", (e) => {
+    if (thDragDone) return;
     const { dx, left } = e.detail;
-    thSnapMove(Math.abs(dx) < 40 ? 0 : dx < 0 ? 1 : -1, left);
+    if (Math.abs(dx) >= TH_DRAG_PASS) {
+        thDragDone = true;
+        thSnapMove(dx < 0 ? 1 : -1, left, 460);
+        return;
+    }
+    thAnim++;
+    thBoardEl.scrollLeft = left - dx * TH_DRAG_PULL;
+});
+/* 기준선을 못 넘기고 놓으면 제자리로 돌아가요 */
+thBoardEl.addEventListener("dragx-end", (e) => {
+    if (!thDragDone) thSnapMove(0, e.detail.left, 320);
+    thDragDone = false;
 });
 /* 트랙패드 · 시프트+휠: 한 번 밀면 한 칸씩 (관성으로 여러 칸 넘어가지 않게 잠깐 잠가요) */
 let thWheelLock = 0;
@@ -307,7 +324,7 @@ thBoardEl.addEventListener(
     },
     { passive: false }
 );
-thBoardEl.addEventListener("pointerdown", () => { thAnim++; });
+thBoardEl.addEventListener("pointerdown", () => { thAnim++; thDragDone = false; });
 
 /* ---------- 리스트 설정 모달 (딤드 + 가운데) ---------- */
 const thModalEl = document.createElement("div");
