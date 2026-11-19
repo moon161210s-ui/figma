@@ -615,7 +615,8 @@ button { font-family: inherit; }
 .noti-list { display: flex; flex: 1; flex-direction: column; gap: 32px; min-height: 0; margin-right: -16px; /* 스크롤바가 패널 안쪽 여백에 놓여서 내용 폭(346px)은 그대로예요 */
  padding: 0 var(--scroll-width) 24px 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; } 
 .noti-empty { margin: 0; padding: 24px 0; font-size: var(--fs-body2); color: var(--color-gray-200); text-align: center; } 
-.noti-item { display: flex; flex-shrink: 0; gap: 12px; align-items: flex-start; } 
+.noti-item { display: flex; flex-shrink: 0; gap: 12px; align-items: flex-start; opacity: 1; cursor: pointer; transition: opacity 0.3s ease; }
+.noti-item.is-read { opacity: 0.56; }
 .noti-icon { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: var(--radius-sm); } 
 .noti-icon.is-issue { background: var(--color-warning-bg); } 
 .noti-icon.is-reassign { background: var(--color-dangerous-bg); } 
@@ -1144,14 +1145,14 @@ body.rl-dragging * { cursor: grabbing !important; user-select: none; }
 .rv-table { display: flex; flex: 1; flex-direction: column; min-height: 0; } 
 .rv-thead { display: flex; flex-shrink: 0; border-top: 1px solid var(--color-line-normal); border-bottom: 1px solid var(--color-line-normal); background: var(--color-bg-low); border-radius: var(--radius-sm) var(--radius-sm) 0 0; overflow: hidden; } 
 .rv-th { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; min-width: 0; color: var(--color-gray-300); font-size: var(--fs-body1); line-height: var(--lh-body1); font-weight: var(--fw-bold); } 
-.rv-month .rv-th { height: 48px; } 
+.rv-month .rv-th { height: 48px; padding: 12px 14px; align-items: flex-start;} 
 .rv-week .rv-th { height: 80px; padding: 8px 0; } 
 .rv-week .rv-th { cursor: default; } 
 .rv-week .rv-th small { font-size: var(--fs-body1); line-height: var(--lh-body1); } 
-.rv-week .rv-th strong { color: var(--color-gray-900); font-size: var(--fs-h4); line-height: var(--lh-h4); font-weight: var(--fw-bold); } 
+.rv-week .rv-th strong { color: var(--color-gray-900); font-size: var(--fs-h5); line-height: var(--lh-h5); font-weight: var(--fw-bold); } 
 .rv-week .rv-th.is-today { background: var(--color-primary-50); } 
 .rv-week .rv-th.is-today strong { color: var(--color-primary-500); } 
-.rv-tbody { flex: 1; min-height: 0; overflow-y: auto; } 
+.rv-tbody { flex: 1; min-height: 0; overflow-y: auto; margin-right: -6px; } 
 /* 세로줄은 격자 배경으로 그려서 여러 날에 걸친 예약 칸이 줄에 가려지지 않아요 */
 .rv-mgrid,
 .rv-wgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); isolation: isolate; min-height: 100%; background: repeating-linear-gradient(90deg, var(--color-line-normal) 0 1px, transparent 1px calc(100% / 7)); } 
@@ -1206,10 +1207,10 @@ body.rl-dragging * { cursor: grabbing !important; user-select: none; }
 .rv-detail { display: flex; flex: none; flex-direction: column; width: 380px; padding-top: 16px; overflow: hidden; border-radius: var(--radius-xl); background: var(--color-base-inverse); } 
 .rv-detail[hidden] { display: none; } 
 .rv-d-body { display: flex; flex: 1; flex-direction: column; gap: 20px; min-height: 0; margin-top: 20px; padding: 0 20px 20px; overflow-y: auto; } 
-.rv-d-date { margin: 0; font-size: var(--fs-h3); line-height: var(--lh-h3); font-weight: var(--fw-bold); } 
+.rv-d-date { margin: 0; font-size: var(--fs-h4); line-height: var(--lh-h4); font-weight: var(--fw-bold); } 
 .rv-d-sec { display: flex; flex-direction: column; gap: 8px; } 
 .rv-d-sec+.rv-d-sec { margin-top: 20px; } 
-.rv-d-sec h3 { margin: 0; font-size: var(--fs-h5); line-height: var(--lh-h5); font-weight: var(--fw-bold); } 
+.rv-d-sec h3 { margin: 0; font-size: var(--fs-h6); line-height: var(--lh-h6); font-weight: var(--fw-bold); } 
 .rv-sum,
 .rv-info { margin: 0; } 
 .rv-sum { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: var(--radius-md); background: var(--color-bg-low); } 
