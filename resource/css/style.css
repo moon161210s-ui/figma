@@ -4586,6 +4586,7 @@ body.rl-dragging * {
 .th-btns .btn {
     flex: 1;
     min-width: 0;
+    font-size: var(--fs-body1);
 }
 
 /* ---- 리스트 설정 모달 ---- */
@@ -5610,6 +5611,12 @@ body.rl-dragging * {
 }
 
 .ui-name .tag {
+    background: var(--color-bg-base);
+}
+
+/* 행이 선택(호버)돼 배경이 회색이 되면 배지가 묻혀서 한 단계 진한 회색으로 바꿔요 */
+.ui-tr:hover .ui-name .tag,
+.ui-tr.is-selected .ui-name .tag {
     background: var(--color-gray-50);
 }
 
@@ -6539,10 +6546,10 @@ html.is-modal-open {
 }
 
 .td-imgs.is-sm {
-    margin-top: 8px;
+    margin-top: 16px;
 }
 
-/* 글(8) 아래 8을 더해 시안의 16 간격 */
+/* 글 아래 16 간격 (시안) */
 .td-imgs.is-sm .td-img {
     width: 90px;
     height: 60px;
@@ -6585,6 +6592,16 @@ html.is-modal-open {
 .td-hist h3 span {
     font-weight: var(--fw-regular);
     color: var(--color-gray-300);
+}
+
+.td-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.td-search {
+    width: 100%;
 }
 
 .td-filters {
@@ -6700,7 +6717,7 @@ html.is-modal-open {
 .td-acc-body {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 40px;
     padding: 16px;
     border: solid var(--color-line-normal);
     border-width: 0 1px 1px;
@@ -6738,7 +6755,7 @@ html.is-modal-open {
 }
 
 /* 시간 · 타임라인 · 내용 사이: 8 / 8 + 16 = 24 */
-.td-item:not(:last-child) .td-sec {
+.td-item .td-sec {
     padding-bottom: 32px;
 }
 

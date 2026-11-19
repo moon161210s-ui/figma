@@ -21,7 +21,7 @@ const TH_STATE = {
     done: { label: "완료", cls: "badge-todo" },
 };
 const TH_CHIPS = [
-    ["wait", "대기"],
+    ["wait", "처리 대기"],
     ["doing", "처리 중"],
     ["done", "처리 완료"],
 ];
@@ -428,7 +428,7 @@ tdEl.id = "thDetail";
 tdEl.hidden = true;
 document.body.appendChild(tdEl);
 let tdItem = null; /* 지금 보고 있는 특이사항 */
-let tdF = { cat: "all", state: "all" };
+let tdF = { cat: "all", state: "all", q: "" };
 let tdPick = null; /* 달력에서 고른 날짜 (그 날 내역으로 스크롤해요) */
 let tdYears = new Set(); /* 펼쳐 둔 연도 */
 let tdMenu = null; /* 열려 있는 필터 드롭다운 */
@@ -439,8 +439,14 @@ const tdMini = (st) => `<span class="mini-badge${st === "wait" ? " is-blue" : ""
 const tdCatName = (id) => (TH_CATS.find((c) => c.id === id) || { name: "기타" }).name;
 const tdWhen = (i) => `${pad(i.date.getMonth() + 1)}.${pad(i.date.getDate())} ${i.time}`;
 
+/* 내용 또는 이름(작성자 · 처리자)으로 검색해요 */
+function tdMatch(x) {
+    const q = tdF.q.trim().toLowerCase();
+    return !q || [x.text, x.by[1], x.handler || ""].some((t) => String(t).toLowerCase().includes(q));
+}
+
 function tdHistory() {
-    return TH_ITEMS.filter((x) => x.room === tdItem.room && (tdF.cat === "all" || x.cat === tdF.cat) && (tdF.state === "all" || x.state === tdF.state)).sort(
+    return TH_ITEMS.filter((x) => x.room === tdItem.room && (tdF.cat === "all" || x.cat === tdF.cat) && (tdF.state === "all" || x.state === tdF.state) && tdMatch(x)).sort(
         (a, b) => b.date - a.date || (a.time < b.time ? 1 : a.time > b.time ? -1 : 0)
     );
 }
@@ -452,9 +458,9 @@ function tdItemHtml(x, first) {
     /* 처리 대기 = 처리하기 / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 · 완료 = 버튼 없음 */
     const btns =
         x.state === "wait"
-            ? `<button class="btn btn-sm btn-primary" type="button" data-td-act="take">처리하기</button>`
+            ? `<button class="btn btn-sm btn-dark" type="button" data-td-act="take">처리하기</button>`
             : x.state === "doing" && x.handler === TH_ME
-                ? `<button class="btn btn-sm btn-outline" type="button" data-td-act="cancel">처리 취소</button><button class="btn btn-sm btn-primary" type="button" data-td-act="finish">처리 완료</button>`
+                ? `<button class="btn btn-sm btn-outline" type="button" data-td-act="cancel">처리 취소</button><button class="btn btn-sm btn-dark" type="button" data-td-act="finish">처리 완료</button>`
                 : "";
     return `<div class="td-item" data-td-id="${x.id}">
       <span class="td-time">${x.time}</span>
@@ -500,7 +506,7 @@ function tdRender(keep) {
     const i = tdItem;
     const users = [`<p>${i.by[0]}: ${thEsc(i.by[1])} (${tdWhen(i)} 등록)</p>`];
     if (i.handler) users.push(`<p>처리자: ${thEsc(i.handler)}</p>`);
-    const catLabel = tdF.cat === "all" ? "카테고리 전체" : tdCatName(tdF.cat);
+    const catLabel = tdF.cat === "all" ? "유형 전체" : tdCatName(tdF.cat);
     const stLabel = tdF.state === "all" ? "상태 전체" : TD_STATE[tdF.state];
     const perLabel = tdPick ? `${tdPick.getFullYear()}. ${pad(tdPick.getMonth() + 1)}. ${pad(tdPick.getDate())}.` : "기간 전체";
     tdEl.innerHTML = `
@@ -517,9 +523,16 @@ function tdRender(keep) {
         <section class="td-hist">
           <div class="td-hist-head">
           <h3>특이사항 내역 <span>(${tdHistory().length}건)</span></h3>
+          <div class="td-filter-group">
           <div class="td-filters">
             <div class="td-dd"><button class="td-date${tdPick ? " is-active" : ""}" type="button" data-td-date-btn aria-haspopup="dialog" aria-expanded="false">${icon("calender", 20)}<span>${perLabel}</span></button></div>
             <div class="td-filters-r">${tdSelect("cat", catLabel, tdF.cat !== "all")}${tdSelect("state", stLabel, tdF.state !== "all")}</div>
+          </div>
+          <label class="search td-search">
+            <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
+            <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt="" aria-hidden="true" />
+            <input id="tdSearch" type="text" placeholder="내용 또는 이름으로 검색" value="${thEsc(tdF.q)}" />
+          </label>
           </div>
           </div>
           <div class="td-accs">${tdHistoryHtml()}</div>
@@ -531,7 +544,7 @@ function tdRender(keep) {
 
 function openThDetail(item) {
     tdItem = item;
-    tdF = { cat: "all", state: "all" };
+    tdF = { cat: "all", state: "all", q: "" };
     tdPick = null;
     tdYears = new Set([item.date.getFullYear()]);
     tdRender();
@@ -570,7 +583,7 @@ function openTdMenu(btn) {
     const same = tdMenu && tdMenu.dataset.kind === kind;
     closeTdMenu();
     if (same) return;
-    const opts = kind === "cat" ? [["all", "카테고리 전체"], ...TH_CATS.map((c) => [c.id, c.name])] : [["all", "상태 전체"], ...Object.entries(TD_STATE)];
+    const opts = kind === "cat" ? [["all", "유형 전체"], ...TH_CATS.map((c) => [c.id, c.name])] : [["all", "상태 전체"], ...Object.entries(TD_STATE)];
     tdMenu = document.createElement("ul");
     tdMenu.className = "td-menu";
     tdMenu.setAttribute("role", "listbox");
@@ -580,6 +593,12 @@ function openTdMenu(btn) {
     btn.setAttribute("aria-expanded", "true");
 }
 
+tdEl.addEventListener("input", (e) => {
+    if (e.target.id !== "tdSearch") return;
+    tdF.q = e.target.value;
+    tdEl.querySelector(".td-accs").innerHTML = tdHistoryHtml();
+    tdEl.querySelector(".td-hist h3 span").textContent = `(${tdHistory().length}건)`;
+});
 tdEl.addEventListener("click", (e) => {
     if (e.target === tdEl || e.target.closest("[data-td-close]")) return closeThDetail();
     const opt = e.target.closest("[data-td-opt]");
@@ -681,7 +700,7 @@ try {
     });
 } catch (e) { }
 
-/* 알림센터 '자세히 보기'로 들어오면 대기 칩부터 보여줘요 (?date=YYYY-MM-DD 가 있으면 그 날짜) */
+/* 알림센터 '자세히 보기'로 들어오면 처리 대기 칩부터 보여줘요 (?date=YYYY-MM-DD 가 있으면 그 날짜) */
 {
     const q = new URLSearchParams(location.search);
     const [y, m, d] = String(q.get("date") || "").split("-").map(Number);
