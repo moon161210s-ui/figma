@@ -159,7 +159,7 @@ function thCard(i) {
             : mine
                 ? `<div class="th-btns">
           <button class="btn btn-md btn-outline" type="button" data-th-act="cancel">처리 취소</button>
-          <button class="btn btn-md btn-primary" type="button" data-th-act="finish">처리 완료</button>
+          <button class="btn btn-md btn-dark" type="button" data-th-act="finish">처리 완료</button>
         </div>`
                 : "";
     return `
@@ -482,10 +482,6 @@ function tdRender(keep) {
           </div>
           <div class="td-accs">${tdHistoryHtml()}</div>
         </section>
-      </div>
-      <div class="hm-foot">
-        <button class="btn btn-lg btn-outline" type="button" data-td-close>닫기</button>
-        <button class="btn btn-lg btn-primary" type="button" data-td-close>저장</button>
       </div>
     </aside>`;
     if (keep != null) tdEl.querySelector(".td-body").scrollTop = keep;

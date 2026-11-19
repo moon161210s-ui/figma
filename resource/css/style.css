@@ -786,7 +786,7 @@ main[hidden] { display: none; }
 .rs-d-in { display: flex; flex-direction: column; gap: 28px; padding: 0 12px 28px 20px; } 
 .rs-d-room { display: flex; align-items: center; justify-content: space-between; padding: 0 8px; } 
 .rs-d-no { font-size: var(--fs-h3); line-height: 48px; font-weight: var(--fw-bold); } 
-.rs-acc-list { display: flex; flex-direction: column; gap: 28px; } 
+.rs-acc-list { display: flex; flex-direction: column; gap: 20px; } 
 /* 아코디언 (top 56px + body) */
 .rs-acc-top { display: flex; align-items: center; gap: 8px; width: 100%; height: 56px; padding: 12px 12px 12px 16px; border: 1px solid var(--color-line-normal); border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--color-base-inverse); font: inherit; font-size: var(--fs-h6); line-height: var(--lh-h6); font-weight: var(--fw-bold); color: var(--color-gray-900); text-align: left; cursor: pointer; } 
 .rs-acc-top span { flex: 1; } 
@@ -887,7 +887,7 @@ html:has(#viewResults) { scrollbar-gutter: stable; }
 .as-body { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; min-height: 480px; } 
 .as-body>.as-card { display: flex; flex-direction: column; min-height: 0; overflow: hidden; } 
 /* ---- 오늘 근무자 목록 ---- */
-.as-workers { gap: 28px; padding: 20px; } 
+.as-workers { gap: 20px; padding: 20px; } 
 .as-card-head { display: flex; flex-direction: column; gap: 12px; } 
 .as-worker-search { width: 100%; } 
 /* 세로로 쌓이고, 넘치면 이 목록 안에서만 스크롤 (스크롤바는 카드 오른쪽 여백 안쪽) */
@@ -1349,7 +1349,7 @@ html.is-modal-open { overflow: hidden; }
 /* 직원 정보 설정: 직원 퇴사처리하기 */
 .ui-resign { display: flex; justify-content: flex-end; padding-right: 8px; } 
 /* ---------- 직원 배정: 자동 배정 기준 설정 모달 ---------- */
-.hm-box.as-set { width: 592px; } 
+.hm-box.as-set { width: 640px; } 
 .as-set .hm-body { gap: 36px; } 
 .as-set h3 { margin: 0; font-size: var(--fs-h6); line-height: var(--lh-h6); font-weight: var(--fw-bold); color: var(--color-gray-900); } 
 .as-set-sec { display: flex; flex-direction: column; gap: 16px; } 
@@ -1445,7 +1445,7 @@ html.is-modal-open { overflow: hidden; }
 .td-filters-r .td-dd:last-child .td-menu { right: 0; left: auto; } 
 .td-menu .filter-item.is-selected { background: var(--color-primary-50); color: var(--color-primary-500); } 
 /* 연도 아코디언 */
-.td-accs { display: flex; flex-direction: column; gap: 12px; } 
+.td-accs { display: flex; flex-direction: column; gap: 20px; } 
 .td-acc-top { display: flex; align-items: center; gap: 8px; width: 100%; height: 56px; padding: 12px 16px; border: 1px solid var(--color-line-normal); border-radius: var(--radius-lg); background: var(--color-base-inverse); font: inherit; font-size: var(--fs-h6); line-height: var(--lh-h6); font-weight: var(--fw-bold); color: var(--color-gray-900); text-align: left; cursor: pointer; } 
 .td-acc-top span { flex: 1; opacity: 0.9; } 
 .td-acc-top img { flex-shrink: 0; transform: rotate(180deg); } 
