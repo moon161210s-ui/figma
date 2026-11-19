@@ -502,7 +502,6 @@ function handleReserveClick(e) {
     rvSelect(pick.dataset.pick);
     return true;
   }
-
   /* 날짜 셀 전체 클릭 */
   const cell = e.target.closest(".rv-cell");
   if (cell) {
@@ -520,8 +519,26 @@ function handleReserveClick(e) {
 
   const tab = e.target.closest("[data-rv-tab]");
   if (tab) {
+    if (rvTab === tab.dataset.rvTab) return true;
     rvTab = tab.dataset.rvTab;
-    renderRvDetail();
+    const group = tab.closest(".rv-seg");
+    group.querySelectorAll("button").forEach((btn) => {
+      const on = btn === tab;
+      btn.classList.toggle("is-on", on);
+      btn.setAttribute("aria-selected", on);
+    });
+
+    const list = rvOnDay(rvSel).filter(
+      (r) => rvTab === "all" || r.type === rvTab
+    );
+    const cards = $("#rvDetail .rv-cards");
+
+    if (cards) {
+      cards.innerHTML = list.length
+        ? list.map(rvCard).join("")
+        : '<p class="rv-empty">예약이 없어요.</p>';
+    }
+
     return true;
   }
 
