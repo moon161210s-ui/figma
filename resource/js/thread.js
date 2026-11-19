@@ -41,16 +41,17 @@ try {
 
 /* 특이사항 1건: T(번호, 카테고리, 호실, 시각, 내용, [작성자|담당자, 이름], 사진 수, 상태, 처리자, 며칠 전) */
 let thSeq = 0;
-const T = (cat, room, time, text, by, photos, state, handler, ago = 0) => ({
-    id: ++thSeq, cat, room, time, text, by, photos, state, handler: handler || null,
+const T = (cat, room, time, text, by, photos, state, handler, ago = 0, img = null) => ({
+    id: ++thSeq, cat, room, time, text, by, photos, state, handler: handler || null, img,
     date: dayAdd(todayMid(), -ago),
 });
 const TH_ITEMS = [
     /* 처리 대기 14 */
     T("broken", "303", "15:42", "샤워기를 온수 쪽으로 돌려도 찬물만 나와요.\n다음 입실 전 점검 부탁드립니다.", ["작성자", "이서영"], 0, "wait"),
-    T("broken", "105", "13:57", "현관 천장등이 계속 깜빡여요.\n전등 교체 부탁드립니다.", ["담당자", "전재연"], 1, "wait"),
+    T("broken", "105", addMinutes(cleanDoneAt("105"), -5), "현관 천장등이 계속 깜빡여요.\n전등 교체 부탁드립니다.", ["담당자", "이서영"], 1, "wait"),
     T("broken", "104", "17:03", "에어컨을 켜면 표시등이 깜빡이고 곧 멈춰요. 시설 점검 부탁드립니다.", ["작성자", "이서영"], 1, "wait"),
-    T("broken", "105", "13:57", "암막 커튼 레일 한쪽이 천장에서 빠져 처져 있어요....", ["담당자", "전재연"], 1, "wait"),
+    T("broken", "105", addMinutes(cleanDoneAt("105"), -5), "암막 커튼 레일 한쪽이 천장에서 빠져 처져 있어요. 다음 입실 전에 레일 고정 부탁드립니다.", ["담당자", "이서영"], 1, "wait"),
+    T("broken", "107", addMinutes(cleanDoneAt("107"), -5), "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다.", ["담당자", "유가은"], 1, "wait", null, 0, FIXED_PHOTOS[107][1][0]),
     T("broken", "303", "15:42", "침대 왼쪽 콘센트에 꽂으면 전원이 들어오지 않아요.\n콘센트 점검 부탁드립니다.", ["작성자", "한다경"], 0, "wait"),
     T("broken", "303", "15:42", "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n시설 점검 부탁드립니다.", ["작성자", "최하석"], 0, "wait"),
     T("broken", "104", "17:03", "현관 전신거울 오른쪽 아래가 깨져 금이 갔어요....", ["작성자", "김이레"], 1, "wait"),
@@ -63,7 +64,7 @@ const TH_ITEMS = [
     T("etc", "502", "17:03", "객실 안에서 벽을 타고 웅웅거리는 소리가 반복돼요.\n소음이 어디서 나는지 확인 부탁드립니다.", ["작성자", "한다경"], 0, "wait"),
     /* 처리 중 7 (다른 사람이 처리하는 중이라 버튼 없이 보여요) */
     T("broken", "303", "15:42", "샤워기 수압이 약하고 물이 한쪽으로만 나와요....", ["작성자", "이서영"], 3, "doing", "유가은"),
-    T("broken", "105", "13:57", "현관 천장등이 금 간거 같아요.\n전등 교체 부탁드립니다.", ["담당자", "전재연"], 4, "doing", "한다경"),
+    T("broken", "105", "13:57", "현관 천장등이 금 간거 같아요.\n전등 교체 부탁드립니다.", ["담당자", "이서영"], 4, "doing", "한다경"),
     T("clean", "206", "16:42", "욕실 세면대에 물때가 남아 있어요. 재청소 요청했습니다.", ["담당자", "유가은"], 0, "doing", "최하석"),
     T("supply", "204", "16:47", "객실 수건이 2장만 비치되어 있어요.\n추가 비치 부탁드립니다.", ["담당자", "이서영"], 2, "doing", "김이레"),
     T("supply", "102", "16:47", "화장실 휴지걸이가 흔들려요.\n고정이 필요할 것 같아요.", ["담당자", "이서영"], 4, "doing", "유가은"),
@@ -71,7 +72,7 @@ const TH_ITEMS = [
     T("etc", "502", "17:03", "객실 안에서 벽을 타고 웅웅거리는 소리가 반복돼요....", ["작성자", "한다경"], 1, "doing", "최하석"),
     /* 처리 완료 2 */
     T("broken", "303", "15:42", "샤워기 수압이 약해요.", ["작성자", "이서영"], 2, "done", "유가은"),
-    T("broken", "105", "13:57", "현관 천장등 군데 군데가 불이 안들어와요.", ["담당자", "전재연"], 5, "done", "한다경"),
+    T("broken", "105", "13:57", "현관 천장등 군데 군데가 불이 안들어와요.", ["담당자", "이서영"], 5, "done", "한다경"),
     /* 어제 */
     T("clean", "207", "14:20", "욕실 거울에 얼룩이 심해요.\n다음 청소 때 닦아 주세요.", ["담당자", "한다경"], 1, "done", "이서영", 1),
     T("supply", "305", "11:05", "타월이 2장 부족해요.\n추가 보충 부탁드립니다.", ["작성자", "유가은"], 0, "wait", null, 1),
@@ -85,12 +86,26 @@ try {
         if (v) {
             i.state = v.state;
             i.handler = v.handler;
+            i.carry = !!v.carry;
         }
     });
 } catch (e) { }
+/* 이월: 어제까지 처리가 끝나지 않은 특이사항은 자정이 지나는 순간 오늘 목록으로 넘어와요 (처리 완료로 바꿔도 오늘 목록에 남아요) */
+function thRollover() {
+    const today = todayMid();
+    let moved = false;
+    TH_ITEMS.forEach((i) => {
+        if (i.state !== "done" && i.date < today && !i.carry) {
+            i.carry = true;
+            moved = true;
+        }
+    });
+    return moved;
+}
+thRollover();
 function thSaveState() {
     const st = {};
-    TH_ITEMS.forEach((i) => (st[i.id] = { state: i.state, handler: i.handler }));
+    TH_ITEMS.forEach((i) => (st[i.id] = { state: i.state, handler: i.handler, carry: !!i.carry }));
     try {
         localStorage.setItem(TH_STATE_KEY, JSON.stringify(st));
     } catch (e) { }
@@ -102,6 +117,8 @@ let tdDate = todayMid(); /* 보고 있는 날짜 (처음에는 오늘) */
 let thChip = "wait";
 let thQuery = "";
 const thSameDay = (a, b) => a.getTime() === b.getTime();
+/* 그 날 목록에 올라오는지: 작성한 날 + (오늘 목록에는) 이월된 것 */
+const thOnDay = (i, day) => thSameDay(i.date, day) || (i.carry && thSameDay(day, todayMid()));
 const thHeadDate = (dt) => `${dt.getFullYear()}. ${pad(dt.getMonth() + 1)}. ${pad(dt.getDate())}. (${TH_DAYS[dt.getDay()]})`;
 const thStamp = (i) => `${pad(i.date.getMonth() + 1)}.${pad(i.date.getDate())} (${TH_DAYS[i.date.getDay()]}) ${i.time}`;
 const thEsc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -114,7 +131,7 @@ function thCard(i) {
     const users = [i.by];
     if (mine || i.state === "done") users.push(["처리자", i.handler]);
     const img = i.photos
-        ? `<div class="th-img"><img src="${ATTACHMENTS[i.id % ATTACHMENTS.length]}" alt="" onerror="this.style.visibility='hidden'" />${i.photos > 1 ? `<span class="th-img-more">+${i.photos - 1}</span>` : ""}</div>`
+        ? `<div class="th-img"><img src="${i.img || ATTACHMENTS[i.id % ATTACHMENTS.length]}" alt="" onerror="this.style.visibility='hidden'" />${i.photos > 1 ? `<span class="th-img-more">+${i.photos - 1}</span>` : ""}</div>`
         : "";
     const btns =
         i.state === "wait"
@@ -130,7 +147,7 @@ function thCard(i) {
       <div class="th-card-body">
         <div class="th-card-tit">
           <div class="th-card-room"><strong>${i.room}호</strong><span class="badge ${st.cls}">${st.label}</span></div>
-          <span class="th-card-time">${thStamp(i)}</span>
+          <span class="th-card-time">${i.carry && thSameDay(tdDate, todayMid()) && !thSameDay(i.date, tdDate) ? `<span class="tag">이월</span> ` : ""}${thStamp(i)}</span>
         </div>
         <div class="th-card-cont">
           ${img}
@@ -154,7 +171,7 @@ function renderThread() {
     const cats = thVisibleCats();
     const ids = new Set(cats.map((c) => c.id));
     const base = TH_ITEMS.filter(
-        (i) => thSameDay(i.date, tdDate) && ids.has(i.cat) && (!q || i.room.includes(q) || i.text.includes(q))
+        (i) => thOnDay(i, tdDate) && ids.has(i.cat) && (!q || i.room.includes(q) || i.text.includes(q))
     );
     $("#thChips").innerHTML = TH_CHIPS.map(
         ([k, label]) =>
@@ -388,3 +405,19 @@ try {
 }
 updateFilterButtons();
 renderThread();
+
+
+/* 자정이 지나면 (화면을 켜 둔 채로도) 어제 못 끝낸 특이사항이 오늘로 넘어와요 */
+function thScheduleMidnight() {
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
+    setTimeout(() => {
+        const wasToday = thSameDay(tdDate, dayAdd(todayMid(), -1));
+        if (wasToday) tdDate = todayMid();
+        thRollover();
+        thSaveState();
+        renderThread();
+        thScheduleMidnight();
+    }, next - now);
+}
+thScheduleMidnight();

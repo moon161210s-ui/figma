@@ -22,16 +22,20 @@ const SI_LEVELS = ["상", "중", "하"];
 
 /* pattern: 일 ~ 토 요일별 근무 형태 (null = 쉬는 날) / over: 날짜별로 따로 고친 값 */
 const SI_STAFF = [
-    { id: 1, name: "최하석", phone: "010-1234-5678", pattern: [null, null, "night", null, "night", null, "night"], account: "active", level: "하", review: true, state: "off" },
-    { id: 2, name: "유가은", phone: "010-2345-6789", pattern: [null, "day", "day", "day", "day", "day", null], account: "active", level: "상", review: false, state: "work" },
-    { id: 3, name: "이서영", phone: "010-4567-8901", pattern: [null, null, "day", null, "aft", null, "night"], account: "active", level: "상", review: false, state: "work" },
-    { id: 4, name: "한다경", phone: "010-4567-8901", pattern: ["night", null, null, "night", "night", "night", null], account: "active", level: "중", review: true, state: "work" },
-    { id: 5, name: "송혜원", phone: "010-5678-9012", pattern: [null, "night", "night", "night", null, null, null], account: "active", level: "중", review: false, state: "off" },
-    { id: 6, name: "전재연", phone: "010-6789-0123", pattern: [null, null, null, null, null, null, null], account: "active", level: "중", review: false, state: "early" },
-    { id: 7, name: "김이레", phone: "010-7890-1234", pattern: [null, null, null, null, null, null, null], account: "invited", level: null, review: false, state: null },
+    { id: 1, name: "최하석", phone: "010-1234-5678", account: "active", level: "하", review: true },
+    { id: 2, name: "유가은", phone: "010-2345-6789", account: "active", level: "상", review: false },
+    { id: 3, name: "이서영", phone: "010-4567-8901", account: "active", level: "상", review: false },
+    { id: 4, name: "한다경", phone: "010-4567-8901", account: "active", level: "중", review: true },
+    { id: 5, name: "송혜원", phone: "010-5678-9012", account: "invited", level: null, review: false },
+    { id: 6, name: "전재연", phone: "010-6789-0123", account: "active", level: "중", review: false },
+    { id: 7, name: "김이레", phone: "010-7890-1234", account: "active", level: "중", review: false },
 ];
 SI_STAFF.forEach((s) => {
-    s.over = {};
+    s.pattern = STAFF_PATTERN[s.name];
+    s.over = { ...(staffOver()[s.name] || {}) };
+    /* 오늘 근무 상태: 조퇴자 / 오늘 청소를 맡은 직원은 근무 중 / 그 밖에는 오늘 근무 일정이 있는지로 정해요 */
+    const holds = ROOMS.some((r) => !r.empty && r.staff === s.name);
+    s.state = s.account === "invited" ? null : LEFT_EARLY.has(s.name) ? "early" : holds || staffWorksOn(s.name, todayMid()) ? "work" : "off";
     if (resignedStaff().includes(s.name)) s.account = "resigned"; /* 퇴사 처리한 직원: 기록은 남기고 목록에서만 빠져요 */
 });
 
@@ -194,6 +198,12 @@ function siSave() {
     s.level = siDraft.level;
     s.review = siDraft.review;
     s.over = { ...siDraft.over };
+    /* 휴무일을 바꾸면 다른 화면(직원 배정)의 앞으로의 배정도 새로 계산돼요 */
+    try {
+        const all = staffOver();
+        all[s.name] = { ...s.over };
+        localStorage.setItem(STAFF_OVER_KEY, JSON.stringify(all));
+    } catch (e) { }
     if (s.state !== null) s.state = siDraft.state;
     siClose();
 }

@@ -34,11 +34,13 @@ const asTomRooms = () =>
         const o = !r.empty && outDateNext(r);
         return o && o.getTime() === AS_TOMORROW.getTime();
     });
-const asTomWorkers = () => STAFF.slice(); /* 조퇴는 오늘 일이라 내일은 모두 근무해요 */
+/* 내일 근무하는 직원만 (휴무인 직원 자리는 다른 직원이 채워요 / 직원 정보 설정에서 휴무일을 바꾸면 바로 반영돼요) */
+const asTomWorkers = () => STAFF.filter((n) => staffWorksOn(n, AS_TOMORROW));
 
 function asAutoPlan() {
     const rooms = asTomRooms().sort((a, b) => a.floor - b.floor || Number(a.no) - Number(b.no));
     const workers = asTomWorkers();
+    if (!workers.length) return {};
     const cap = AS_RULES.balance ? Math.ceil(rooms.length / workers.length) : Infinity;
     const load = Object.fromEntries(workers.map((n) => [n, 0]));
     /* 오늘 층별로 누가 몇 실을 맡았는지 */
@@ -59,8 +61,8 @@ function asAutoPlan() {
 }
 const AS_PLAN = asAutoPlan();
 /* 퇴사한 직원에게 미리 저장해 둔 담당자는 무시하고, 남은 직원끼리 새로 자동 배정한 값을 써요 */
-const asTomSavedOk = (r) => !!asTomSaved[r.no] && STAFF.includes(asTomSaved[r.no]);
-const asTomBase = (r) => (asTomSavedOk(r) ? asTomSaved[r.no] : AS_PLAN[r.no]);
+const asTomSavedOk = (r) => !!asTomSaved[r.no] && asTomWorkers().includes(asTomSaved[r.no]);
+const asTomBase = (r) => (asTomSavedOk(r) ? asTomSaved[r.no] : AS_PLAN[r.no] || "-");
 const asTomStaff = (r) => asTomChanges[r.no] || asTomBase(r);
 const asTomManual = (r) => !!(asTomChanges[r.no] || asTomSavedOk(r));
 /* 재배정 필요 객실은 일괄 저장을 누르기 전까지 '재배정 필요'로 남아요 (담당자를 끌어다 놔도 배지가 안 사라져요) */
@@ -79,7 +81,8 @@ function asCount(name) {
 
 /* 현재 맡은 객실이 적은 사람이 맨 앞 (같으면 직원 목록 순서) */
 function asWorkers() {
-    return STAFF.filter((n) => asDay === "tomorrow" || !LEFT_EARLY.has(n))
+    const holds = (n) => ROOMS.some((r) => !r.empty && r.staff === n);
+    return (asDay === "tomorrow" ? asTomWorkers() : STAFF.filter((n) => !LEFT_EARLY.has(n) && (staffWorksOn(n, todayMid()) || holds(n))))
         .map((name, i) => ({ name, n: asCount(name), i }))
         .sort((a, b) => a.n - b.n || a.i - b.i);
 }

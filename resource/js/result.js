@@ -69,6 +69,27 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
 const dayKey = (dt) => `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
 const resultCache = {};
 
+/* 사용성 테스트용으로 내용을 고정한 객실 (오늘 날짜 / 메인 · 업무 특이사항과 같은 이야기로 이어져요)
+   - 105호: 문제없이 꼼꼼하게 끝낸 청소
+   - 107호: 욕실 환풍기가 고장 나서 욕실 물기가 덜 마른 청소 (인증 사진은 FIXED_PHOTOS 로 고정) */
+const RESULT_FIXED = {
+    105: {
+        start: 10, /* 청소 가능 시각보다 몇 분 뒤에 시작했는지 */
+        hist: (s, e) => [[s, "청소 시작"], [e, "최초 청소 완료", "침구 교체 · 욕실 청소 · 비품 보충 · 바닥 청소 · 환기까지 모두 마쳤어요."]],
+        memo: "침구는 전부 새것으로 교체했고, 욕실 바닥과 세면대 물기까지 닦았어요. 수건 4장, 생수 2병, 어메니티도 채워 뒀어요.",
+        notes: [
+            [0, "13:57", "이서영", "현관 천장등이 계속 깜빡여요.\n전등 교체 부탁드립니다."],
+            [0, "13:57", "이서영", "암막 커튼 레일 한쪽이 천장에서 빠져 처져 있어요. 다음 입실 전에 레일 고정 부탁드립니다."],
+        ],
+    },
+    107: {
+        start: 10,
+        hist: (s, e) => [[s, "청소 시작"], [e, "최초 청소 완료", "욕실 환풍기가 작동하지 않아 물기가 완전히 마르지 않았어요."]],
+        memo: "욕실 환풍기가 작동하지 않아서 수건으로 닦아도 바닥에 물기가 조금 남았어요. 시설 점검이 필요해요.",
+        notes: [[0, "16:05", "유가은", "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다."]],
+    },
+};
+
 /* 오늘의 결과: 메인의 객실 데이터(청소 완료 · 검수 대기)에서 만들고, 결과 화면에서 바꾼 검수 상태를 덧입혀요 */
 function todayResultRows() {
     const saved = loadResultState();
@@ -76,6 +97,12 @@ function todayResultRows() {
         .map((r) => {
             const at = addMinutes(r.clean || r.out, 50);
             const row = { no: r.no, type: r.type, staff: r.staff, status: r.status, at, hist: [[at, "최초 청소 완료"]] };
+            const fx = RESULT_FIXED[r.no];
+            if (fx) {
+                row.hist = fx.hist(addMinutes(r.clean || r.out, fx.start), at);
+                row.memo = [at, fx.memo];
+                row.notes = fx.notes.map(([off, , name, text]) => [off, addMinutes(at, -5), name, text]);
+            }
             return saved[r.no] ? Object.assign(row, clone(saved[r.no])) : row;
         });
 }
@@ -184,7 +211,7 @@ const PHOTO_GROUPS = [
 ];
 
 const rsPhoto = (r, gi, i) => ({
-    src: ATTACHMENTS[(gi * 2 + i) % ATTACHMENTS.length],
+    src: (FIXED_PHOTOS[r.no] && FIXED_PHOTOS[r.no][gi] && FIXED_PHOTOS[r.no][gi][i]) || ATTACHMENTS[(gi * 2 + i) % ATTACHMENTS.length],
     fresh: !!(r.resub && i < PHOTO_GROUPS[gi].fresh),
 });
 

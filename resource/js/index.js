@@ -18,6 +18,23 @@ const ATTACHMENTS = [
     "resource/img/room-4.png",
 ];
 
+/* 사용성 테스트용으로 고정한 청소 인증 사진: { 객실: { 사진 묶음 번호(0 침구 · 1 욕실): [앞에서부터 쓸 사진 경로] } }
+   - 107호: 욕실 물기가 제대로 닦이지 않은 상태의 사진 (resource/img/clean-107-bath.jpg 로 넣어 주세요) */
+const FIXED_PHOTOS = {
+    107: { 1: ["resource/img/clean-107-bath.jpg"] },
+};
+/* 메인 우측 패널의 첨부파일: 고정 사진이 있는 객실은 그 사진을 맨 앞에 써요 */
+const roomPhotos = (no) => {
+    const fixed = Object.values(FIXED_PHOTOS[no] || {}).flat();
+    return fixed.length ? [...fixed, ...ATTACHMENTS.slice(0, Math.max(0, ATTACHMENTS.length - fixed.length))] : ATTACHMENTS;
+};
+
+/* 청소 담당자가 청소를 끝내는 시각 (결과 화면 · 업무 특이사항이 같은 시각을 써요) */
+const cleanDoneAt = (no) => {
+    const r = ROOMS.find((x) => x.no === no);
+    return addMinutes(r.clean || r.out, 50);
+};
+
 /* ---------- 유틸 ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
 const pad = (n) => String(n).padStart(2, "0");
@@ -111,6 +128,35 @@ const tagHtml = (t) => (t ? `<span class="tag">${t}</span>` : "");
 
 /* ---------- 샘플 데이터 (실제 서비스에서는 서버 데이터로 교체) ---------- */
 /* 새 업무를 배정할 수 있는 직원 (퇴사 처리한 직원은 빠져요 / 지난 청소·근무 기록은 그대로 남아요) */
+/* 직원별 요일 근무 형태 (일 ~ 토 / null = 쉬는 날) — 직원 정보 설정 · 직원 배정이 함께 써요 (서버 연결 시 교체)
+   송혜원은 초대 대기라서 아직 근무 일정이 없어요 */
+const STAFF_PATTERN = {
+    최하석: ["night", null, "night", null, "night", "night", "night"],
+    유가은: [null, "day", "day", "day", "day", "day", null],
+    이서영: ["aft", null, "day", "day", "aft", null, "night"],
+    한다경: ["night", "night", null, null, "night", "night", "night"],
+    전재연: [null, "day", null, "day", "day", "day", "day"],
+    김이레: ["aft", "aft", null, "aft", "aft", null, null],
+    송혜원: [null, null, null, null, null, null, null],
+};
+/* 날짜별로 따로 고친 근무 형태 { 이름: { 'YYYY-MM-DD': 형태 | null } } (직원 정보 설정에서 저장하면 여기에 보관해요) */
+const STAFF_OVER_KEY = "staffOver";
+const staffOver = () => {
+    try {
+        return JSON.parse(localStorage.getItem(STAFF_OVER_KEY)) || {};
+    } catch (e) {
+        return {};
+    }
+};
+const staffDateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+/* 그 날 근무하는 직원인지 (휴무일을 바꾸면 이 값이 바뀌고, 그 날의 자동 배정도 새로 계산돼요) */
+function staffWorksOn(name, d) {
+    const o = staffOver()[name];
+    const k = staffDateKey(d);
+    if (o && k in o) return !!o[k];
+    return !!(STAFF_PATTERN[name] || [])[d.getDay()];
+}
+
 const RESIGNED_KEY = "resignedStaff"; /* { 이름: 퇴사 처리한 날짜(YYYY-M-D) } */
 const resignedMap = () => {
     try {
@@ -155,15 +201,15 @@ const dayAdd = (base, n) => new Date(base.getFullYear(), base.getMonth(), base.g
 const RAW_ROOMS = [
     { no: "101", floor: 1, status: "done", out: "17:00", extHour: 2, staff: "전재연", clean: "16:00", nights: 2 },
     { no: "102", floor: 1, status: "progress", out: "15:00", staff: "유가은", nights: 1, nextIn: true, nextNights: 2 },
-    { no: "103", floor: 1, status: "progress", out: "17:00", staff: "전재연", nights: 3, nextIn: true, nextNights: 1 },
+    { no: "103", floor: 1, status: "progress", out: "17:00", staff: "한다경", nights: 3, nextIn: true, nextNights: 1 },
     { no: "104", floor: 1, status: "todo", out: "17:00", staff: "한다경", nights: 1, nextIn: true, nextNights: 3 },
-    { no: "105", floor: 1, status: "review", out: "15:00", staff: "최하석", nights: 2 },
+    { no: "105", floor: 1, status: "review", out: "15:00", staff: "이서영", nights: 2 },
     { no: "106", floor: 1, status: "done", out: "15:00", staff: "이서영", nights: 1, nextIn: true, nextNights: 1 },
     { no: "107", floor: 1, status: "review", out: "17:00", staff: "유가은", nights: 4, nextIn: true, nextNights: 2 },
     { no: "108", floor: 1, status: "reassign", out: "15:00", staff: "전재연", staffTag: "조퇴", nights: 1, nextIn: true, nextNights: 1 },
     { no: "201", floor: 2, status: "todo", out: "17:00", staff: "이서영", nights: 2, nextIn: true, nextNights: 2 },
     { no: "202", floor: 2, status: "done", out: "17:00", staff: "김이레", nights: 1 },
-    { no: "203", floor: 2, status: "progress", out: "17:00", staff: "전재연", nights: 5, nextIn: true, nextNights: 1 },
+    { no: "203", floor: 2, status: "progress", out: "17:00", staff: "이서영", nights: 5, nextIn: true, nextNights: 1 },
     { no: "204", floor: 2, status: "progress", out: "15:00", staff: "유가은", nights: 2, nextIn: true, nextNights: 3 },
     { no: "301", floor: 3, status: "progress", out: "17:00", staff: "최하석", nights: 1, nextIn: true, nextNights: 1 },
     { no: "302", floor: 3, status: "stay", out: "16:00", extHour: 1, nights: 3, stayed: 1, extNight: 1 },
@@ -477,10 +523,10 @@ function renderDetail() {
       </dl>
       ${done
             ? `
-        <h3 class="detail-section">첨부파일 <small>(${ATTACHMENTS.length
+        <h3 class="detail-section">첨부파일 <small>(${roomPhotos(r.no).length
             })</small></h3>
         <div class="attach-list">
-          ${ATTACHMENTS.map(
+          ${roomPhotos(r.no).map(
                 (src) => `<img src="${src}" alt="청소 완료 사진" />`
             ).join("")}
         </div>`
@@ -1578,52 +1624,38 @@ const NOTI_TYPES = {
 };
 const NOTI_TABS = ["전체", "청소 현황", "직원 관리", "특이사항", "시스템 공지"];
 
+const NOTI_TODAY = `${todayMid().getFullYear()}-${pad(todayMid().getMonth() + 1)}-${pad(todayMid().getDate())}`;
+/* 알림 날짜: n일 전 HH:MM (서비스를 며칠 써 온 것처럼 최근 일주일 알림을 보여줘요 / 서버 연결 시 서버 값으로 교체) */
+const notiDate = (ago, t) => {
+    const d = dayAdd(todayMid(), -ago);
+    return `${d.getMonth() + 1}월 ${d.getDate()}일 ${t}`;
+};
+const notiResult = (room, ago = 0) => ({ label: "결과 검수", result: { room, date: ago ? staffDateKey(dayAdd(todayMid(), -ago)) : NOTI_TODAY } });
+/* 위쪽 5건(오늘 · 사용성 테스트 고정): 107호 특이사항 · 105호 특이사항 · 108호 재배정 필요 · 105호 / 107호 검수 요청 */
 let NOTIFICATIONS = [
-    {
-        id: 1,
-        type: "issue",
-        title: "이민지 · 특이사항 등록",
-        date: "11월 15일 11:41",
-        text: "드라이기 바람이 약해요.\n교체해야 할 것 같아요.",
-        actions: [{ label: "자세히 보기", href: "thread.html" }, { label: "직접 처리하기" }],
-        read: false,
-    },
-    {
-        id: 2,
-        type: "reassign",
-        title: "201호 · 재배정 필요",
-        date: "11월 15일 11:41",
-        text: "청소 담당자가 조퇴했어요.\n담당자 재배정이 필요해요.",
-        actions: [{ label: "현황 확인", room: "201" }],
-        read: true,
-    },
-    {
-        id: 3,
-        type: "todo",
-        title: "104호 · 청소 필요",
-        date: "11월 15일 11:41",
-        text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 1시간 지났어요.",
-        actions: [{ label: "현황 확인", room: "104" }],
-        read: true,
-    },
-    {
-        id: 4,
-        type: "review",
-        title: "305호 · 검수 요청",
-        date: "11월 15일 11:41",
-        text: "305호 청소가 끝났어요.\n검수가 필요해요.",
-        actions: [{ label: "결과 검수", result: { room: "305", date: "2026-11-10" } }],
-        read: true,
-    },
-    {
-        id: 5,
-        type: "notice",
-        title: "시스템 공지",
-        date: "11월 15일 11:41",
-        text: "[서비스 정기 점검 안내] 안정적인 서비스 제공을 위해 정기 점검이 예정되어 있습니다. 점검 시간 동안 일부 기능 이용이 제한될 수 있습니다.",
-        actions: [],
-        read: true,
-    },
+    { id: 11, type: "issue", title: "유가은 · 특이사항 등록", date: notiDate(0, addMinutes(cleanDoneAt("107"), -5)), text: "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다.", actions: [{ label: "자세히 보기", href: "thread.html" }, { label: "직접 처리하기" }], read: false },
+    { id: 6, type: "review", title: "107호 · 검수 요청", date: notiDate(0, cleanDoneAt("107")), text: "107호 청소가 끝났어요.\n검수가 필요해요.", actions: [notiResult("107")], read: false },
+    { id: 12, type: "issue", title: "이서영 · 특이사항 등록", date: notiDate(0, addMinutes(cleanDoneAt("105"), -5)), text: "현관 천장등이 계속 깜빡여요.\n전등 교체 부탁드립니다.", actions: [{ label: "자세히 보기", href: "thread.html" }, { label: "직접 처리하기" }], read: false },
+    { id: 4, type: "review", title: "105호 · 검수 요청", date: notiDate(0, cleanDoneAt("105")), text: "105호 청소가 끝났어요.\n검수가 필요해요.", actions: [notiResult("105")], read: false },
+    { id: 2, type: "reassign", title: "108호 · 재배정 필요", date: notiDate(0, "13:20"), text: "청소 담당자가 조퇴했어요.\n담당자 재배정이 필요해요.", actions: [{ label: "현황 확인", room: "108" }], read: true },
+    { id: 3, type: "todo", title: "104호 · 청소 필요", date: notiDate(0, "11:41"), text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 1시간 지났어요.", actions: [{ label: "현황 확인", room: "104" }], read: true },
+    /* 어제 */
+    { id: 13, type: "issue", title: "이서영 · 특이사항 등록", date: notiDate(1, "17:03"), text: "에어컨을 켜면 표시등이 깜빡이고 곧 멈춰요. 시설 점검 부탁드립니다.", actions: [{ label: "자세히 보기", href: "thread.html" }, { label: "직접 처리하기" }], read: true },
+    { id: 14, type: "review", title: "202호 · 검수 요청", date: notiDate(1, "16:15"), text: "202호 청소가 끝났어요.\n검수가 필요해요.", actions: [notiResult("202", 1)], read: true },
+    { id: 15, type: "todo", title: "201호 · 청소 필요", date: notiDate(1, "12:10"), text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 30분 지났어요.", actions: [{ label: "현황 확인", room: "201" }], read: true },
+    { id: 16, type: "reassign", title: "203호 · 재배정 필요", date: notiDate(1, "09:05"), text: "담당자의 휴무 일정이 변경됐어요.\n담당자 재배정이 필요해요.", actions: [{ label: "현황 확인", room: "203" }], read: true },
+    /* 2~3일 전 */
+    { id: 17, type: "issue", title: "한다경 · 특이사항 등록", date: notiDate(2, "15:42"), text: "침대 왼쪽 콘센트에 꽂으면 전원이 들어오지 않아요.\n콘센트 점검 부탁드립니다.", actions: [{ label: "자세히 보기", href: "thread.html" }, { label: "직접 처리하기" }], read: true },
+    { id: 18, type: "review", title: "303호 · 검수 요청", date: notiDate(2, "14:30"), text: "303호 청소가 끝났어요.\n검수가 필요해요.", actions: [notiResult("303", 2)], read: true },
+    { id: 19, type: "reassign", title: "106호 · 재배정 필요", date: notiDate(3, "10:12"), text: "청소 담당자가 조퇴했어요.\n담당자 재배정이 필요해요.", actions: [{ label: "현황 확인", room: "106" }], read: true },
+    { id: 20, type: "todo", title: "301호 · 청소 필요", date: notiDate(3, "13:40"), text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 1시간 지났어요.", actions: [{ label: "현황 확인", room: "301" }], read: true },
+    { id: 21, type: "notice", title: "시스템 공지", date: notiDate(3, "09:00"), text: "[업데이트 안내] 직원 배정 화면에서 직원을 끌어다 객실에 배정할 수 있어요. 변경 사항은 일괄 저장 후 직원에게 반영됩니다.", actions: [], read: true },
+    /* 4일 전 이전 */
+    { id: 22, type: "issue", title: "최하석 · 특이사항 등록", date: notiDate(4, "16:47"), text: "빗 파손이요.\n교체 부탁드립니다.", actions: [{ label: "자세히 보기", href: "thread.html" }, { label: "직접 처리하기" }], read: true },
+    { id: 23, type: "review", title: "204호 · 검수 요청", date: notiDate(4, "15:20"), text: "204호 청소가 끝났어요.\n검수가 필요해요.", actions: [notiResult("204", 4)], read: true },
+    { id: 5, type: "notice", title: "시스템 공지", date: notiDate(5, "11:41"), text: "[서비스 정기 점검 안내] 안정적인 서비스 제공을 위해 정기 점검이 예정되어 있습니다. 점검 시간 동안 일부 기능 이용이 제한될 수 있습니다.", actions: [], read: true },
+    { id: 24, type: "reassign", title: "104호 · 재배정 필요", date: notiDate(6, "09:30"), text: "청소 담당자가 조퇴했어요.\n담당자 재배정이 필요해요.", actions: [{ label: "현황 확인", room: "104" }], read: true },
+    { id: 25, type: "todo", title: "102호 · 청소 필요", date: notiDate(6, "12:25"), text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 30분 지났어요.", actions: [{ label: "현황 확인", room: "102" }], read: true },
 ];
 
 const readIds =
