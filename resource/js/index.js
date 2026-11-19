@@ -1913,7 +1913,7 @@ function hmKeepTab() {
 function openHours(trigger) {
     hmTrigger = trigger || null;
     Object.assign(hmDraft, JSON.parse(JSON.stringify(HOURS)));
-    hmShowTab("weekday");
+    hmShowTab([0, 6].includes(new Date().getDay()) ? "weekend" : "weekday"); /* 오늘 요일에 맞는 칩부터 열려요 */
     $("#hmCleanOut").value = HOURS.cleanOut;
     $("#hmCleanIn").value = HOURS.cleanIn;
     $("#hmExtend").value = HOURS.extend;

@@ -2850,7 +2850,8 @@ main[hidden] {
 .rs-d-body {
     flex: 1;
     min-height: 0;
-    margin-top: 16px;
+    margin-top: 20px;
+    /* 메인 우측 패널만 헤더-바디 간격 16, 그 외 상세 패널은 20 */
     overflow-y: auto;
     scrollbar-gutter: stable;
 }
@@ -4019,7 +4020,8 @@ body.as-dragging * {
     height: 220px;
     padding: 0;
     overflow: hidden;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
+    /* 10px */
     cursor: pointer;
 }
 

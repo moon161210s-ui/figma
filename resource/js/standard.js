@@ -148,7 +148,7 @@ function renderCard() {
       <section class="rl-sec">
         <div class="rl-sec-head">
           <div class="rl-sec-tx">
-            <h3>${pre}관리 항목 체크리스트 <em>*필수</em></h3>
+            <h3>${pre}관리 항목 체크리스트 <em>*직원 응답 필수</em></h3>
             <p>직원이 청소 중 참고하는 항목입니다.</p>
           </div>
           <button class="rl-btn is-sm" type="button" id="rlAddCheck">${icon("plus")}항목 추가</button>
@@ -159,7 +159,7 @@ function renderCard() {
       <section class="rl-sec">
         <div class="rl-sec-head">
           <div class="rl-sec-tx">
-            <h3>${pre}청소 인증 사진 <em>*필수</em></h3>
+            <h3>${pre}청소 인증 사진 <em>*직원 응답 필수</em></h3>
             <p>직원이 청소 완료 시 제출할 사진과 촬영 방법을 설정합니다.</p>
           </div>
           <button class="rl-btn is-sm" type="button" id="rlAddProof">${icon("plus")}항목 추가</button>
