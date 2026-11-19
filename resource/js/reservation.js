@@ -1,0 +1,362 @@
+/* ==========================================================
+   예약 현황 (reservation.html / index.js 뒤에 불러와요)
+   - 월별 / 주별 달력 (마지막에 본 보기 방식은 localStorage 'rvView' 로 저장 → 다시 열어도 유지)
+   - 한 날짜의 번호 줄(날짜 + '+ 외 N건')을 누르면 우측 '날짜 상세' 패널이 열려요
+   - 예약 한 칸을 누르면 '개별 일정' 카드가 그 칸 옆에 떠요 (칸과 10px 간격, 카드 위 또는 아래 끝선이 칸과 같은 선)
+   - 한 칸 안의 정렬: 대실 → 숙박 순, 같은 종류는 입실 시간이 이른 순서 (위 → 아래)
+   - 지금은 샘플 데이터 / 서버 연결 시 RV_RESERVATIONS 만 서버 예약으로 바꾸면 돼요
+   ========================================================== */
+const RV_VIEW_KEY = "rvView";
+const RV_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const RV_MONTH_CAP = 2; /* 월별 칸 하나에 보이는 예약 수 (넘치면 '+ 외 N건') */
+
+/* ---------- 데이터 (서버 연결 시 교체) ----------
+   type: "rest"(대실) | "stay"(숙박) · start/end: 입실/퇴실 날짜 · in/out: 입실/퇴실 시간 · ext: 연장(분) */
+const RV_BASE = (() => {
+    const t = todayMid();
+    return new Date(t.getFullYear(), t.getMonth(), 1);
+})();
+const rvDay = (d) => new Date(RV_BASE.getFullYear(), RV_BASE.getMonth(), d);
+let rvSeq = 0;
+const RV = (room, type, day, nights, ch, tin, tout, guests = 2, ext = 0) => ({
+    id: ++rvSeq,
+    room,
+    type,
+    ch,
+    start: rvDay(day),
+    end: rvDay(day + (type === "stay" ? nights : 0)),
+    in: tin,
+    out: tout,
+    guests,
+    ext,
+});
+const RV_RESERVATIONS = [
+    RV("304", "stay", 7, 1, "nol", "20:00", "11:00"),
+    RV("504", "stay", 10, 3, "agoda", "15:00", "11:00", 3),
+    RV("305", "stay", 13, 1, "yeogi", "16:00", "11:00"),
+    RV("405", "rest", 16, 0, "nol", "13:00", "17:00"),
+    RV("102", "rest", 16, 0, "nol", "13:00", "17:00"),
+    RV("301", "rest", 16, 0, "trip", "15:00", "19:00"),
+    RV("203", "stay", 16, 1, "onda", "17:00", "11:00"),
+    RV("105", "rest", 16, 0, "nol", "18:00", "22:00"),
+    RV("201", "rest", 17, 0, "nol", "14:00", "18:00"),
+    RV("403", "stay", 17, 2, "yeogi", "15:00", "11:00", 2),
+    RV("201", "rest", 20, 0, "nol", "13:00", "17:00"),
+    RV("304", "stay", 20, 1, "nol", "15:00", "11:00"),
+    RV("502", "rest", 20, 0, "agoda", "14:00", "18:00"),
+    RV("104", "stay", 20, 2, "yeogi", "16:00", "11:00"),
+    RV("303", "rest", 20, 0, "trip", "19:00", "23:00"),
+    RV("205", "stay", 20, 1, "onda", "18:00", "11:00"),
+    RV("401", "rest", 24, 0, "yeogi", "13:00", "18:00", 2, 60),
+    RV("302", "rest", 24, 0, "nol", "13:00", "17:00"),
+    RV("205", "rest", 24, 0, "agoda", "19:00", "23:00"),
+    RV("101", "stay", 24, 1, "nol", "13:00", "17:00", 2, 120),
+    RV("103", "stay", 24, 1, "yeogi", "15:00", "11:00"),
+    RV("305", "stay", 22, 2, "trip", "15:00", "11:00"),
+    RV("402", "stay", 24, 1, "onda", "17:00", "11:00"),
+    RV("504", "stay", 24, 2, "agoda", "20:00", "11:00"),
+    RV("101", "rest", 28, 0, "trip", "13:00", "17:00"),
+    RV("402", "stay", 29, 2, "trip", "15:00", "11:00"),
+];
+
+/* ---------- 채널 로고 (실제 로고 SVG 가 생기면 RV_LOGO 의 값만 <img> 로 바꾸세요) ---------- */
+const RV_CH = {
+    nol: { name: "야놀자", html: '<b class="rv-logo rv-logo-nol">NOL</b>' },
+    yeogi: { name: "여기어때", html: '<b class="rv-logo rv-logo-yeogi">여기어때</b>' },
+    agoda: { name: "agoda", html: '<b class="rv-logo rv-logo-agoda">agoda</b>' },
+    trip: { name: "Trip.com", html: '<b class="rv-logo rv-logo-trip">Trip.com</b>' },
+    onda: { name: "ONDA", html: '<b class="rv-logo rv-logo-onda">ONDA</b>' },
+};
+
+/* ---------- 계산 ---------- */
+const rvKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const rvSame = (a, b) => rvKey(a) === rvKey(b);
+const rvFmtMD = (d) => `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+const rvFmtFull = (d) => `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${RV_DAYS[d.getDay()]})`;
+const rvExtText = (m) => (m % 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분 연장` : `${m / 60}시간 연장`);
+
+/* 그 날짜에 걸친 예약: 대실 → 숙박, 입실 시간이 이른 순 */
+const rvOnDay = (d) =>
+    RV_RESERVATIONS.filter((r) => d >= r.start && d <= r.end).sort(
+        (a, b) => (a.type === b.type ? 0 : a.type === "rest" ? -1 : 1) || a.in.localeCompare(b.in) || a.room.localeCompare(b.room),
+    );
+
+let rvView = "month";
+try {
+    if (localStorage.getItem(RV_VIEW_KEY) === "week") rvView = "week";
+} catch (e) { }
+let rvAnchor = todayMid(); /* 지금 보고 있는 달/주를 알려주는 날짜 */
+let rvSel = null; /* 선택한 날짜 (우측 패널) */
+let rvTab = "all";
+let rvPop = null; /* {id, date, el} */
+
+/* ---------- 예약 한 칸 ----------
+   칸의 왼쪽 끝마디 = 예약이 시작하는 날, 오른쪽 끝마디 = 예약이 끝나는 날. 사이 날짜는 끝마디 없이 이어져요 */
+function rvBar(r, d) {
+    const first = rvSame(d, r.start);
+    const last = rvSame(d, r.end);
+    const span = r.start.getTime() !== r.end.getTime();
+    const time = !span ? `${r.in} - ${r.out}` : first ? `${r.in} -` : last ? `- ${r.out}` : "";
+    const pick = rvPop && rvPop.id === r.id && rvSame(rvPop.date, d) ? " is-picked" : "";
+    return `<button class="rv-bar rv-${r.type}${first ? " is-first" : ""}${last ? " is-last" : ""}${pick}" type="button" data-rid="${r.id}" data-date="${rvKey(d)}">
+        <span class="rv-bar-top"><b>${r.room}</b>${RV_CH[r.ch].html}</span>
+        <span class="rv-bar-time">${time || "&nbsp;"}</span>
+        ${first ? '<i class="rv-cap rv-cap-l"></i>' : ""}${last ? '<i class="rv-cap rv-cap-r"></i>' : ""}
+    </button>`;
+}
+
+/* ---------- 달력 ---------- */
+function rvRange() {
+    if (rvView === "week") {
+        const s = dayAdd(rvAnchor, -rvAnchor.getDay());
+        return { start: s, end: dayAdd(s, 6) };
+    }
+    const first = new Date(rvAnchor.getFullYear(), rvAnchor.getMonth(), 1);
+    const last = new Date(rvAnchor.getFullYear(), rvAnchor.getMonth() + 1, 0);
+    return { start: dayAdd(first, -first.getDay()), end: dayAdd(last, 6 - last.getDay()), first, last };
+}
+
+function rvDayHead(d, n, other) {
+    const today = rvSame(d, todayMid());
+    const sel = rvSel && rvSame(d, rvSel);
+    const more = n > RV_MONTH_CAP ? `<span class="rv-more">+ 외 ${n - RV_MONTH_CAP}건</span>` : "";
+    return `<button class="rv-dayhead${other ? " is-other" : ""}" type="button" data-pick="${rvKey(d)}" aria-label="${rvFmtFull(d)} 상세 열기">
+        <span class="rv-day${today ? " is-today" : ""}${sel ? " is-sel" : ""}">${d.getDate()}</span>${more}
+    </button>`;
+}
+
+function renderReserve() {
+    const t = $("#rvTable");
+    const { start, end, first, last } = rvRange();
+    const todayD = todayMid();
+    $("#rvTitle").textContent =
+        rvView === "week"
+            ? `${start.getFullYear()}년 ${start.getMonth() + 1}월 ${start.getDate()}일 ~ ${end.getMonth() + 1}월 ${end.getDate()}일`
+            : `${rvAnchor.getFullYear()}년 ${rvAnchor.getMonth() + 1}월`;
+    document.querySelectorAll("#rvView button").forEach((b) => {
+        const on = b.dataset.view === rvView;
+        b.classList.toggle("is-on", on);
+        b.setAttribute("aria-selected", on);
+    });
+    const days = [];
+    for (let d = start; d <= end; d = dayAdd(d, 1)) days.push(d);
+
+    if (rvView === "week") {
+        t.className = "rv-table rv-week";
+        t.innerHTML =
+            `<div class="rv-thead">${days
+                .map((d) => {
+                    const today = rvSame(d, todayD);
+                    return `<div class="rv-th${today ? " is-today" : ""}${rvSel && rvSame(d, rvSel) ? " is-sel" : ""}">
+                        <button type="button" data-pick="${rvKey(d)}" aria-label="${rvFmtFull(d)} 상세 열기"><small>${RV_DAYS[d.getDay()]}</small><strong>${d.getDate()}</strong></button></div>`;
+                })
+                .join("")}</div>` +
+            `<div class="rv-tbody"><div class="rv-wgrid">${days
+                .map((d) => `<div class="rv-wcell">${rvOnDay(d).map((r) => rvBar(r, d)).join("")}</div>`)
+                .join("")}</div></div>`;
+    } else {
+        t.className = "rv-table rv-month";
+        t.innerHTML =
+            `<div class="rv-thead">${RV_DAYS.map((w) => `<div class="rv-th"><span>${w}</span></div>`).join("")}</div>` +
+            `<div class="rv-tbody"><div class="rv-mgrid">${days
+                .map((d) => {
+                    const list = rvOnDay(d);
+                    const other = d < first || d > last;
+                    return `<div class="rv-cell${other ? " is-other" : ""}">${rvDayHead(d, list.length, other)}
+                        <div class="rv-list">${list.slice(0, RV_MONTH_CAP).map((r) => rvBar(r, d)).join("")}</div></div>`;
+                })
+                .join("")}</div></div>`;
+    }
+}
+
+/* ---------- 우측 '날짜 상세' 패널 ---------- */
+function rvCard(r) {
+    const stay = r.type === "stay";
+    const nights = dayDiff(r.start, r.end);
+    const sched = `${rvFmtMD(r.start)} - ${rvFmtMD(r.end)}${stay ? ` (${nights}박)` : ""}`;
+    return `<div class="rv-card">
+        <div class="rv-card-tit"><strong>${r.room}호</strong><span class="badge ${stay ? "badge-primary" : "badge-todo"}">${stay ? "숙박" : "대실"}</span></div>
+        <dl class="rv-info">
+            <div><dt>일정</dt><dd>${sched}</dd></div>
+            <div><dt>인원</dt><dd>${r.guests}명</dd></div>
+            <div><dt>입실</dt><dd>${r.in}</dd></div>
+            <div><dt>퇴실</dt><dd>${r.out}${r.ext ? `<em class="rv-mini">${rvExtText(r.ext)}</em>` : ""}</dd></div>
+            <div><dt>예약</dt><dd>${RV_CH[r.ch].html}</dd></div>
+        </dl>
+    </div>`;
+}
+
+function renderRvDetail() {
+    const p = $("#rvDetail");
+    const lay = $("#rvLayout");
+    if (!rvSel) {
+        p.hidden = true;
+        lay.classList.remove("has-detail");
+        return;
+    }
+    const all = rvOnDay(rvSel);
+    const rest = all.filter((r) => r.type === "rest").length;
+    const list = all.filter((r) => rvTab === "all" || r.type === rvTab);
+    const tabs = [
+        ["all", "전체"],
+        ["stay", "숙박"],
+        ["rest", "대실"],
+    ];
+    const keepScroll = p.querySelector(".rv-d-body")?.scrollTop || 0;
+    p.innerHTML = `<div class="rs-d-head"><h2>날짜 상세</h2>
+            <button class="rs-x" type="button" data-rv="close-detail" aria-label="닫기">${icon("close", 24)}</button></div>
+        <div class="rv-d-body">
+            <p class="rv-d-date">${rvFmtFull(rvSel)}</p>
+            <section class="rv-d-sec"><h3>예약 요약</h3>
+                <dl class="rv-sum"><div><dt>총 예약</dt><dd>${all.length}건</dd></div><div><dt>대실</dt><dd>${rest}건</dd></div><div><dt>숙박</dt><dd>${all.length - rest}건</dd></div></dl>
+            </section>
+            <section class="rv-d-sec"><h3>예약 목록</h3>
+                <div class="rv-seg rv-seg-full" role="tablist">${tabs.map(([k, v]) => `<button type="button" role="tab" class="${rvTab === k ? "is-on" : ""}" data-rv-tab="${k}">${v}</button>`).join("")}</div>
+                <div class="rv-cards">${list.length ? list.map(rvCard).join("") : '<p class="rv-empty">예약이 없어요.</p>'}</div>
+            </section>
+        </div>`;
+    p.hidden = false;
+    lay.classList.add("has-detail");
+    p.querySelector(".rv-d-body").scrollTop = keepScroll;
+}
+
+/* ---------- 개별 일정 카드 (예약 한 칸 선택) ---------- */
+function closeRvPop() {
+    if (!rvPop) return;
+    rvPop.el.remove();
+    rvPop = null;
+    document.querySelectorAll(".rv-bar.is-picked").forEach((b) => b.classList.remove("is-picked"));
+}
+
+function openRvPop(bar) {
+    const r = RV_RESERVATIONS.find((x) => x.id === +bar.dataset.rid);
+    if (!r) return;
+    const [y, m, dd] = bar.dataset.date.split("-").map(Number);
+    const date = new Date(y, m - 1, dd);
+    closeRvPop();
+    bar.classList.add("is-picked");
+    const el = document.createElement("div");
+    el.className = "rv-pop";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-label", "개별 일정");
+    el.innerHTML = `<div class="rv-pop-head"><h3>${rvFmtFull(date)}</h3>
+        <button class="rs-x" type="button" data-rv="close-pop" aria-label="닫기">${icon("close", 24)}</button></div>
+        <div class="rv-pop-body">${rvCard(r).replace('class="rv-card"', 'class="rv-card is-plain"')}</div>`;
+    document.body.appendChild(el);
+    rvPop = { id: r.id, date, el };
+    rvPlacePop(bar);
+}
+
+/* 카드는 칸의 오른쪽(자리가 없으면 왼쪽)에 10px 띄워서 놓고,
+   카드의 맨 위선을 칸의 맨 위선에 맞춰요 (아래로 넘치면 카드의 맨 아래선을 칸의 맨 아래선에 맞춰요) */
+function rvPlacePop(bar) {
+    if (!rvPop) return;
+    const el = rvPop.el;
+    const b = bar.getBoundingClientRect();
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    const GAP = 10;
+    const M = 20;
+    let left = b.right + GAP;
+    if (left + w > innerWidth - M) left = b.left - GAP - w;
+    if (left < M) left = Math.max(M, Math.min(innerWidth - M - w, b.left + (b.width - w) / 2));
+    let top = b.top;
+    if (top + h > innerHeight - M) top = b.bottom - h;
+    top = Math.max(M, top);
+    el.style.left = `${Math.round(left)}px`;
+    el.style.top = `${Math.round(top)}px`;
+}
+
+/* ---------- 이동 / 선택 ---------- */
+function rvMove(dir) {
+    closeRvPop();
+    if (rvView === "week") rvAnchor = dayAdd(rvAnchor, 7 * dir);
+    else rvAnchor = new Date(rvAnchor.getFullYear(), rvAnchor.getMonth() + dir, 1);
+    renderReserve();
+}
+
+function rvSetView(v) {
+    if (v === rvView) return;
+    closeRvPop();
+    rvView = v;
+    try {
+        localStorage.setItem(RV_VIEW_KEY, v);
+    } catch (e) { }
+    /* 월 ↔ 주 전환 시 보던 날짜 근처를 유지해요 */
+    if (v === "month") rvAnchor = new Date(rvAnchor.getFullYear(), rvAnchor.getMonth(), 1 + (rvSame(rvAnchor, todayMid()) ? todayMid().getDate() - 1 : rvAnchor.getDate() - 1));
+    renderReserve();
+}
+
+function rvSelect(key) {
+    const [y, m, d] = key.split("-").map(Number);
+    const nd = new Date(y, m - 1, d);
+    closeRvPop();
+    if (rvSel && rvSame(rvSel, nd)) {
+        /* 같은 날짜를 다시 누르면 패널이 닫혀요 */
+        rvSel = null;
+    } else {
+        rvSel = nd;
+        rvTab = "all";
+    }
+    renderReserve();
+    renderRvDetail();
+}
+
+function handleReserveClick(e) {
+    if (!$("#viewReserve")) return false;
+    const bar = e.target.closest(".rv-bar");
+    if (bar) {
+        if (rvPop && rvPop.id === +bar.dataset.rid && rvKey(rvPop.date) === bar.dataset.date) closeRvPop();
+        else openRvPop(bar);
+        return true;
+    }
+    if (e.target.closest(".rv-pop")) {
+        if (e.target.closest('[data-rv="close-pop"]')) closeRvPop();
+        return true;
+    }
+    closeRvPop();
+    const pick = e.target.closest("[data-pick]");
+    if (pick) {
+        rvSelect(pick.dataset.pick);
+        return true;
+    }
+    if (e.target.closest('[data-rv="close-detail"]')) {
+        rvSel = null;
+        renderReserve();
+        renderRvDetail();
+        return true;
+    }
+    const tab = e.target.closest("[data-rv-tab]");
+    if (tab) {
+        rvTab = tab.dataset.rvTab;
+        renderRvDetail();
+        return true;
+    }
+    const v = e.target.closest("#rvView [data-view]");
+    if (v) {
+        rvSetView(v.dataset.view);
+        return true;
+    }
+    if (e.target.closest("#rvPrev")) return rvMove(-1), true;
+    if (e.target.closest("#rvNext")) return rvMove(1), true;
+    if (e.target.closest("#rvToday")) {
+        rvAnchor = todayMid();
+        renderReserve();
+        return true;
+    }
+    return false;
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && rvPop) closeRvPop();
+});
+addEventListener("resize", () => {
+    if (!rvPop) return;
+    const bar = document.querySelector(".rv-bar.is-picked");
+    if (bar) rvPlacePop(bar);
+    else closeRvPop();
+});
+document.addEventListener("scroll", () => closeRvPop(), true);
+
+renderReserve();
+renderRvDetail();

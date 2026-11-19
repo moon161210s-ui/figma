@@ -4289,3 +4289,1088 @@ body.rl-dragging * {
         align-items: flex-start;
     }
 }
+
+/* ==========================================================
+   업무 특이사항 (thread.html)
+   - 위: 날짜 / 검색 / 카테고리 필터 / 상태 칩 / 리스트 설정 (흰 상자)
+   - 아래: 카테고리별 칸 (칸이 많으면 가로 스크롤) / 칸 안의 카드 목록은 세로 스크롤
+   ========================================================== */
+.th-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.th-search {
+    width: 320px;
+}
+
+.th-select {
+    width: 230px;
+}
+
+.th-filter .rs-date {
+    width: 200px;
+}
+
+.th-chiprow {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.th-set-btn {
+    font-size: var(--fs-body1);
+}
+
+/* 칸이 놓이는 줄: 화면 아래(여백 20px)까지 채우고, 가로 스크롤바는 칸 아래 16px 에 놓여요 */
+.th-board-wrap {
+    position: relative;
+    margin-top: 20px;
+}
+
+/* 가로로 스크롤하다 칸이 화면 가장자리에서 잘려도 잘린 쪽 모서리가 둥글게 보이도록(radius 유지)
+   칸 영역의 네 모서리 바깥을 배경색으로 덮어요 (맨 아래 24px = 칸 아래 여백 16 + 스크롤바 8 은 덮지 않아요) */
+.th-board-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 24px 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 100% 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl)) 0 0 / var(--radius-xl) var(--radius-xl) no-repeat,
+        radial-gradient(circle at 0 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl)) 100% 0 / var(--radius-xl) var(--radius-xl) no-repeat,
+        radial-gradient(circle at 100% 0, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl)) 0 100% / var(--radius-xl) var(--radius-xl) no-repeat,
+        radial-gradient(circle at 0 0, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl)) 100% 100% / var(--radius-xl) var(--radius-xl) no-repeat;
+}
+
+.th-board {
+    display: flex;
+    gap: 16px;
+    height: calc(100vh - 300px);
+    min-height: 480px;
+    padding-bottom: 16px;
+    overflow-x: scroll;
+    /* 스크롤바 자리가 늘 있어서 칸 높이가 달라지지 않아요 */
+    overflow-y: hidden;
+}
+
+.th-board::-webkit-scrollbar {
+    height: var(--scroll-width);
+}
+
+.th-board::-webkit-scrollbar-track {
+    border-radius: 100px;
+    background: var(--color-gray-50);
+}
+
+.th-board::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: var(--color-gray-900);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .th-board {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-gray-900) var(--color-gray-50);
+    }
+}
+
+/* 카테고리 칸: 칸이 4개면 가로를 꽉 채우고, 더 많으면 398px 로 멈춰서 가로 스크롤돼요 */
+.th-col {
+    display: flex;
+    flex: 1 0 398px;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 398px;
+    padding: 16px 8px 16px 16px;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.th-col.is-wide {
+    flex-basis: 100%;
+}
+
+.th-col-tit {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    padding: 0 8px;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+/* 카드 목록: 스크롤바(8px)는 칸 오른쪽 여백(8px) 옆에 놓여서 카드 폭은 366px 이에요 */
+.th-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.th-list::-webkit-scrollbar {
+    width: var(--scroll-width);
+}
+
+.th-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.th-list::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: var(--color-gray-200);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .th-list {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-gray-200) transparent;
+    }
+}
+
+/* 한 카테고리만 고르면 한 칸을 넓게 쓰고 카드를 여러 줄로 보여줘요 */
+.th-col.is-wide .th-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(364px, 1fr));
+    align-content: start;
+}
+
+/* ---- 특이사항 카드 (Details_RoomCard) ---- */
+.th-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-lg);
+    background: var(--color-base-inverse);
+}
+
+.th-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.th-card-tit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.th-card-room {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.th-card-room strong {
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5, 36px);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+    white-space: nowrap;
+}
+
+.th-card-time {
+    flex-shrink: 0;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+    white-space: nowrap;
+}
+
+.th-card-cont {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+/* 사진 80px / 여러 장이면 오른쪽 위에 +N */
+.th-img {
+    position: relative;
+    flex-shrink: 0;
+    width: 80px;
+    height: 80px;
+    overflow: hidden;
+    border: 1px solid var(--color-line-low);
+    border-radius: var(--radius-sm);
+    background: var(--color-gray-50);
+}
+
+.th-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.th-img-more {
+    position: absolute;
+    top: 5px;
+    right: 4px;
+    padding: 0 4px;
+    border-radius: var(--radius-xs);
+    background: rgba(0, 0, 0, 0.6);
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    font-weight: var(--fw-bold);
+    color: var(--color-white);
+}
+
+.th-card-txt {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.th-msg {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    height: 48px;
+    margin: 0;
+    overflow: hidden;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-900);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.th-user {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 42px;
+}
+
+.th-user p {
+    margin: 0;
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    color: var(--color-gray-300);
+}
+
+.th-btns {
+    display: flex;
+    gap: 16px;
+}
+
+.th-btns .btn {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ---- 리스트 설정 모달 ---- */
+.hm-box.th-set {
+    width: 640px;
+}
+
+.th-set-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    min-height: 0;
+    padding: 16px 24px;
+}
+
+.th-set-top {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    justify-content: space-between;
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.th-set-top strong {
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.th-set-top span {
+    color: var(--color-gray-300);
+}
+
+.th-set-list {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    gap: 8px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.th-set-item {
+    display: flex;
+    align-items: center;
+    background: var(--color-base-inverse);
+}
+
+.th-set-item.is-dragging {
+    opacity: 0.6;
+}
+
+.th-set-handle {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: grab;
+    touch-action: none;
+}
+
+.th-set-handle:hover {
+    background: var(--color-bg-disable);
+}
+
+.th-set-input {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    height: 48px;
+    padding: 0 2px 0 12px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+}
+
+.th-set-input:focus-within {
+    border-color: var(--color-gray-900);
+}
+
+.th-set-input.is-error {
+    border-color: var(--color-dangerous);
+}
+
+.th-set-input input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+}
+
+.th-set-del {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    padding: 8px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+}
+
+.th-set-del:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.th-set-add:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ==========================================================
+   예약 현황 (reservation.html)
+   ========================================================== */
+#viewReserve {
+    padding-bottom: 20px;
+}
+
+.rv-layout {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 140px);
+    min-height: 560px;
+}
+
+/* 달력 카드 (overflow 로 잘라서 스크롤해도 모서리가 둥글게 유지돼요) */
+.rv-cal {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    padding: 20px;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.rv-head {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.rv-head-left,
+.rv-head-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rv-title {
+    margin: 0;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5);
+    font-weight: var(--fw-bold);
+    white-space: nowrap;
+}
+
+.rv-nav {
+    display: flex;
+    gap: 6px;
+}
+
+.rv-today {
+    height: 40px;
+    border-radius: var(--radius-md);
+    font-size: var(--fs-body1);
+}
+
+.rv-icon-btn {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+    cursor: pointer;
+}
+
+.rv-icon-btn:hover {
+    background: var(--color-bg-low);
+}
+
+.rv-legend {
+    display: flex;
+    gap: 9px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+}
+
+.rv-legend li {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.rv-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-xs);
+}
+
+.rv-dot-stay {
+    background: var(--color-primary-500);
+}
+
+.rv-dot-rest {
+    background: var(--color-gray-200);
+}
+
+/* 월별 / 주별 · 전체 / 숙박 / 대실 */
+.rv-seg {
+    display: flex;
+    width: 128px;
+    padding: 4px;
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-base);
+}
+
+.rv-seg button {
+    flex: 1;
+    min-width: 54px;
+    height: 40px;
+    padding: 2px 10px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-gray-200);
+    font: inherit;
+    font-size: var(--fs-body1);
+    font-weight: var(--fw-medium);
+    cursor: pointer;
+}
+
+.rv-seg button.is-on {
+    background: var(--color-white);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.07);
+    color: var(--color-gray-900);
+    font-weight: var(--fw-bold);
+}
+
+.rv-seg-full {
+    width: 100%;
+}
+
+/* ---------- 표 ---------- */
+.rv-table {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.rv-thead {
+    display: flex;
+    flex-shrink: 0;
+    border-top: 1px solid var(--color-line-normal);
+    border-bottom: 1px solid var(--color-line-normal);
+    background: var(--color-bg-low);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    overflow: hidden;
+}
+
+.rv-th {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    color: var(--color-gray-300);
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.rv-month .rv-th {
+    height: 48px;
+}
+
+.rv-week .rv-th {
+    height: 80px;
+    padding: 8px 0;
+}
+
+.rv-week .rv-th button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.rv-week .rv-th small {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.rv-week .rv-th strong {
+    color: var(--color-gray-900);
+    font-size: var(--fs-h4);
+    line-height: var(--lh-h4);
+    font-weight: var(--fw-regular);
+}
+
+.rv-week .rv-th.is-today {
+    background: var(--color-primary-50);
+}
+
+.rv-week .rv-th.is-today strong {
+    color: var(--color-primary-500);
+}
+
+.rv-week .rv-th.is-sel strong {
+    display: inline-block;
+    min-width: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--color-gray-900);
+    color: var(--color-white);
+}
+
+.rv-tbody {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* 세로줄은 격자 배경으로 그려서 여러 날에 걸친 예약 칸이 줄에 가려지지 않아요 */
+.rv-mgrid,
+.rv-wgrid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    isolation: isolate;
+    min-height: 100%;
+    background: repeating-linear-gradient(90deg, var(--color-line-normal) 0 1px, transparent 1px calc(100% / 7));
+}
+
+.rv-mgrid {
+    grid-auto-rows: minmax(150px, 1fr);
+}
+
+.rv-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--color-line-normal);
+}
+
+.rv-cell.is-other::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 1px;
+    z-index: -1;
+    background: var(--color-bg-low);
+}
+
+/* 날짜 줄 (날짜 번호 + '+ 외 N건') = 누르면 우측 상세 패널이 열리는 영역 */
+.rv-dayhead {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 4px;
+    width: 100%;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--color-gray-900);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.rv-dayhead:hover .rv-day:not(.is-today):not(.is-sel) {
+    background: var(--color-bg-base);
+}
+
+.rv-day {
+    display: grid;
+    place-items: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.rv-day.is-today {
+    background: var(--color-primary-500);
+    color: var(--color-white);
+    font-weight: var(--fw-bold);
+}
+
+.rv-day.is-sel {
+    background: var(--color-gray-900);
+    color: var(--color-white);
+    font-weight: var(--fw-bold);
+}
+
+.rv-dayhead.is-other .rv-day:not(.is-sel):not(.is-today) {
+    color: var(--color-gray-200);
+}
+
+.rv-more {
+    color: var(--color-gray-300);
+    font-size: var(--fs-body3);
+    line-height: var(--lh-body3);
+    font-weight: var(--fw-bold);
+}
+
+.rv-list,
+.rv-wcell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.rv-wcell {
+    padding: 12px 6px;
+    border-bottom: 1px solid var(--color-line-normal);
+}
+
+/* ---------- 예약 한 칸 (Schedule_md) ---------- */
+.rv-bar {
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 48px;
+    padding: 4px 10px;
+    border: 0;
+    border-radius: 0;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.rv-bar.is-first {
+    border-top-left-radius: var(--radius-xs);
+    border-bottom-left-radius: var(--radius-xs);
+}
+
+.rv-bar.is-last {
+    border-top-right-radius: var(--radius-xs);
+    border-bottom-right-radius: var(--radius-xs);
+}
+
+/* 여러 날에 걸친 예약은 날짜 칸 사이 여백까지 이어 붙여요 */
+.rv-bar:not(.is-first) {
+    margin-left: -6px;
+}
+
+.rv-bar:not(.is-last) {
+    margin-right: -6px;
+}
+
+.rv-stay {
+    background: var(--color-primary-50);
+    --rv-cap: var(--color-primary-300);
+}
+
+.rv-stay:hover,
+.rv-stay.is-picked {
+    background: var(--color-primary-100);
+}
+
+.rv-rest {
+    background: var(--color-bg-base);
+    --rv-cap: var(--color-gray-200);
+}
+
+.rv-rest:hover,
+.rv-rest.is-picked {
+    background: #e3e7f1;
+}
+
+.rv-bar-top {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.rv-bar-top b {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.rv-bar-time {
+    color: var(--color-gray-300);
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    white-space: nowrap;
+}
+
+/* 시작(왼쪽) / 끝(오른쪽) 끝마디 */
+.rv-cap {
+    position: absolute;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--rv-cap);
+}
+
+.rv-cap-l {
+    left: 0;
+    border-radius: var(--radius-xs) 0 0 var(--radius-xs);
+}
+
+.rv-cap-r {
+    right: 0;
+    border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+}
+
+/* 채널 로고 (실제 로고 파일로 바꿔도 돼요) */
+.rv-logo {
+    flex-shrink: 0;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+}
+
+.rv-logo-nol {
+    color: #0066ff;
+}
+
+.rv-logo-yeogi {
+    color: #ee2a4a;
+}
+
+.rv-logo-agoda {
+    color: #5c6470;
+    font-weight: var(--fw-medium);
+}
+
+.rv-logo-trip {
+    color: #287dfa;
+}
+
+.rv-logo-onda {
+    color: #1a4bd6;
+}
+
+/* ---------- 우측 '날짜 상세' 패널 ---------- */
+.rv-detail {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: 380px;
+    padding-top: 16px;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.rv-detail[hidden] {
+    display: none;
+}
+
+.rv-d-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+    margin-top: 20px;
+    padding: 0 20px 20px;
+    overflow-y: auto;
+}
+
+.rv-d-date {
+    margin: 0;
+    font-size: var(--fs-h3);
+    line-height: var(--lh-h3);
+    font-weight: var(--fw-bold);
+}
+
+.rv-d-sec {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rv-d-sec+.rv-d-sec {
+    margin-top: 20px;
+}
+
+.rv-d-sec h3 {
+    margin: 0;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5);
+    font-weight: var(--fw-bold);
+}
+
+.rv-sum,
+.rv-info {
+    margin: 0;
+}
+
+.rv-sum {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-low);
+}
+
+.rv-sum div {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.rv-sum dt {
+    flex: none;
+    width: 92px;
+    color: var(--color-gray-300);
+}
+
+.rv-sum dd {
+    margin: 0;
+}
+
+.rv-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.rv-empty {
+    margin: 24px 0;
+    color: var(--color-gray-300);
+    text-align: center;
+}
+
+.rv-card {
+    padding: 16px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-lg);
+    background: var(--color-base-inverse);
+}
+
+.rv-card.is-plain {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+}
+
+.rv-card-tit {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 16px;
+}
+
+.rv-card-tit strong {
+    min-width: 68px;
+    white-space: nowrap;
+    font-size: var(--fs-h4);
+    line-height: var(--lh-h4);
+}
+
+.rv-card-tit .badge {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--radius-xs);
+    font-size: var(--fs-body2);
+    font-weight: var(--fw-bold);
+}
+
+.rv-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.rv-info div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+}
+
+.rv-info dt {
+    flex: none;
+    width: 60px;
+    color: var(--color-gray-300);
+    line-height: var(--lh-body1);
+}
+
+.rv-info dd {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    color: var(--color-gray-300);
+    font-weight: var(--fw-medium);
+    line-height: var(--lh-body1);
+}
+
+.rv-info .rv-logo {
+    font-size: 14px;
+}
+
+.rv-mini {
+    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+    background: var(--color-bg-base);
+    color: var(--color-gray-300);
+    font-size: var(--fs-body3);
+    line-height: var(--lh-body3);
+    font-style: normal;
+    font-weight: var(--fw-medium);
+}
+
+/* ---------- 개별 일정 카드 ---------- */
+.rv-pop {
+    position: fixed;
+    z-index: 60;
+    width: 380px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+    box-shadow: 0 0 12.5px rgba(31, 34, 37, 0.08);
+}
+
+.rv-pop-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 16px 24px;
+}
+
+.rv-pop-head h3 {
+    margin: 0;
+    font-size: var(--fs-h4);
+    line-height: var(--lh-h4);
+    font-weight: var(--fw-bold);
+}
+
+.rv-pop-body {
+    padding: 8px 24px 24px;
+}
+
+/* 한 주의 맨 왼쪽/오른쪽 칸에서는 이어 붙이는 여백이 달력 밖으로 나가지 않게 해요 */
+.rv-mgrid>.rv-cell:nth-child(7n) .rv-bar,
+.rv-wgrid>.rv-wcell:nth-child(7n) .rv-bar {
+    margin-right: 0;
+}
+
+.rv-mgrid>.rv-cell:nth-child(7n + 1) .rv-bar,
+.rv-wgrid>.rv-wcell:nth-child(7n + 1) .rv-bar {
+    margin-left: 0;
+}

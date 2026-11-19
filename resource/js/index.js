@@ -369,7 +369,7 @@ function roomCard(r) {
 
 /* 체크된 필터 값 (처음에는 전부 체크 = 전체 / 아래 FILTER_DEFS 뒤에서 채워요) */
 /* 선택한 값만 담아요. 아무것도 선택하지 않으면 필터 없음(= 전체) */
-const filters = { floor: new Set(), status: new Set(), rtype: new Set(), astatus: new Set() };
+const filters = { floor: new Set(), status: new Set(), rtype: new Set(), astatus: new Set(), tcat: new Set() };
 const filterPass = (kind, value) => filters[kind].size === 0 || filters[kind].has(value);
 
 function renderFloors() {
@@ -506,7 +506,7 @@ let pop = null; /* 현재 열린 팝오버 요소 */
 let popAnchor = null; /* 팝오버를 연 버튼 */
 
 function closePopover() {
-    const rd = document.getElementById("rsDate");
+    const rd = document.getElementById("rsDate") || document.getElementById("thDate");
     if (rd) rd.setAttribute("aria-expanded", "false");
     if (pop) pop.remove();
     pop = null;
@@ -760,11 +760,12 @@ function openPopover(kind, anchor, room) {
         };
     }
 
-    /* 청소 결과 날짜 선택: 퇴실 예정 모달과 같은 달력인데 시간 칸만 없어요 (날짜 제한 없음 / 실제 달력) */
-    if (kind === "resultDate") {
+    /* 청소 결과 · 업무 특이사항 날짜 선택: 퇴실 예정 모달과 같은 달력인데 시간 칸만 없어요 (날짜 제한 없음 / 실제 달력) */
+    if (kind === "resultDate" || kind === "threadDate") {
         pop.dataset.align = "left";
-        let view = new Date(rsDate.getFullYear(), rsDate.getMonth(), 1);
-        let sel = new Date(rsDate);
+        const baseDate = kind === "threadDate" ? tdDate : rsDate;
+        let view = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+        let sel = new Date(baseDate);
         const todayMid = new Date();
         todayMid.setHours(0, 0, 0, 0);
         const drawCal = () => {
@@ -809,6 +810,12 @@ function openPopover(kind, anchor, room) {
             placePopover();
         });
         save = () => {
+            if (kind === "threadDate") {
+                tdDate = sel;
+                closePopover();
+                renderThread();
+                return false;
+            }
             rsDate = sel;
             rsSelected = null;
             closePopover();
@@ -972,6 +979,11 @@ const FILTER_DEFS = {
             { value: "assigned", label: "배정 완료" },
             { value: "need", label: "재배정 필요" },
         ],
+    },
+    /* 업무 특이사항 카테고리 (thread.js 의 TH_CATS) */
+    tcat: {
+        base: "전체",
+        options: () => (typeof TH_CATS !== "undefined" ? TH_CATS : []).map((c) => ({ value: c.id, label: c.name })),
     },
     rtype: {
         base: "객실 유형",
@@ -1154,6 +1166,7 @@ function openFilterMenu(btn) {
         updateFilterButtons();
         if (kind === "astatus") renderAssignRooms();
         else if (kind === "rtype") renderResults();
+        else if (kind === "tcat") renderThread();
         else renderFloors();
     };
 
@@ -1191,6 +1204,8 @@ document.addEventListener("click", (e) => {
         return;
     }
     if (typeof handleResultsClick === "function" && handleResultsClick(e)) return;
+    if (typeof handleThreadClick === "function" && handleThreadClick(e)) return;
+    if (typeof handleReserveClick === "function" && handleReserveClick(e)) return;
     const fbtn = e.target.closest(".select[data-filter]");
     if (fbtn) {
         openFilterMenu(fbtn);
@@ -1247,6 +1262,7 @@ document.addEventListener("keydown", (e) => {
         else if (fmenu) closeFilterMenu();
         else if (pop) closePopover();
         else if (document.getElementById("rsModal")?.hidden === false) { /* 청소 결과 모달이 열려 있으면 모달만 닫아요 (result.js) */ }
+        else if (document.getElementById("thModal")?.hidden === false) { /* 리스트 설정 모달이 열려 있으면 모달만 닫아요 (thread.js) */ }
         else if (typeof rsSelected !== "undefined" && rsSelected) closeRsDetail(); else if (selectedNo) {
             selectedNo = null;
             renderFloors();
