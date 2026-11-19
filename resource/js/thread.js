@@ -155,7 +155,7 @@ function thCard(i) {
         : "";
     const btns =
         i.state === "wait"
-            ? `<div class="th-btns"><button class="btn btn-md btn-primary" type="button" data-th-act="take">처리하기</button></div>`
+            ? `<div class="th-btns"><button class="btn btn-md btn-dark" type="button" data-th-act="take">처리하기</button></div>`
             : mine
                 ? `<div class="th-btns">
           <button class="btn btn-md btn-outline" type="button" data-th-act="cancel">처리 취소</button>

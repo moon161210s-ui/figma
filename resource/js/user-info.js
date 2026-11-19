@@ -269,85 +269,95 @@ function renderStaffDetail() {
   const selShift = shiftOf(sel);
   const isToday = siKey(sel) === siKey(todayMid());
   const first = week[0];
-  p.innerHTML = `<div class="rs-d-head"><h2>직원 정보 수정</h2>
-            <button class="rs-x" type="button" data-ui="close" aria-label="닫기">${icon(
-              "close",
-              20
-            )}</button></div>
-        <div class="ui-d-body">
-            <div class="ui-user">${siAvatar(s, "lg")}<div><strong>${
-    s.name
-  }</strong><span>${s.phone}</span></div></div>
-            <section class="ui-sec"><h3>기본 설정</h3>
-                <div class="ui-set">
-                    <div class="ui-set-row"><div><p>숙련도 설정</p><p class="is-sub">설정한 숙련도는 청소 자동 배정에 반영됩니다.</p></div>${siSeg(
-                      "level",
-                      SI_LEVELS.map((l) => [l, l]),
-                      d.level
-                    )}</div>
-                    <div class="ui-set-row"><div><p>청소 검수 대상</p><p class="is-sub">검수 대상 직원의 청소는 관리자 확인이 필요합니다.</p></div>${siSeg(
-                      "review",
-                      [
-                        ["y", "검수 대상"],
-                        ["n", "대상 아님"],
-                      ],
-                      d.review ? "y" : "n"
-                    )}</div>
-                </div>
-            </section>
-            <hr class="ui-line" />
-            <section class="ui-sec"><h3>근무 일정</h3>
-                <div class="ui-weeknav">
-                    <button class="rv-icon-btn" type="button" data-ui="prev" aria-label="이전 주">${icon(
-                      "arrow-left"
-                    )}</button>
-                    <strong>${first.getFullYear()}년 ${
-    first.getMonth() + 1
-  }월 ${siWeekNo(first)}주차</strong>
-                    <button class="rv-icon-btn" type="button" data-ui="next" aria-label="다음 주">${icon(
-                      "arrow-right"
-                    )}</button>
-                </div>
-                <div class="ui-week">${week
-                  .map((day) => {
-                    const f = shiftOf(day);
-                    return `<button type="button" class="ui-day${
-                      siKey(day) === siKey(sel) ? " is-on" : ""
-                    }" data-day="${siKey(day)}">
-                            <span class="ui-day-w">${
-                              SI_DAYS[day.getDay()]
-                            }</span><strong>${day.getDate()}</strong><span class="ui-day-s">${
-                      f ? SI_SHIFTS[f].label : "-"
-                    }</span></button>`;
-                  })
-                  .join("")}</div>
-                <div class="ui-daybox">
-                    <p class="ui-daybox-tit">${
-                      sel.getMonth() + 1
-                    }월 ${sel.getDate()}일 (${SI_DAYS[sel.getDay()]})</p>
-                    <div class="ui-daybox-row">
-                        <dl><div><dt>근무 형태</dt><dd>${
-                          selShift ? SI_SHIFTS[selShift].label : "휴무"
-                        }</dd></div>
-                            <div><dt>근무 시간</dt><dd>${
-                              selShift ? SI_SHIFTS[selShift].time : "-"
-                            }</dd></div></dl>
-                        <div class="ui-daybox-btns">
-                            <button class="btn btn-sm btn-outline" type="button" data-ui="shift">근무 형태 변경</button>
-                            <button class="btn btn-sm btn-outline" type="button" data-ui="early" ${
-                              isToday && selShift ? "" : "disabled"
-                            }>${
-    d.state === "early" ? "조퇴 취소" : "조퇴 처리"
-  }</button>
-                        </div>
+  
+p.innerHTML = `<div class="rs-d-head"><h2>직원 정보 수정</h2>
+<button class="rs-x" type="button" data-ui="close" aria-label="닫기">${icon(
+  "close",
+  20
+)}</button></div>
+<div class="ui-d-body">
+<div class="ui-user">${siAvatar(s, "lg")}<div><strong>${
+s.name
+}</strong><span>${s.phone}</span></div></div>
+<section class="ui-sec"><h3>기본 설정</h3>
+    <div class="ui-set">
+        <div class="ui-set-row"><div><p>숙련도 설정</p><p class="is-sub">설정한 숙련도는 청소 자동 배정에 반영됩니다.</p></div>${siSeg(
+          "level",
+          SI_LEVELS.map((l) => [l, l]),
+          d.level
+        )}</div>
+        <div class="ui-set-row"><div><p>청소 검수 대상</p><p class="is-sub">검수 대상 직원의 청소는 관리자 확인이 필요합니다.</p></div>${siSeg(
+          "review",
+          [
+            ["y", "검수 대상"],
+            ["n", "대상 아님"],
+          ],
+          d.review ? "y" : "n"
+        )}</div>
+    </div>
+</section>
+<hr class="ui-line" />
+<section class="ui-sec"><h3>근무 일정</h3>
+    <div class="ui-weeknav">
+        <button class="rv-icon-btn" type="button" data-ui="prev" aria-label="이전 주">${icon(
+          "arrow-left"
+        )}</button>
+        <strong>${first.getFullYear()}년 ${
+first.getMonth() + 1
+}월 ${siWeekNo(first)}주차</strong>
+        <button class="rv-icon-btn" type="button" data-ui="next" aria-label="다음 주">${icon(
+          "arrow-right"
+        )}</button>
+    </div>
+
+    <div class="ui-week-group">
+        <div class="ui-week">${week
+          .map((day) => {
+            const f = shiftOf(day);
+            return `<button type="button" class="ui-day${
+              siKey(day) === siKey(sel) ? " is-on" : ""
+            }" data-day="${siKey(day)}">
+                <span class="ui-day-w">${
+                  SI_DAYS[day.getDay()]
+                }</span><strong>${day.getDate()}</strong><span class="ui-day-s">${
+              f ? SI_SHIFTS[f].label : "-"
+            }</span></button>`;
+          })
+          .join("")}</div>
+
+        <div class="ui-daybox-group">
+            <div class="ui-daybox">
+                <p class="ui-daybox-tit">${
+                  sel.getMonth() + 1
+                }월 ${sel.getDate()}일 (${SI_DAYS[sel.getDay()]})</p>
+                <div class="ui-daybox-row">
+                    <dl><div><dt>근무 형태</dt><dd>${
+                      selShift ? SI_SHIFTS[selShift].label : "휴무"
+                    }</dd></div>
+                        <div><dt>근무 시간</dt><dd>${
+                          selShift ? SI_SHIFTS[selShift].time : "-"
+                        }</dd></div></dl>
+                    <div class="ui-daybox-btns">
+                        <button class="btn btn-sm btn-outline" type="button" data-ui="shift">근무 형태 변경</button>
+                        <button class="btn btn-sm btn-outline" type="button" data-ui="early" ${
+                          isToday && selShift ? "" : "disabled"
+                        }>${
+d.state === "early" ? "조퇴 취소" : "조퇴 처리"
+}</button>
                     </div>
                 </div>
-            </section>
+            </div>
+
             <div class="ui-resign"><button class="text-btn" type="button" data-ui="resign">직원 퇴사 처리하기</button></div>
         </div>
-        <div class="ui-d-foot"><button class="btn btn-lg btn-outline" type="button" data-ui="cancel">취소</button><button class="btn btn-lg btn-primary" type="button" data-ui="save">저장</button></div>`;
-  p.querySelector(".ui-d-body").scrollTop = keep;
-  p.querySelectorAll(".ui-seg").forEach((group) => siPositionSeg(group, false));
+    </div>
+</section>
+</div>
+<div class="ui-d-foot"><button class="btn btn-lg btn-outline" type="button" data-ui="cancel">취소</button><button class="btn btn-lg btn-primary" type="button" data-ui="save">저장</button></div>`;
+
+p.querySelector(".ui-d-body").scrollTop = keep;
+p.querySelectorAll(".ui-seg").forEach((group) => siPositionSeg(group, false));
+
 }
 
 function siSelect(id) {

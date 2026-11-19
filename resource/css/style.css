@@ -60,10 +60,10 @@
     --color-information: #0091ea;
 
     /* ---------- Color / System bg ---------- */
-    --color-dangerous-bg: #fbe8e8;
-    --color-warning-bg: #fef2e4;
-    --color-success-bg: #e9f5ea;
-    --color-information-bg: #e0f1fc;
+    --color-dangerous-bg: #FFF4F4;
+    --color-warning-bg: #FFF8EF;
+    --color-success-bg: #F0FDF1;
+    --color-information-bg: #F0F9FF;
 
     /* ---------- Typography / Font Family ---------- */
     --font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
@@ -481,7 +481,7 @@ button { font-family: inherit; }
 .badge-reassign { background: var(--color-dangerous-bg); color: var(--color-dangerous); } 
 .badge-review { background: var(--color-warning-bg); color: var(--color-warning); } 
 .badge-progress,
-.badge-todo { background: var(--color-gray-50); color: var(--color-gray-300); } 
+.badge-todo { background: var(--color-bg-base); color: var(--color-gray-300); } 
 /* 진한 배지 (Figma Badge: black / pr 500) */
 .badge-black { background: var(--color-gray-900); color: var(--color-base-inverse); } 
 .badge-pr500 { background: var(--color-primary-500); color: var(--color-white); } 
@@ -497,6 +497,9 @@ button { font-family: inherit; }
 .btn-primary { background: var(--color-primary-500); color: var(--color-white); } 
 .btn-primary:hover { background: var(--color-primary-600); } 
 .btn-primary:disabled { background: var(--color-gray-50); color: var(--color-gray-200); cursor: not-allowed; } 
+.btn-dark { background: var(--color-gray-900); color: var(--color-white); } 
+.btn-dark:hover { background: var(--color-gray-800); } 
+.btn-dark:disabled { background: var(--color-gray-50); color: var(--color-gray-200); cursor: not-allowed; } 
 .btn-outline { background: var(--color-base-inverse); border-color: var(--color-line-normal); color: var(--color-gray-900); } 
 .btn-outline:hover { border-color: var(--color-gray-100); } 
 .btn-outline:disabled { background: var(--color-bg-low); border-color: var(--color-line-low); color: var(--color-gray-200); cursor: not-allowed; } 
@@ -1247,6 +1250,7 @@ body.rl-dragging * { cursor: grabbing !important; user-select: none; }
 .ui-body { display: grid; grid-template-columns: minmax(0, 980fr) minmax(0, 644fr); gap: 16px; height: calc(100vh - 236px); min-height: 560px; } 
 .ui-list,
 .ui-detail { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-radius: var(--radius-xl); background: var(--color-base-inverse); } 
+.ui-detail .rs-d-head { margin-bottom: 8px; }
 /* ---------- 왼쪽: 직원 목록 ---------- */
 .ui-list { gap: 12px; padding: 20px 0; } 
 .ui-list-top { display: flex; align-items: center; gap: 8px; padding: 0 20px 0 24px; } 
@@ -1286,15 +1290,14 @@ body.rl-dragging * { cursor: grabbing !important; user-select: none; }
 .ui-avatar.is-lg { width: 64px; height: 64px; border-radius: 12px; } 
 /* ---------- 오른쪽: 직원 정보 수정 ---------- */
 .ui-detail { padding-top: 16px; } 
-.ui-detail .rs-d-head { margin-bottom: 20px; } 
 .ui-detail.is-empty .rs-d-head { margin-bottom: 0; } 
-.ui-d-body { display: flex; flex: 1; flex-direction: column; gap: 20px; min-height: 0; padding: 0 20px 20px; overflow-y: auto; } 
+.ui-d-body { display: flex; flex: 1; flex-direction: column; gap: 20px; min-height: 0; padding: 0 20px 8px; overflow-y: auto; } 
 .ui-user { display: flex; align-items: center; gap: 16px; } 
-.ui-user strong { display: block; font-size: var(--fs-h5); line-height: var(--lh-h5); font-weight: var(--fw-bold); } 
+.ui-user strong { display: block; font-size: var(--fs-h6); line-height: var(--lh-h6); font-weight: var(--fw-bold); } 
 .ui-user span:not(.ui-avatar) { display: block; color: var(--color-gray-300); } 
 .ui-sec { display: flex; flex-direction: column; gap: 16px; } 
-.ui-sec h3 { margin: 0; font-size: var(--fs-h5); line-height: var(--lh-h5); font-weight: var(--fw-bold); } 
-.ui-set { display: flex; flex-direction: column; gap: 20px; } 
+.ui-sec h3 { margin: 0; font-size: var(--fs-h6); line-height: var(--lh-h6); font-weight: var(--fw-bold); } 
+.ui-set { display: flex; flex-direction: column; gap: 16px; } 
 .ui-set-row { display: flex; align-items: center; gap: 12px; } 
 .ui-set-row>div:first-child { flex: 1; min-width: 0; } 
 .ui-set-row p { margin: 0; } 
@@ -1309,6 +1312,7 @@ body.rl-dragging * { cursor: grabbing !important; user-select: none; }
 .ui-weeknav { display: flex; align-items: center; gap: 12px; } 
 .ui-weeknav strong { font-size: var(--fs-h5); line-height: var(--lh-h5); font-weight: var(--fw-bold); } 
 /* 요일 버튼: 기본 / 호버 / 선택 (Week btn 컴포넌트) */
+.ui-week-group .ui-daybox-group { margin-top: 12px; }
 .ui-week { display: flex; gap: 8px; } 
 .ui-day { display: flex; flex: 1; flex-direction: column; align-items: center; min-width: 0; height: 123px; padding: 8px; border: 0; border-radius: var(--radius-sm); background: none; font: inherit; cursor: pointer; } 
 .ui-day:hover { background: var(--color-bg-hover); } 
@@ -1317,10 +1321,11 @@ body.rl-dragging * { cursor: grabbing !important; user-select: none; }
 .ui-day-s { display: flex; flex: 1; align-items: center; justify-content: center; font-size: var(--fs-body1); line-height: var(--lh-body1); } 
 .ui-day-w { color: var(--color-gray-300); } 
 .ui-day-s { color: var(--color-gray-900); font-weight: var(--fw-medium); } 
-.ui-day strong { color: var(--color-gray-300); font-size: var(--fs-h4); line-height: var(--lh-h4); } 
+.ui-day strong { color: var(--color-gray-300); font-size: var(--fs-h5); line-height: var(--lh-h5); } 
 .ui-day.is-on strong { color: var(--color-primary-accent); } 
+.ui-daybox-group .ui-resign { margin-top: 4px; }
 .ui-daybox { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: var(--radius-md); background: var(--color-bg-hover); } 
-.ui-daybox-tit { margin: 0; font-weight: var(--fw-bold); font-size: var(--fs-h5); line-height: var(--lh-h5); } 
+.ui-daybox-tit { margin: 0; font-weight: var(--fw-bold); font-size: var(--fs-h6); line-height: var(--lh-h6); } 
 .ui-daybox-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; } 
 .ui-daybox dl { margin: 0; color: var(--color-gray-300); } 
 .ui-daybox dl div { display: flex; gap: 8px; } 
