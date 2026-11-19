@@ -182,8 +182,8 @@ function renderReserve() {
             `<div class="rv-thead">${days
                 .map((d) => {
                     const today = rvSame(d, todayD);
-                    return `<div class="rv-th${today ? " is-today" : ""}${rvSel && rvSame(d, rvSel) ? " is-sel" : ""}">
-                        <button type="button" data-pick="${rvKey(d)}" aria-label="${rvFmtFull(d)} 상세 열기"><small>${RV_DAYS[d.getDay()]}</small><strong>${d.getDate()}</strong></button></div>`;
+                    return `<div class="rv-th${today ? " is-today" : ""}">
+                        <small>${RV_DAYS[d.getDay()]}</small><strong>${d.getDate()}</strong></div>`;
                 })
                 .join("")}</div>` +
             `<div class="rv-tbody"><div class="rv-wgrid">${days
@@ -315,6 +315,9 @@ function rvSetView(v) {
     if (v === rvView) return;
     closeRvPop();
     rvView = v;
+    /* 주별 보기에서는 우측 '날짜 상세' 패널을 쓰지 않아요 */
+    rvSel = null;
+    renderRvDetail();
     try {
         localStorage.setItem(RV_VIEW_KEY, v);
     } catch (e) { }
@@ -324,6 +327,7 @@ function rvSetView(v) {
 }
 
 function rvSelect(key) {
+    if (rvView === "week") return;
     const [y, m, d] = key.split("-").map(Number);
     const nd = new Date(y, m - 1, d);
     closeRvPop();

@@ -4885,17 +4885,8 @@ body.rl-dragging * {
     padding: 8px 0;
 }
 
-.rv-week .rv-th button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
+.rv-week .rv-th {
+    cursor: default;
 }
 
 .rv-week .rv-th small {
@@ -4916,14 +4907,6 @@ body.rl-dragging * {
 
 .rv-week .rv-th.is-today strong {
     color: var(--color-primary-500);
-}
-
-.rv-week .rv-th.is-sel strong {
-    display: inline-block;
-    min-width: 36px;
-    border-radius: var(--radius-sm);
-    background: var(--color-gray-900);
-    color: var(--color-white);
 }
 
 .rv-tbody {
