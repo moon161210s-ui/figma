@@ -1138,9 +1138,11 @@ function openProfileMenu(btn) {
     </ul>
     <button class="menu-logout" type="button" data-menu="logout">로그아웃</button>`;
     document.body.appendChild(fmenu);
-    /* 각 메뉴가 연결할 페이지/기능은 아직 없어서 지금은 누르면 메뉴만 닫혀요 */
+    /* 각 메뉴가 연결할 페이지/기능은 아직 없어서 지금은 누르면 메뉴를 닫고 '준비 중' 모달을 띄워요 */
     fmenu.addEventListener("click", (e) => {
-        if (e.target.closest("[data-menu]")) closeFilterMenu();
+        if (!e.target.closest("[data-menu]")) return;
+        closeFilterMenu();
+        openSoon();
     });
     placeFilterMenu();
 }
@@ -2177,10 +2179,10 @@ soonModal.className = "hm";
 soonModal.id = "soonModal";
 soonModal.hidden = true;
 soonModal.innerHTML = `
-  <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="준비 중인 기능이에요">
-    <div class="rs-cm-body">
-      <span class="rs-cm-ic"><img src="${ICON("hourglass")}" alt="" /></span>
-      <div class="rs-cm-tx"><strong>준비 중인 기능이에요</strong><span>더 나은 서비스로 곧 찾아뵐게요.<br />조금만 기다려 주세요.</span></div>
+  <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="준비 중입니다.">
+    <div class="rs-cm-body is-soon">
+      <span class="rs-cm-ic is-neutral"><img src="${ICON("hourglass")}" alt="" /></span>
+      <div class="rs-cm-tx"><strong>준비 중입니다.</strong><span>더 나은 서비스를 제공하기 위해 준비 중입니다.<br />빠른 시일 내에 찾아뵙겠습니다.</span></div>
     </div>
     <div class="rs-cm-btns"><button class="btn btn-lg btn-primary" type="button" data-soon-close>확인</button></div>
   </div>`;
