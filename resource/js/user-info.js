@@ -22,7 +22,7 @@ const SI_SHIFT_ORDER = [
 ]; /* '근무 형태 변경' 을 누를 때 도는 순서 (null = 휴무) */
 
 /* 현재 근무 상태 (목록의 이름 옆 배지 / 필터) */
-const SI_WSTATE = { work: "근무 중", off: "휴무", early: "조퇴" };
+const SI_WSTATE = { work: "근무 중", off: "휴무", early: "조퇴", resigned: "퇴사" };
 const SI_LEVELS = ["상", "중", "하"];
 
 /* pattern: 일 ~ 토 요일별 근무 형태 (null = 쉬는 날) / over: 날짜별로 따로 고친 값 */
@@ -156,9 +156,11 @@ function renderStaffInfo() {
     /* 활성 직원 → 초대 대기 직원 순서 / 같은 그룹 안에서는 가나다순 */
     const list = SI_STAFF.filter(
         (s) =>
-            s.account !== "resigned" &&
             (!q || s.name.includes(q)) &&
-            (filters.wstatus.size === 0 || (s.state && filters.wstatus.has(s.state)))
+            /* 퇴사한 직원은 '퇴사' 필터를 골랐을 때만 보여요 */
+            (s.account === "resigned"
+                ? filters.wstatus.has("resigned")
+                : filters.wstatus.size === 0 || (s.state && filters.wstatus.has(s.state)))
     ).sort(
         (a, b) =>
             (a.account === "active" ? 0 : 1) - (b.account === "active" ? 0 : 1) ||
@@ -170,9 +172,11 @@ function renderStaffInfo() {
         .map((s) => {
             const sc = siSchedule(s);
             const badge =
-                s.state === "off" || s.state === "early"
-                    ? `<span class="tag">${SI_WSTATE[s.state]}</span>`
-                    : "";
+                s.account === "resigned"
+                    ? `<span class="tag">${SI_WSTATE.resigned}</span>`
+                    : s.state === "off" || s.state === "early"
+                        ? `<span class="tag">${SI_WSTATE[s.state]}</span>`
+                        : "";
             return `<div class="ui-tr${s.id === siSelId ? " is-selected" : ""
                 }" data-staff="${s.id}" tabindex="0" role="button" aria-pressed="${s.id === siSelId
                 }">
@@ -184,7 +188,7 @@ function renderStaffInfo() {
                     : "-"
                 }</div>
                 <div class="ui-td"><i class="ui-dot${s.account === "active" ? " is-on" : ""
-                }"></i>${s.account === "active" ? "활성" : "초대 대기"}</div>
+                }"></i>${s.account === "active" ? "활성" : s.account === "resigned" ? "퇴사" : "초대 대기"}</div>
                 <div class="ui-td">${s.level || "-"}</div>
                 <div class="ui-td">${s.review
                     ? '<span class="badge badge-review ui-review">검수 대상</span>'
@@ -326,7 +330,7 @@ function renderStaffDetail() {
                 </div>
             </div>
 
-            <div class="ui-resign"><button class="text-btn" type="button" data-ui="resign">직원 퇴사 처리하기</button></div>
+            ${s.account === "resigned" ? "" : '<div class="ui-resign"><button class="text-btn" type="button" data-ui="resign">직원 퇴사 처리하기</button></div>'}
         </div>
     </div>
 </section>
