@@ -125,6 +125,50 @@
     /* ★ 임시값: 막대가 다니는 길(위·아래)을 이만큼씩 줄여요. 막대:배경 비율은 그대로 유지돼요 */
 }
 
+/* ---------- 스크롤바 (모든 페이지 공통) ----------
+ 배경 없이 막대만, 8px, 회색 둥근 막대 / 막대가 다니는 길(track)만 양 끝을 --scroll-inset 만큼 줄여요 */
+*::-webkit-scrollbar {
+    width: var(--scroll-width);
+    height: var(--scroll-width);
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-track:vertical {
+    margin: var(--scroll-inset) 0;
+}
+
+*::-webkit-scrollbar-track:horizontal {
+    margin: 0 var(--scroll-inset);
+    border-radius: 100px;
+    background: var(--color-gray-50);
+}
+
+*::-webkit-scrollbar-thumb:horizontal {
+    background: var(--color-gray-900);
+}
+
+*::-webkit-scrollbar-thumb {
+    border-radius: 100px;
+    background: var(--color-gray-200);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-gray-200) transparent;
+    }
+
+    .th-board,
+    .ui-table,
+    .attach-list,
+    .noti-tabs {
+        scrollbar-color: var(--color-gray-900) var(--color-gray-50);
+    }
+}
+
 /* ---------- PC 타이포 (breakpoint 768px 이상) ---------- */
 @media (min-width: 768px) {
     :root {
@@ -1011,26 +1055,6 @@ button {
     list-style: none;
 }
 
-.filter-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-.filter-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.filter-list::-webkit-scrollbar-thumb {
-    background: var(--color-gray-200);
-    border-radius: 100px;
-}
-
-@supports not selector(::-webkit-scrollbar) {
-    .filter-list {
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-gray-200) transparent;
-    }
-}
-
 .filter-item {
     display: flex;
     align-items: center;
@@ -1537,11 +1561,6 @@ button {
     gap: 8px;
     margin-top: 8px;
     overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.attach-list::-webkit-scrollbar {
-    display: none;
 }
 
 .attach-list img {
@@ -1657,11 +1676,6 @@ button {
     gap: 2px;
     padding: 4px;
     overflow-y: auto;
-    scrollbar-width: none;
-}
-
-.tp-col::-webkit-scrollbar {
-    display: none;
 }
 
 .tp-col+.tp-col {
@@ -1786,27 +1800,6 @@ button {
     margin: 16px 0 0;
     padding: 0 4px 0 0;
     overflow-y: auto;
-}
-
-/* 스크롤바: 배경 없이 막대만 (시안 scroll bar 8px) */
-.staff-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.staff-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.staff-list::-webkit-scrollbar-thumb {
-    background: var(--color-gray-200);
-    border-radius: 100px;
-}
-
-@supports not selector(::-webkit-scrollbar) {
-    .staff-list {
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-gray-200) transparent;
-    }
 }
 
 .staff-item {
@@ -1994,7 +1987,6 @@ button {
     margin-top: -1px;
     padding-top: 1px;
     overflow-x: auto;
-    scrollbar-width: none;
     cursor: grab;
     user-select: none;
     touch-action: pan-x;
@@ -2002,10 +1994,6 @@ button {
 
 .noti-tabs.is-dragging {
     cursor: grabbing;
-}
-
-.noti-tabs::-webkit-scrollbar {
-    display: none;
 }
 
 .noti-tab {
@@ -4383,27 +4371,6 @@ body.rl-dragging * {
     overflow-y: hidden;
 }
 
-.th-board::-webkit-scrollbar {
-    height: var(--scroll-width);
-}
-
-.th-board::-webkit-scrollbar-track {
-    border-radius: 100px;
-    background: var(--color-gray-50);
-}
-
-.th-board::-webkit-scrollbar-thumb {
-    border-radius: 100px;
-    background: var(--color-gray-900);
-}
-
-@supports not selector(::-webkit-scrollbar) {
-    .th-board {
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-gray-900) var(--color-gray-50);
-    }
-}
-
 /* 카테고리 칸: 칸이 4개면 가로를 꽉 채우고, 더 많으면 398px 로 멈춰서 가로 스크롤돼요 */
 .th-col {
     display: flex;
@@ -4441,26 +4408,6 @@ body.rl-dragging * {
     min-height: 0;
     overflow-y: auto;
     scrollbar-gutter: stable;
-}
-
-.th-list::-webkit-scrollbar {
-    width: var(--scroll-width);
-}
-
-.th-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.th-list::-webkit-scrollbar-thumb {
-    border-radius: 100px;
-    background: var(--color-gray-200);
-}
-
-@supports not selector(::-webkit-scrollbar) {
-    .th-list {
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-gray-200) transparent;
-    }
 }
 
 /* 한 카테고리만 고르면 한 칸을 넓게 쓰고 카드를 여러 줄로 보여줘요 */
