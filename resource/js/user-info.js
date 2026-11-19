@@ -30,7 +30,10 @@ const SI_STAFF = [
     { id: 6, name: "전재연", phone: "010-6789-0123", pattern: [null, null, null, null, null, null, null], account: "active", level: "중", review: false, state: "early" },
     { id: 7, name: "김이레", phone: "010-7890-1234", pattern: [null, null, null, null, null, null, null], account: "invited", level: null, review: false, state: null },
 ];
-SI_STAFF.forEach((s) => (s.over = {}));
+SI_STAFF.forEach((s) => {
+    s.over = {};
+    if (resignedStaff().includes(s.name)) s.account = "resigned"; /* 퇴사 처리한 직원: 기록은 남기고 목록에서만 빠져요 */
+});
 
 /* ---------- 날짜 ---------- */
 const siKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -74,7 +77,7 @@ function renderStaffInfo() {
     const week = siWeekDays();
     $("#uiWeekText").textContent = `(${week[0].getFullYear()} ${pad(week[0].getMonth() + 1)}.${pad(week[0].getDate())} - ${pad(week[6].getMonth() + 1)}.${pad(week[6].getDate())})`;
     const q = siQuery.trim();
-    const list = SI_STAFF.filter((s) => (!q || s.name.includes(q)) && (filters.wstatus.size === 0 || (s.state && filters.wstatus.has(s.state))));
+    const list = SI_STAFF.filter((s) => s.account !== "resigned" && (!q || s.name.includes(q)) && (filters.wstatus.size === 0 || (s.state && filters.wstatus.has(s.state))));
     $("#uiCount").textContent = `전체직원 총 ${SI_STAFF.filter((s) => s.account === "active").length}명`;
     const rows = list
         .map((s) => {
@@ -161,6 +164,7 @@ function renderStaffDetail() {
                     </div>
                 </div>
             </section>
+            <div class="ui-resign"><button class="text-btn" type="button" data-ui="resign">직원 퇴사처리하기</button></div>
         </div>
         <div class="ui-d-foot"><button class="btn btn-lg btn-outline" type="button" data-ui="cancel">취소</button><button class="btn btn-lg btn-primary" type="button" data-ui="save">저장</button></div>`;
     p.querySelector(".ui-d-body").scrollTop = keep;
@@ -194,6 +198,75 @@ function siSave() {
     siClose();
 }
 
+/* ---------- 직원 퇴사 처리 확인 모달 ---------- */
+const siModal = document.createElement("div");
+siModal.className = "hm";
+siModal.id = "siModal";
+siModal.hidden = true;
+document.body.appendChild(siModal);
+
+function openResign() {
+    const s = SI_STAFF.find((x) => x.id === siSelId);
+    if (!s) return;
+    siModal.innerHTML = `
+    <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="${s.name} 직원 퇴사 처리">
+      <div class="rs-cm-body">
+        <span class="rs-cm-ic is-danger"><img src="${ICON("exclamation-red")}" alt="" /></span>
+        <div class="rs-cm-tx"><strong>${s.name} 직원을 퇴사 처리 하시겠습니까?</strong><span>퇴사 처리 후에는 새 청소 업무를 배정할 수 없습니다.<br />근무·업무 이력은 유지되며, 미완료 업무는 재배정이 필요할 수 있습니다.</span></div>
+      </div>
+      <div class="rs-cm-btns">
+        <button class="btn btn-lg btn-outline" type="button" data-si-m="close">닫기</button>
+        <button class="btn btn-lg btn-primary" type="button" data-si-m="ok">확인</button>
+      </div>
+    </div>`;
+    siModal.hidden = false;
+    siModal.querySelector(".btn-primary").focus();
+}
+/* 저장 확인 (직원 배정 화면의 '변경된 내용으로 저장하시겠습니까?' 모달과 같은 모양) */
+function openSaveConfirm() {
+    siModal.innerHTML = `
+    <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="변경된 내용으로 저장하시겠습니까?">
+      <div class="rs-cm-body">
+        <span class="rs-cm-ic"><img src="${ICON("check-purple")}" alt="" /></span>
+        <div class="rs-cm-tx"><strong>변경된 내용으로 저장하시겠습니까?</strong><span>변경한 직원 정보가 저장되며,<br />숙련도와 근무 일정은 청소 자동 배정에 반영됩니다.</span></div>
+      </div>
+      <div class="rs-cm-btns">
+        <button class="btn btn-lg btn-outline" type="button" data-si-m="close">닫기</button>
+        <button class="btn btn-lg btn-primary" type="button" data-si-m="save">변경 사항 저장</button>
+      </div>
+    </div>`;
+    siModal.hidden = false;
+    siModal.querySelector(".btn-primary").focus();
+}
+const closeResign = () => {
+    siModal.hidden = true;
+    siModal.innerHTML = "";
+};
+siModal.addEventListener("click", (e) => {
+    if (e.target === siModal) return closeResign();
+    const b = e.target.closest("[data-si-m]");
+    if (!b) return;
+    if (b.dataset.siM === "save") {
+        closeResign();
+        siSave();
+    } else if (b.dataset.siM === "ok") {
+        /* 기존 데이터는 그대로 두고, 앞으로 새 업무 배정만 막아요 (서버 연결 시 퇴사 처리 요청으로 교체) */
+        const s = SI_STAFF.find((x) => x.id === siSelId);
+        if (s) {
+            s.account = "resigned";
+            try {
+                const n = todayMid();
+                localStorage.setItem(RESIGNED_KEY, JSON.stringify({ ...resignedMap(), [s.name]: `${n.getFullYear()}-${n.getMonth() + 1}-${n.getDate()}` }));
+            } catch (e) { }
+        }
+        closeResign();
+        siClose();
+    } else closeResign();
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !siModal.hidden) closeResign();
+});
+
 function siMoveWeek(dir) {
     siWeek = dayAdd(siWeek, 7 * dir);
     if (siSelId) siDay = dayAdd(siDay || siWeek, 7 * dir);
@@ -223,7 +296,8 @@ document.addEventListener("click", (e) => {
     if (!act) return;
     const a = act.dataset.ui;
     if (a === "close" || a === "cancel") siClose();
-    else if (a === "save") siSave();
+    else if (a === "save") openSaveConfirm();
+    else if (a === "resign") openResign();
     else if (a === "prev") siMoveWeek(-1);
     else if (a === "next") siMoveWeek(1);
     else if (a === "shift") {

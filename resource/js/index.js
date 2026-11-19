@@ -110,7 +110,19 @@ function syncStayStatus(r) {
 const tagHtml = (t) => (t ? `<span class="tag">${t}</span>` : "");
 
 /* ---------- 샘플 데이터 (실제 서비스에서는 서버 데이터로 교체) ---------- */
-const STAFF = ["이서영", "전재연", "유가은", "한다경", "최하석", "김이레"];
+/* 새 업무를 배정할 수 있는 직원 (퇴사 처리한 직원은 빠져요 / 지난 청소·근무 기록은 그대로 남아요) */
+const RESIGNED_KEY = "resignedStaff"; /* { 이름: 퇴사 처리한 날짜(YYYY-M-D) } */
+const resignedMap = () => {
+    try {
+        const v = JSON.parse(localStorage.getItem(RESIGNED_KEY));
+        if (Array.isArray(v)) return Object.fromEntries(v.map((n) => [n, ""])); /* 예전 형식 */
+        return v || {};
+    } catch (e) {
+        return {};
+    }
+};
+const resignedStaff = () => Object.keys(resignedMap());
+const STAFF = ["이서영", "전재연", "유가은", "한다경", "최하석", "김이레"].filter((n) => !resignedStaff().includes(n));
 /* 순서 = 청소 상태 필터 드롭다운에 보이는 순서 (시안) */
 const STATUS = {
     /* 숙박 중이고 오늘 청소 대상이 아닌 객실: 상태 칩을 보여주지 않아요 */
@@ -315,6 +327,20 @@ function applyResultState() {
     });
 }
 applyResultState();
+
+/* 오늘 퇴사 처리한 직원이 맡은 객실 중 청소를 끝내지 못한 객실(청소 필요 · 청소 중)은 '재배정 필요'로 바꿔요 (담당자 옆에는 조퇴 대신 퇴사 배지) */
+function applyResignations() {
+    const map = resignedMap();
+    const now = todayMid();
+    const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    ROOMS.forEach((r) => {
+        if (r.empty || !r.staff || map[r.staff] !== today) return;
+        if (!["todo", "progress"].includes(r.status)) return;
+        r.status = "reassign";
+        r.staffTag = "퇴사";
+    });
+}
+applyResignations();
 applyHours();
 
 /* 상단 요약 카드 숫자 (서버 데이터로 교체 대상) */

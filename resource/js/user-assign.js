@@ -58,9 +58,11 @@ function asAutoPlan() {
     return plan;
 }
 const AS_PLAN = asAutoPlan();
-const asTomBase = (r) => asTomSaved[r.no] || AS_PLAN[r.no];
+/* 퇴사한 직원에게 미리 저장해 둔 담당자는 무시하고, 남은 직원끼리 새로 자동 배정한 값을 써요 */
+const asTomSavedOk = (r) => !!asTomSaved[r.no] && STAFF.includes(asTomSaved[r.no]);
+const asTomBase = (r) => (asTomSavedOk(r) ? asTomSaved[r.no] : AS_PLAN[r.no]);
 const asTomStaff = (r) => asTomChanges[r.no] || asTomBase(r);
-const asTomManual = (r) => !!(asTomChanges[r.no] || asTomSaved[r.no]);
+const asTomManual = (r) => !!(asTomChanges[r.no] || asTomSavedOk(r));
 /* 재배정 필요 객실은 일괄 저장을 누르기 전까지 '재배정 필요'로 남아요 (담당자를 끌어다 놔도 배지가 안 사라져요) */
 const asNeed = (r) => r.status === "reassign";
 

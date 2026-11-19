@@ -5868,3 +5868,35 @@ html.is-modal-open body {
 .as-dropped .as-handle {
     opacity: 1;
 }
+
+/* 텍스트 버튼 (Figma 914-6780) */
+.text-btn {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-300);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.text-btn:hover,
+.text-btn:focus-visible {
+    color: var(--color-gray-900);
+    outline: 0;
+}
+
+.text-btn .i24 {
+    flex-shrink: 0;
+}
+
+/* 직원 정보 설정: 직원 퇴사처리하기 */
+.ui-resign {
+    padding-right: 8px;
+}
