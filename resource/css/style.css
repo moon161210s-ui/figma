@@ -6931,3 +6931,8 @@ html.is-modal-open {
     border-radius: var(--radius-xs);
     background: var(--color-gray-900);
 }
+
+/* 업무 특이사항 화면만: 가로로 넘친 보드가 화면 전체를 옆으로 밀지 않게 해요 */
+#viewThread {
+    overflow-x: hidden;
+}
