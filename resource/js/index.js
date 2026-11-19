@@ -836,9 +836,10 @@ function openPopover(kind, anchor, room) {
     }
 
     /* 청소 결과 · 업무 특이사항 날짜 선택: 퇴실 예정 모달과 같은 달력인데 시간 칸만 없어요 (날짜 제한 없음 / 실제 달력) */
-    if (kind === "resultDate" || kind === "threadDate") {
+    if (kind === "resultDate" || kind === "threadDate" || kind === "threadHistDate") {
         pop.dataset.align = "left";
-        const baseDate = kind === "threadDate" ? tdDate : rsDate;
+        if (kind === "threadHistDate") pop.classList.add("is-above"); /* 특이사항 상세 패널 위에 떠요 */
+        const baseDate = kind === "threadHistDate" ? tdPick || new Date() : kind === "threadDate" ? tdDate : rsDate;
         let view = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
         let sel = new Date(baseDate);
         const todayMid = new Date();
@@ -885,6 +886,11 @@ function openPopover(kind, anchor, room) {
             placePopover();
         });
         save = () => {
+            if (kind === "threadHistDate") {
+                closePopover();
+                tdGoDate(sel);
+                return false;
+            }
             if (kind === "threadDate") {
                 tdDate = sel;
                 closePopover();

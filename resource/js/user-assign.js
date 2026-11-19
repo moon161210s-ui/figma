@@ -530,7 +530,8 @@ function asRankDrag(e) {
         const y = clientY - lr.top - grab;
         const max = list.offsetHeight - el.offsetHeight;
         el.style.transform = `translateY(${Math.min(Math.max(y, 0), max) - el.offsetTop}px)`;
-        const mid = Math.min(Math.max(y, 0), max) + el.offsetHeight / 2;
+        const top = Math.min(Math.max(y, 0), max);
+        const bottom = top + el.offsetHeight; /* 위로는 윗변, 아래로는 아랫변이 이웃 카드의 가운데를 넘으면 자리를 바꿔요 (카드 높이가 달라도 맨 끝까지 가요) */
         const swap = (other, before) => {
             const was = other.offsetTop;
             before ? list.insertBefore(el, other) : list.insertBefore(el, other.nextSibling);
@@ -542,10 +543,17 @@ function asRankDrag(e) {
             other.style.transform = "";
             numbers();
         };
-        const prev = el.previousElementSibling;
-        const next = el.nextElementSibling;
-        if (prev && mid < prev.offsetTop + prev.offsetHeight / 2) swap(prev, true);
-        else if (next && mid > next.offsetTop + next.offsetHeight / 2) swap(next, false);
+        /* 빠르게 끌어도 지나친 칸만큼 한 번에 자리를 바꿔요 (1순위 ↔ 3순위 바로 이동) */
+        let prev = el.previousElementSibling;
+        let next = el.nextElementSibling;
+        while (prev && top < prev.offsetTop + prev.offsetHeight / 2) {
+            swap(prev, true);
+            prev = el.previousElementSibling;
+        }
+        while (next && bottom > next.offsetTop + next.offsetHeight / 2) {
+            swap(next, false);
+            next = el.nextElementSibling;
+        }
         el.style.transform = `translateY(${Math.min(Math.max(y, 0), max) - el.offsetTop}px)`;
     };
     place(e.clientY);

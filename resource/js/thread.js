@@ -77,7 +77,25 @@ const TH_ITEMS = [
     T("clean", "207", "14:20", "욕실 거울에 얼룩이 심해요.\n다음 청소 때 닦아 주세요.", ["담당자", "한다경"], 1, "done", "이서영", 1),
     T("supply", "305", "11:05", "타월이 2장 부족해요.\n추가 보충 부탁드립니다.", ["작성자", "유가은"], 0, "wait", null, 1),
     T("etc", "408", "16:30", "복도 쪽 소음이 심하다는 손님 의견이 있었어요.", ["작성자", "최하석"], 0, "doing", "전재연", 1),
+    /* 지난 특이사항 (객실별 '특이사항 내역'에 쌓여 있는 기록 / 모두 처리 완료) */
+    T("broken", "303", "14:10", "욕실 문 손잡이가 헐거워서 덜컹거려요.\n나사 조임 부탁드립니다.", ["작성자", "한다경"], 1, "done", "유가은", 6),
+    T("clean", "303", "11:25", "침대 헤드 뒤쪽에 먼지가 쌓여 있어요.", ["작성자", "최하석"], 0, "done", "이서영", 13),
+    T("supply", "303", "16:05", "객실 슬리퍼가 한 켤레 부족해요.\n추가 비치 부탁드립니다.", ["작성자", "이서영"], 0, "done", "유가은", 13),
+    T("broken", "303", "13:40", "TV 리모컨이 반응하지 않아요. 건전지 교체 부탁드립니다.", ["작성자", "유가은"], 0, "done", "한다경", 29),
+    T("etc", "303", "15:20", "객실 창문 틈으로 바람 소리가 들려요.", ["작성자", "김이레"], 1, "done", "유가은", 410),
+    T("broken", "105", "12:30", "욕실 샤워 커튼 고리가 부러졌어요.\n교체 부탁드립니다.", ["담당자", "이서영"], 1, "done", "한다경", 9),
+    T("clean", "105", "15:50", "창틀에 먼지가 남아 있어요.", ["담당자", "이서영"], 0, "done", "최하석", 21),
+    T("supply", "204", "13:15", "일회용 칫솔이 부족해요.\n추가 보충 부탁드립니다.", ["담당자", "이서영"], 0, "done", "김이레", 7),
+    T("broken", "204", "10:50", "옷장 문 경첩이 빠졌어요.", ["작성자", "유가은"], 1, "done", "한다경", 18),
+    T("clean", "206", "14:45", "욕실 배수구에서 냄새가 올라와요.", ["담당자", "유가은"], 0, "done", "최하석", 11),
+    T("supply", "102", "15:35", "물컵이 한 개 깨져 있어요.\n교체 부탁드립니다.", ["담당자", "이서영"], 0, "done", "유가은", 5),
 ];
+/* 처리 완료 시각 (샘플은 등록 50분 뒤로 해 둬요 / 처리 완료를 누르면 그 순간의 시각이 기록돼요) */
+TH_ITEMS.forEach((i) => {
+    if (i.state !== "done") return;
+    const [h, m] = i.time.split(":").map(Number);
+    i.doneAt = new Date(Math.min(new Date(i.date.getFullYear(), i.date.getMonth(), i.date.getDate(), h, m + 50), Date.now()));
+});
 /* 처리 상태 변경은 이 브라우저에 보관해요 (서버 연결 시 서버 값으로 교체) */
 try {
     const st = JSON.parse(localStorage.getItem(TH_STATE_KEY)) || {};
@@ -87,6 +105,8 @@ try {
             i.state = v.state;
             i.handler = v.handler;
             i.carry = !!v.carry;
+            if (v.doneAt) i.doneAt = new Date(v.doneAt);
+            else if (v.state !== "done") i.doneAt = null;
         }
     });
 } catch (e) { }
@@ -105,7 +125,7 @@ function thRollover() {
 thRollover();
 function thSaveState() {
     const st = {};
-    TH_ITEMS.forEach((i) => (st[i.id] = { state: i.state, handler: i.handler, carry: !!i.carry }));
+    TH_ITEMS.forEach((i) => (st[i.id] = { state: i.state, handler: i.handler, carry: !!i.carry, doneAt: i.doneAt ? +i.doneAt : null }));
     try {
         localStorage.setItem(TH_STATE_KEY, JSON.stringify(st));
     } catch (e) { }
@@ -342,6 +362,228 @@ document.addEventListener("keydown", (e) => {
     thModalEl.addEventListener("pointercancel", end);
 }
 
+
+/* 처리하기 / 처리 취소 / 처리 완료 (카드와 특이사항 상세가 같이 써요) */
+function thApply(item, k) {
+    if (k === "take") {
+        item.state = "doing";
+        item.handler = TH_ME;
+    } else if (k === "cancel") {
+        item.state = "wait";
+        item.handler = null;
+        item.doneAt = null;
+    } else if (k === "finish") {
+        item.state = "done";
+        item.doneAt = new Date(); /* 처리 완료를 누른 순간의 시각 */
+    }
+    thSaveState();
+}
+
+/* ---------- 특이사항 상세 (딤드 + 오른쪽 패널) ---------- */
+const TD_STATE = { wait: "처리 대기", doing: "처리 중", done: "처리 완료" };
+const tdEl = document.createElement("div");
+tdEl.className = "hm th-dp";
+tdEl.id = "thDetail";
+tdEl.hidden = true;
+document.body.appendChild(tdEl);
+let tdItem = null; /* 지금 보고 있는 특이사항 */
+let tdF = { cat: "all", state: "all" };
+let tdPick = null; /* 달력에서 고른 날짜 (그 날 내역으로 스크롤해요) */
+let tdYears = new Set(); /* 펼쳐 둔 연도 */
+let tdMenu = null; /* 열려 있는 필터 드롭다운 */
+
+const tdImgs = (i, n) => Array.from({ length: n }, (_, k) => (k === 0 && i.img) || ATTACHMENTS[(i.id + k) % ATTACHMENTS.length]);
+const tdImgHtml = (i, cls) => (i.photos ? `<div class="td-imgs ${cls}">${tdImgs(i, Math.min(i.photos, 3)).map((src) => `<span class="td-img"><img src="${src}" alt="" onerror="this.style.visibility='hidden'" /></span>`).join("")}</div>` : "");
+const tdMini = (st) => `<span class="mini-badge ${st === "wait" ? "is-blue" : "is-dark"}">${TD_STATE[st]}</span>`;
+const tdCatName = (id) => (TH_CATS.find((c) => c.id === id) || { name: "기타" }).name;
+const tdWhen = (i) => `${pad(i.date.getMonth() + 1)}.${pad(i.date.getDate())} ${i.time}`;
+
+function tdHistory() {
+    return TH_ITEMS.filter((x) => x.room === tdItem.room && (tdF.cat === "all" || x.cat === tdF.cat) && (tdF.state === "all" || x.state === tdF.state)).sort(
+        (a, b) => b.date - a.date || (a.time < b.time ? 1 : a.time > b.time ? -1 : 0)
+    );
+}
+
+function tdItemHtml(x, first) {
+    const cur = x.id === tdItem.id;
+    const users = [`<p>${x.by[0]}: ${thEsc(x.by[1])} (${tdWhen(x)} 등록)</p>`];
+    if (x.handler) users.push(`<p>처리자: ${thEsc(x.handler)}${x.state === "done" && x.doneAt ? ` (${pad(x.doneAt.getMonth() + 1)}.${pad(x.doneAt.getDate())} ${pad(x.doneAt.getHours())}:${pad(x.doneAt.getMinutes())} 처리 완료)` : ""}</p>`);
+    /* 처리 대기 = 처리하기 / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 · 완료 = 버튼 없음 */
+    const btns =
+        x.state === "wait"
+            ? `<button class="btn btn-sm btn-primary" type="button" data-td-act="take">처리하기</button>`
+            : x.state === "doing" && x.handler === TH_ME
+                ? `<button class="btn btn-sm btn-outline" type="button" data-td-act="cancel">처리 취소</button><button class="btn btn-sm btn-primary" type="button" data-td-act="finish">처리 완료</button>`
+                : "";
+    return `<div class="td-item" data-td-id="${x.id}">
+      <span class="td-time">${x.time}</span>
+      <span class="td-rail"><i class="${first ? "is-blank" : ""}"></i><b></b><i class="is-line"></i></span>
+      <div class="td-sec">
+        <div class="td-sec-tit"><strong${cur ? ' class="is-cur"' : ""}>${thEsc(tdCatName(x.cat))}</strong>${tdMini(x.state)}</div>
+        <p class="td-msg">${thEsc(x.text)}</p>
+        <div class="td-user">${users.join("")}</div>
+        ${tdImgHtml(x, "is-sm")}
+        ${btns ? `<div class="td-btns">${btns}</div>` : ""}
+      </div>
+    </div>`;
+}
+
+function tdHistoryHtml() {
+    const list = tdHistory();
+    if (!list.length) return `<p class="floor-empty">조건에 맞는 특이사항이 없어요.</p>`;
+    const years = [...new Set(list.map((x) => x.date.getFullYear()))];
+    return years
+        .map((y) => {
+            const open = tdYears.has(y);
+            const inYear = list.filter((x) => x.date.getFullYear() === y);
+            const dates = [...new Set(inYear.map((x) => x.date.getTime()))];
+            return `<div class="td-acc${open ? " is-open" : ""}">
+        <button class="td-acc-top" type="button" data-td-year="${y}" aria-expanded="${open}"><span>${y}</span><img class="i32" src="${ICON("arrow-up")}" alt="" /></button>
+        <div class="td-acc-body"${open ? "" : " hidden"}>${dates
+                    .map((t) => {
+                        const d = new Date(t);
+                        const day = inYear.filter((x) => x.date.getTime() === t);
+                        return `<div class="td-day" data-td-date="${t}"><h4>${pad(d.getMonth() + 1)}.${pad(d.getDate())} (${TH_DAYS[d.getDay()]}) ${day.length}건</h4>
+              <div class="td-list">${day.map((x, k) => tdItemHtml(x, k === 0)).join("")}</div></div>`;
+                    })
+                    .join("")}</div>
+      </div>`;
+        })
+        .join("");
+}
+
+const tdSelect = (kind, label, on) =>
+    `<div class="td-dd"><button class="select${on ? " is-active" : ""}" type="button" data-td-dd="${kind}" aria-haspopup="listbox" aria-expanded="false"><span class="select-label">${label}</span><img class="i24" src="${ICON("arrow-down")}" alt="" /></button></div>`;
+
+function tdRender(keep) {
+    const i = tdItem;
+    const users = [`<p>${i.by[0]}: ${thEsc(i.by[1])}</p>`];
+    if (i.handler) users.push(`<p>처리자: ${thEsc(i.handler)}</p>`);
+    const catLabel = tdF.cat === "all" ? "카테고리 전체" : tdCatName(tdF.cat);
+    const stLabel = tdF.state === "all" ? "상태 전체" : TD_STATE[tdF.state];
+    const perLabel = tdPick ? `${tdPick.getFullYear()}. ${pad(tdPick.getMonth() + 1)}. ${pad(tdPick.getDate())}.` : "기간 전체";
+    tdEl.innerHTML = `
+    <aside class="th-dp-box" role="dialog" aria-modal="true" aria-label="${i.room}호 특이사항 상세">
+      <div class="td-head"><h2>${i.room}호</h2>
+        <button class="hm-close" type="button" data-td-close aria-label="닫기">${icon("close", 20)}</button></div>
+      <div class="td-body">
+        <section class="td-cur">
+          <div class="td-cur-tit"><div><strong>${thEsc(tdCatName(i.cat))}</strong><span class="td-state is-${i.state === "wait" ? "wait" : "etc"}">${TD_STATE[i.state]}</span></div><time>${thStamp(i)}</time></div>
+          <p class="td-msg">${thEsc(i.text)}</p>
+          <div class="td-user">${users.join("")}</div>
+          ${tdImgHtml(i, "is-lg")}
+        </section>
+        <hr class="td-line" />
+        <section class="td-hist">
+          <h3>특이사항 내역 <span>(${tdHistory().length}건)</span></h3>
+          <div class="td-filters">
+            <div class="td-dd"><button class="td-date${tdPick ? " is-active" : ""}" type="button" data-td-date-btn aria-haspopup="dialog" aria-expanded="false">${icon("calender", 20)}<span>${perLabel}</span></button></div>
+            <div class="td-filters-r">${tdSelect("cat", catLabel, tdF.cat !== "all")}${tdSelect("state", stLabel, tdF.state !== "all")}</div>
+          </div>
+          <div class="td-accs">${tdHistoryHtml()}</div>
+        </section>
+      </div>
+      <div class="hm-foot">
+        <button class="btn btn-lg btn-outline" type="button" data-td-close>닫기</button>
+        <button class="btn btn-lg btn-primary" type="button" data-td-close>저장</button>
+      </div>
+    </aside>`;
+    if (keep != null) tdEl.querySelector(".td-body").scrollTop = keep;
+}
+
+function openThDetail(item) {
+    tdItem = item;
+    tdF = { cat: "all", state: "all" };
+    tdPick = null;
+    tdYears = new Set([item.date.getFullYear()]);
+    tdRender();
+    tdEl.hidden = false;
+    tdEl.querySelector(".td-body").scrollTop = 0;
+}
+/* 달력에서 날짜를 고르면 그 날의 내역까지 스크롤해요 (그 날 내역이 없으면 가장 가까운 날로 가요) */
+function tdGoDate(d) {
+    tdPick = d;
+    const dates = [...new Set(tdHistory().map((x) => x.date.getTime()))];
+    if (dates.length) {
+        const near = dates.reduce((a, b) => (Math.abs(b - +d) < Math.abs(a - +d) ? b : a));
+        tdYears.add(new Date(near).getFullYear());
+        tdRender(tdEl.querySelector(".td-body").scrollTop);
+        const el = tdEl.querySelector(`[data-td-date="${near}"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else tdRender(tdEl.querySelector(".td-body").scrollTop);
+}
+const closeThDetail = () => {
+    closePopover();
+    closeTdMenu();
+    tdEl.hidden = true;
+};
+function closeTdMenu() {
+    if (!tdMenu) return;
+    tdMenu.remove();
+    tdMenu = null;
+    tdEl.querySelectorAll("[data-td-dd]").forEach((b) => b.setAttribute("aria-expanded", "false"));
+}
+function openTdMenu(btn) {
+    const kind = btn.dataset.tdDd;
+    const same = tdMenu && tdMenu.dataset.kind === kind;
+    closeTdMenu();
+    if (same) return;
+    const opts = kind === "cat" ? [["all", "카테고리 전체"], ...TH_CATS.map((c) => [c.id, c.name])] : [["all", "상태 전체"], ...Object.entries(TD_STATE)];
+    tdMenu = document.createElement("ul");
+    tdMenu.className = "td-menu";
+    tdMenu.setAttribute("role", "listbox");
+    tdMenu.dataset.kind = kind;
+    tdMenu.innerHTML = opts.map(([v, l]) => `<li class="filter-item${tdF[kind] === v ? " is-selected" : ""}" role="option" aria-selected="${tdF[kind] === v}" data-td-opt="${v}"><span class="label">${thEsc(l)}</span></li>`).join("");
+    btn.parentElement.appendChild(tdMenu);
+    btn.setAttribute("aria-expanded", "true");
+}
+
+tdEl.addEventListener("click", (e) => {
+    if (e.target === tdEl || e.target.closest("[data-td-close]")) return closeThDetail();
+    const opt = e.target.closest("[data-td-opt]");
+    if (opt) {
+        tdF[tdMenu.dataset.kind] = opt.dataset.tdOpt;
+        const keep = tdEl.querySelector(".td-body").scrollTop;
+        tdMenu = null;
+        return tdRender(keep);
+    }
+    const act = e.target.closest("[data-td-act]");
+    if (act) {
+        const item = TH_ITEMS.find((x) => String(x.id) === act.closest("[data-td-id]").dataset.tdId);
+        if (!item) return;
+        thApply(item, act.dataset.tdAct);
+        renderThread(); /* 뒤의 업무 특이사항 목록도 같이 바뀌어요 */
+        return tdRender(tdEl.querySelector(".td-body").scrollTop);
+    }
+    const dbtn = e.target.closest("[data-td-date-btn]");
+    if (dbtn) {
+        e.stopPropagation(); /* 공용 '팝오버 바깥을 누르면 닫기' 가 방금 연 달력을 닫지 않게 해요 */
+        closeTdMenu();
+        const same = pop && popAnchor === dbtn;
+        closePopover();
+        if (!same) openPopover("threadHistDate", dbtn);
+        return;
+    }
+    const dd = e.target.closest("[data-td-dd]");
+    if (dd) return openTdMenu(dd);
+    const yr = e.target.closest("[data-td-year]");
+    if (yr) {
+        const y = +yr.dataset.tdYear;
+        tdYears.has(y) ? tdYears.delete(y) : tdYears.add(y);
+        const keep = tdEl.querySelector(".td-body").scrollTop;
+        return tdRender(keep);
+    }
+    if (!e.target.closest(".td-dd")) closeTdMenu();
+});
+document.addEventListener(
+    "keydown",
+    (e) => {
+        if (e.key !== "Escape" || tdEl.hidden || pop) return; /* 달력이 열려 있으면 달력만 닫아요 (index.js) */
+        tdMenu ? closeTdMenu() : closeThDetail();
+    },
+    true
+);
+
 /* ---------- 클릭 처리 (index.js 의 공용 click 이 먼저 불러줘요) ---------- */
 function handleThreadClick(e) {
     const dateBtn = e.target.closest("#thDate");
@@ -370,15 +612,15 @@ function handleThreadClick(e) {
         const item = TH_ITEMS.find((x) => String(x.id) === act.closest("[data-th-id]").dataset.thId);
         if (!item) return true;
         const k = act.dataset.thAct;
-        if (k === "take") {
-            item.state = "doing";
-            item.handler = TH_ME;
-        } else if (k === "cancel") {
-            item.state = "wait";
-            item.handler = null;
-        } else if (k === "finish") item.state = "done";
-        thSaveState();
+        thApply(item, k);
         renderThread();
+        return true;
+    }
+    /* 카드를 누르면 그 호실의 특이사항 상세가 오른쪽에서 열려요 (카드 안 버튼은 제외) */
+    const card = e.target.closest(".th-card");
+    if (card && !e.target.closest("button")) {
+        const item = TH_ITEMS.find((x) => String(x.id) === card.dataset.thId);
+        if (item) openThDetail(item);
         return true;
     }
     return false;
