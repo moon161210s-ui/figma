@@ -403,9 +403,16 @@ function outDateNext(r) {
     return r.end > base ? r.end : null;
 }
 
+/* 시안 샘플: 객실 유형 (층마다 섞어 둬요) */
+const ROOM_TYPE = {
+    101: "스탠다드", 102: "디럭스", 103: "프리미엄", 104: "스탠다드", 105: "디럭스", 106: "스탠다드", 107: "프리미엄", 108: "디럭스",
+    201: "디럭스", 202: "스탠다드", 203: "프리미엄", 204: "스탠다드",
+    301: "프리미엄", 302: "디럭스", 303: "스탠다드", 304: "프리미엄",
+};
+
 /* 서버에서 받은 객실 한 건을 화면에서 쓰는 형태(날짜 계산 포함)로 바꿔요 */
 function normalizeRoom(r) {
-    r.type = "스탠다드";
+    r.type = ROOM_TYPE[r.no] || "스탠다드";
     if (r.empty) {
         if (r.cleanReq && r.status === "done")
             cancelRequest(r); /* 요청 청소가 끝나면 빈 객실로 돌아가요 */
@@ -1543,15 +1550,14 @@ function openTeamMenu(btn) {
     closePopover();
     closeFilterMenu();
     if (wasSame) return;
-    const cur = btn.firstChild.textContent.trim();
     fmenuBtn = btn;
     fmenuKind = "team";
     btn.setAttribute("aria-expanded", "true");
     fmenu = document.createElement("div");
     fmenu.className = "filter-menu";
-    fmenu.innerHTML = `<ul class="filter-list" role="listbox">${TEAM_LIST.map(
-        (n) => `<li class="filter-item${n === cur ? " is-checked" : ""}" role="option" aria-selected="${n === cur}" data-team="${n}">
-      <span class="filter-check">${CHECK_SVG}</span><span class="label">${n}</span></li>`
+    fmenu.setAttribute("role", "menu");
+    fmenu.innerHTML = `<ul class="filter-list">${TEAM_LIST.map(
+        (n) => `<li class="filter-item" role="menuitem" data-team="${n}"><span class="label">${n}</span></li>`
     ).join("")}</ul>`;
     document.body.appendChild(fmenu);
     /* 사업장 전환 기능은 아직 없어서 누르면 메뉴를 닫고 '준비 중' 모달을 띄워요 */

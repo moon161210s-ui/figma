@@ -39,10 +39,10 @@ const RESULT_BASE = [
         memo: ["16:10", "꼼꼼하게 다시 재청소 했습니다!"],
         notes: [[0, "15:40", "한다경", "드라이기 바람이 약해요. 교체해야 할 것 같아요."], [-2, "14:20", "전재연", "진상 손님이 바닥을 박살내고 갔어요ㅠ"]],
     },
-    { no: "102", type: "스탠다드", staff: "유가은", status: "done", at: "16:40", hist: [["16:40", "최초 청소 완료"]] },
-    { no: "105", type: "스탠다드", staff: "이서영", status: "done", at: "16:40", hist: [["16:40", "최초 청소 완료"]] },
+    { no: "102", type: "디럭스", staff: "유가은", status: "done", at: "14:50", hist: [["14:50", "최초 청소 완료"]] },
+    { no: "105", type: "디럭스", staff: "이서영", status: "done", at: "15:15", hist: [["15:15", "최초 청소 완료"]] },
     {
-        no: "203", type: "스탠다드", staff: "한다경", status: "review", at: "16:40", first: "15:25", resub: true,
+        no: "203", type: "프리미엄", staff: "한다경", status: "review", at: "16:40", first: "15:25", resub: true,
         hist: [
             ["15:25", "최초 청소 완료"],
             ["15:55", "재청소 요청", "요청사유: 바닥 청소가 필요합니다."],
@@ -50,7 +50,7 @@ const RESULT_BASE = [
         ],
         memo: ["16:40", "바닥까지 다시 닦았어요."],
     },
-    { no: "207", type: "스탠다드", staff: "이서영", status: "review", at: "16:55", hist: [["16:55", "최초 청소 완료"]] },
+    { no: "207", type: "스탠다드", staff: "이서영", status: "review", at: "15:35", hist: [["15:35", "최초 청소 완료"]] },
     { no: "305", type: "디럭스", staff: "유가은", status: "review", at: "17:10", hist: [["17:10", "최초 청소 완료"]] },
     {
         no: "403", type: "프리미엄", staff: "최하석", status: "reclean", at: "16:30", first: "16:30",
@@ -58,12 +58,12 @@ const RESULT_BASE = [
         req: ["환기"], msg: "환기가 필요합니다.",
     },
     {
-        no: "408", type: "디럭스", staff: "송혜원", status: "reclean", at: "16:40", first: "16:40",
-        hist: [["16:40", "최초 청소 완료"], ["17:05", "재청소 요청", "요청사유: 욕실 물기 제거가 필요합니다."]],
+        no: "408", type: "스탠다드", staff: "송혜원", status: "reclean", at: "14:20", first: "14:20",
+        hist: [["14:20", "최초 청소 완료"], ["15:05", "재청소 요청", "요청사유: 욕실 물기 제거가 필요합니다."]],
         req: ["욕실 물기 제거"], msg: "욕실 물기 제거가 필요합니다.",
     },
-    { no: "409", type: "디럭스", staff: "전재연", status: "done", confirmed: true, at: "16:40", hist: [["16:40", "최초 청소 완료"], ["17:20", "검수 완료"]] },
-    { no: "504", type: "프리미엄", staff: "김이레", status: "done", confirmed: true, at: "16:40", hist: [["16:40", "최초 청소 완료"], ["17:20", "검수 완료"]] },
+    { no: "409", type: "스탠다드", staff: "전재연", status: "done", confirmed: true, at: "13:45", hist: [["13:45", "최초 청소 완료"], ["14:30", "검수 완료"]] },
+    { no: "504", type: "프리미엄", staff: "김이레", status: "done", confirmed: true, at: "17:35", hist: [["17:35", "최초 청소 완료"], ["18:10", "검수 완료"]] },
 ];
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const dayKey = (dt) => `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
