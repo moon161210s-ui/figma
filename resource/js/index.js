@@ -28,22 +28,17 @@ const RESULT_PHOTOS = [
 ];
 
 /* 사용성 테스트용으로 고정한 청소 인증 사진: { 객실: { 사진 묶음 번호(0 침구 · 1 욕실): [앞에서부터 쓸 사진 경로] } }
-   - 107호: 욕실 물기가 제대로 닦이지 않은 상태의 사진 (resource/img/clean-107-bath.jpg 로 넣어 주세요) */
+   - 107호: 욕실 물기가 제대로 닦이지 않은 상태의 사진 (욕실_물기, 욕실_물기2) */
 const FIXED_PHOTOS = {
-    107: { 1: ["resource/img/clean-107-bath.jpg"] },
+    107: { 1: [IMG("욕실_물기"), IMG("욕실_물기2"), IMG("욕실_물기"), IMG("욕실_물기2")] },
 };
-/* 107호 재청소 후 직원이 새로 올린 사진 (재검수 요청 상태에서 NEW 배지와 함께 보여요) → resource/img/ 에 넣어 주세요 */
+/* 107호 재청소 요청 후 직원이 다시 올린 뽀송한 욕실 사진 (재검수 요청 상태에서 앞쪽 2장에 NEW 배지가 붙어요) */
 const FIXED_PHOTOS_REDO = {
-    107: {
-        1: [
-            "resource/img/clean-107-bath-redo-1.jpg",
-            "resource/img/clean-107-bath-redo-2.jpg",
-        ],
-    },
+    107: { 1: [IMG("메인&청소결과상세_02"), IMG("메인&청소결과상세_05"), IMG("메인&청소결과상세_02"), IMG("메인&청소결과상세_05")] },
 };
 /* 메인 우측 패널의 첨부파일: 고정 사진이 있는 객실은 그 사진을 맨 앞에 써요 */
 const roomPhotos = (no) => {
-    const fixed = Object.values(FIXED_PHOTOS[no] || {}).flat();
+    const fixed = [...new Set(Object.values(FIXED_PHOTOS[no] || {}).flat())];
     return fixed.length
         ? [
             ...fixed,
