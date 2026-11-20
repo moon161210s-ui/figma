@@ -167,6 +167,11 @@ const thHeadDate = (dt) => `${dt.getFullYear()}. ${pad(dt.getMonth() + 1)}. ${pa
 const thStamp = (i) => `${pad(i.date.getMonth() + 1)}.${pad(i.date.getDate())} (${TH_DAYS[i.date.getDay()]}) ${i.time}`;
 const thEsc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+/* 이월 배지가 붙는 카드(오늘 목록으로 넘어온 지난 특이사항) */
+const thIsCarry = (i) => i.carry && thSameDay(tdDate, todayMid()) && !thSameDay(i.date, tdDate);
+/* 카드 순서: 이월 카드가 맨 위 / 같은 묶음 안에서는 오래된 것부터 */
+const thOrder = (a, b) => thIsCarry(b) - thIsCarry(a) || a.date - b.date || (a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+
 /* ---------- 카드 ---------- */
 /* 처리 대기 = 처리하기 / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 = 내용만 / 완료 = 처리자까지 */
 function thCard(i) {
@@ -191,7 +196,7 @@ function thCard(i) {
       <div class="th-card-body">
         <div class="th-card-tit">
           <div class="th-card-room"><strong>${i.room}호</strong><span class="badge ${st.cls}">${st.label}</span></div>
-          <span class="th-card-time">${i.carry && thSameDay(tdDate, todayMid()) && !thSameDay(i.date, tdDate) ? `<span class="tag">이월</span> ` : ""}${thStamp(i)}</span>
+          <span class="th-card-time">${thIsCarry(i) ? `<span class="tag">이월</span> ` : ""}${thStamp(i)}</span>
         </div>
         <div class="th-card-cont">
           ${img}
@@ -225,7 +230,7 @@ function renderThread() {
     const wide = cats.length === 1; /* 카테고리를 하나만 고르면 한 칸을 넓게 쓰고 카드를 여러 줄로 보여줘요 */
     $("#thBoard").innerHTML = cats
         .map((c) => {
-            const list = base.filter((i) => i.cat === c.id && i.state === thChip);
+            const list = base.filter((i) => i.cat === c.id && i.state === thChip).sort(thOrder);
             return `
       <section class="th-col${wide ? " is-wide" : ""}" aria-label="${thEsc(c.name)}">
         <h2 class="th-col-tit"><span>${thEsc(c.name)}</span><span>${list.length}</span></h2>
