@@ -238,17 +238,17 @@ const RAW_ROOMS = [
         no: "101",
         floor: 1,
         status: "done",
-        out: "17:00",
+        out: "13:00",
         extHour: 2,
         staff: EARLY_LEAVER,
-        clean: "16:00",
+        clean: "12:00",
         nights: 2,
     },
     {
         no: "102",
         floor: 1,
         status: "progress",
-        out: "15:00",
+        out: "11:00",
         staff: "유가은",
         nights: 1,
         nextIn: true,
@@ -258,7 +258,7 @@ const RAW_ROOMS = [
         no: "103",
         floor: 1,
         status: "progress",
-        out: "17:00",
+        out: "13:00",
         staff: "한다경",
         nights: 3,
         nextIn: true,
@@ -268,7 +268,7 @@ const RAW_ROOMS = [
         no: "104",
         floor: 1,
         status: "todo",
-        out: "17:00",
+        out: "13:00",
         staff: "한다경",
         nights: 1,
         nextIn: true,
@@ -278,7 +278,7 @@ const RAW_ROOMS = [
         no: "105",
         floor: 1,
         status: "review",
-        out: "15:00",
+        out: "11:00",
         staff: "이서영",
         nights: 2,
     },
@@ -286,7 +286,7 @@ const RAW_ROOMS = [
         no: "106",
         floor: 1,
         status: "done",
-        out: "15:00",
+        out: "11:00",
         staff: "이서영",
         nights: 1,
         nextIn: true,
@@ -296,7 +296,7 @@ const RAW_ROOMS = [
         no: "107",
         floor: 1,
         status: "review",
-        out: "17:00",
+        out: "13:00",
         staff: "유가은",
         nights: 4,
         nextIn: true,
@@ -306,7 +306,7 @@ const RAW_ROOMS = [
         no: "108",
         floor: 1,
         status: "reassign",
-        out: "15:00",
+        out: "11:00",
         staff: EARLY_LEAVER,
         staffTag: "조퇴",
         nights: 1,
@@ -317,7 +317,7 @@ const RAW_ROOMS = [
         no: "201",
         floor: 2,
         status: "todo",
-        out: "17:00",
+        out: "13:00",
         staff: "이서영",
         nights: 2,
         nextIn: true,
@@ -327,7 +327,7 @@ const RAW_ROOMS = [
         no: "202",
         floor: 2,
         status: "done",
-        out: "17:00",
+        out: "13:00",
         staff: "김이레",
         nights: 1,
     },
@@ -335,7 +335,7 @@ const RAW_ROOMS = [
         no: "203",
         floor: 2,
         status: "progress",
-        out: "17:00",
+        out: "13:00",
         staff: "이서영",
         nights: 5,
         nextIn: true,
@@ -345,7 +345,7 @@ const RAW_ROOMS = [
         no: "204",
         floor: 2,
         status: "progress",
-        out: "15:00",
+        out: "11:00",
         staff: "유가은",
         nights: 2,
         nextIn: true,
@@ -355,7 +355,7 @@ const RAW_ROOMS = [
         no: "301",
         floor: 3,
         status: "progress",
-        out: "17:00",
+        out: "13:00",
         staff: "최하석",
         nights: 1,
         nextIn: true,
@@ -365,7 +365,7 @@ const RAW_ROOMS = [
         no: "302",
         floor: 3,
         status: "stay",
-        out: "16:00",
+        out: "12:00",
         extHour: 1,
         nights: 3,
         stayed: 1,
@@ -375,7 +375,7 @@ const RAW_ROOMS = [
         no: "303",
         floor: 3,
         status: "todo",
-        out: "17:00",
+        out: "13:00",
         staff: "이서영",
         nights: 3,
         stayed: 2,
@@ -432,8 +432,8 @@ function normalizeRoom(r) {
 /* ---------- 운영 시간대 기본 규칙 (모달에서 설정 / 모든 객실 타일의 기본값) ----------
    - 객실별로 우측 패널에서 직접 고친 시간(outLocked / cleanLocked)은 이 규칙보다 우선해요 */
 const HOURS_DEFAULT = {
-    weekday: { in: "20:00", out: "15:00" },
-    weekend: { in: "20:00", out: "15:00" },
+    weekday: { in: "15:00", out: "11:00" },
+    weekend: { in: "15:00", out: "11:00" },
     cleanOut: "0" /* 퇴실 N시간 후부터 청소 */,
     cleanIn: "0" /* 입실 N시간 전까지 청소 */,
     extend: "0" /* 연장 N시간 초과 시 1박 추가 */,
@@ -442,6 +442,12 @@ const HOURS_DEFAULT = {
 let HOURS = JSON.parse(JSON.stringify(HOURS_DEFAULT));
 try {
     const saved = JSON.parse(localStorage.getItem("hours"));
+    /* 예전 기본값(입실 20시 · 퇴실 15시) 그대로 저장돼 있던 값은 새 기본값(입실 15시 · 퇴실 11시)으로 바꿔요 */
+    const wasOldDefault = (h) => h && h.in === "20:00" && h.out === "15:00";
+    if (saved && wasOldDefault(saved.weekday) && wasOldDefault(saved.weekend)) {
+        delete saved.weekday;
+        delete saved.weekend;
+    }
     if (saved) HOURS = { ...HOURS, ...saved };
 } catch (e) { }
 
