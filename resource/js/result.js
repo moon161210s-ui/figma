@@ -216,15 +216,27 @@ const PHOTO_GROUPS = [
     { name: "욕실 청소 상태", desc: "세면대와 변기, 바닥 상태가 보이도록 촬영해 주세요.", n: 4, fresh: 2 },
 ];
 
-/* 재검수를 요청하면(r.resub) 새로 올라온 사진이 앞에 와요 */
-const rsFixed = (r, gi, i) => {
-    const pick = (map) => map[r.no] && map[r.no][gi] && map[r.no][gi][i];
-    return (r.resub && pick(FIXED_PHOTOS_REDO)) || pick(FIXED_PHOTOS);
+/* 사진 묶음별 사진 목록
+   - 고정 사진이 있는 객실(FIXED_PHOTOS)은 그 장수만큼만 보여줘요. 재검수를 요청하면(r.resub) 새로 올라온 사진(FIXED_PHOTOS_REDO)이 앞에 NEW 로 붙어요.
+   - 그 외 객실은 PHOTO_GROUPS 의 장수대로 시안 사진을 돌려 써요. */
+const rsFixedList = (r, gi) => {
+    const base = FIXED_PHOTOS[r.no] && FIXED_PHOTOS[r.no][gi];
+    if (!base) return null;
+    const redo = (r.resub && FIXED_PHOTOS_REDO[r.no] && FIXED_PHOTOS_REDO[r.no][gi]) || [];
+    return { list: [...redo, ...base], fresh: redo.length };
 };
-const rsPhoto = (r, gi, i) => ({
-    src: rsFixed(r, gi, i) || RESULT_PHOTOS[gi][i % RESULT_PHOTOS[gi].length],
-    fresh: !!(r.resub && i < PHOTO_GROUPS[gi].fresh),
-});
+const rsCount = (r, gi) => {
+    const f = rsFixedList(r, gi);
+    return f ? f.list.length : PHOTO_GROUPS[gi].n;
+};
+const rsPhoto = (r, gi, i) => {
+    const f = rsFixedList(r, gi);
+    if (f) return { src: f.list[i], fresh: i < f.fresh };
+    return {
+        src: RESULT_PHOTOS[gi][i % RESULT_PHOTOS[gi].length],
+        fresh: !!(r.resub && i < PHOTO_GROUPS[gi].fresh),
+    };
+};
 
 function renderResultDetail() {
     const box = $("#rsDetail");
@@ -268,7 +280,7 @@ function renderResultDetail() {
             (g, gi) => `
         <div class="rs-photo-group">
           <div class="rs-photo-tit"><strong>${g.name}</strong><span>${g.desc}</span></div>
-          <div class="rs-photo-list">${Array.from({ length: g.n }, (_, i) => `
+          <div class="rs-photo-list">${Array.from({ length: rsCount(r, gi) }, (_, i) => `
             <button class="rs-photo" type="button" data-rs-photo="${gi}:${i}" aria-label="${g.name} ${i + 1}번 사진 크게 보기"><img src="${rsPhoto(r, gi, i).src}" alt="" onerror="this.style.visibility='hidden'" />${rsPhoto(r, gi, i).fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</button>`).join("")}
           </div>
         </div>`
@@ -493,7 +505,7 @@ function openRsModal(kind) {
 let rsView = null;
 function openRsViewer(r, gi, i) {
     const g = PHOTO_GROUPS[gi];
-    rsView = { photos: Array.from({ length: g.n }, (_, k) => rsPhoto(r, gi, k)), i, dx: 0 };
+    rsView = { photos: Array.from({ length: rsCount(r, gi) }, (_, k) => rsPhoto(r, gi, k)), i, dx: 0 };
     rsModalEl.innerHTML = `
     <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="인증 사진">
       <div class="hm-head">
