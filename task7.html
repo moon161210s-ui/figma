@@ -19,8 +19,8 @@
             localStorage.setItem("roomResult", JSON.stringify({
                 date: key, rooms: {
                     "107": {
-                        status: "reclean", confirmed: false, resub: true, first: "11:50", at: "12:30",
-                        req: ["욕실 물기 제거"], msg: msg, prev: { status: "review", confirmed: false }, redo: { at: "11:50" },
+                        status: "review", confirmed: false, resub: true, first: "11:50", at: "12:30",
+                        req: ["욕실 물기 제거"], msg: msg, prev: null, redo: { at: "11:50" },
                         hist: [["11:10", "청소 시작"], ["11:50", "최초 청소 완료"], ["12:05", "재청소 요청", "요청사유: " + msg], ["12:30", "직원 재검수 요청", "전달된 메모: " + memo]],
                         memo: ["12:30", memo]
                     }
