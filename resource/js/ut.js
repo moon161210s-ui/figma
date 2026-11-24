@@ -34,9 +34,12 @@
         const btn = el.querySelector("button");
         btn.addEventListener("click", () => {
             el.remove();
-            /* 설문 페이지에서 새 탭/창으로 열렸다면 이 창이 닫혀요 (브라우저가 막으면 빈 페이지로 바꿔요) */
+            /* 설문 페이지에서 새 탭/창으로 열렸다면 이 창이 닫혀요 (브라우저가 막으면 닫으라는 안내 화면으로 바꿔요) */
             window.close();
-            setTimeout(() => { if (!window.closed) location.replace("about:blank"); }, 300);
+            setTimeout(() => {
+                if (window.closed) return;
+                document.body.innerHTML = `<div style="position:fixed;inset:0;display:grid;place-items:center;background:var(--color-bg-base,#fff);text-align:center;font-family:inherit;color:var(--color-gray-900,#1f2225)"><div><strong style="display:block;font-size:var(--fs-heading6,20px);margin-bottom:8px">미션이 끝났어요</strong><span style="color:var(--color-gray-600,#656d77);font-size:var(--fs-body1,16px)">이 탭을 닫고 설문 페이지로 돌아가 다음 미션을 진행해 주세요.</span></div></div>`;
+            }, 300);
         });
         btn.focus();
     }
@@ -54,38 +57,27 @@
         };
     };
 
-    /* ---------- 태스크 1 · 조치가 필요한 객실 고르기 (105 · 107 · 108) ---------- */
+    /* ---------- 태스크 1 · 조치가 필요한 객실 3개(105 · 107 · 108)를 고르면 바로 성공 ---------- */
     if (task === 1 && page === "index.html") {
         const TARGET = ["105", "107", "108"];
         const picked = new Set();
         const st = document.createElement("style");
-        st.textContent = `
-        .room-card.is-ut-picked { outline: 3px solid var(--color-primary-500); outline-offset: -3px; }
-        #utPick { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 90; }`;
+        st.textContent = `.room-card.is-ut-picked { outline: 3px solid var(--color-primary-500); outline-offset: -3px; }`;
         document.head.appendChild(st);
-        const pill = document.createElement("button");
-        pill.id = "utPick";
-        pill.type = "button";
-        pill.className = "btn btn-lg btn-dark";
-        document.body.appendChild(pill);
         const paint = () => {
             document.querySelectorAll(".room-card[data-room]").forEach((c) => c.classList.toggle("is-ut-picked", picked.has(c.dataset.room)));
-            pill.textContent = `선택 완료 (${picked.size})`;
         };
-        paint();
         new MutationObserver(paint).observe(document.querySelector("#floors"), { childList: true, subtree: true });
         document.addEventListener("click", (e) => {
             const card = e.target.closest(".room-card[data-room]");
             if (!card) return;
             const no = card.dataset.room;
             picked.has(no) ? picked.delete(no) : picked.add(no);
-            later(paint, 0);
+            later(() => {
+                paint();
+                if (picked.size === TARGET.length && TARGET.every((n) => picked.has(n))) utSuccess();
+            }, 150);
         }, true);
-        pill.addEventListener("click", () => {
-            if (picked.size === TARGET.length && TARGET.every((n) => picked.has(n))) return utSuccess();
-            pill.textContent = "다시 확인해 주세요";
-            setTimeout(paint, 1500);
-        });
     }
 
     /* ---------- 태스크 2 · 104호 퇴실 11:00 → 13:00 저장 ---------- */
