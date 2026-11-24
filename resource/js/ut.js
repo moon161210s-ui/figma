@@ -32,7 +32,12 @@
         document.body.appendChild(el);
         el.hidden = false;
         const btn = el.querySelector("button");
-        btn.addEventListener("click", () => el.remove());
+        btn.addEventListener("click", () => {
+            el.remove();
+            /* 설문 페이지에서 새 탭/창으로 열렸다면 이 창이 닫혀요 (브라우저가 막으면 빈 페이지로 바꿔요) */
+            window.close();
+            setTimeout(() => { if (!window.closed) location.replace("about:blank"); }, 300);
+        });
         btn.focus();
     }
     const later = (fn, ms = 350) => setTimeout(fn, ms); /* 기존 완료 모달 위에 얹어요 */
