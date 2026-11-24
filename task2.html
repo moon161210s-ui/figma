@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>태스크 2</title>
+    <script>
+        /* 사용성 테스트 태스크 2 — 저장돼 있던 데이터를 비우고 index.html 에서 시작해요 */
+        try {
+            var theme = localStorage.getItem("theme");
+            localStorage.clear();
+            if (theme) localStorage.setItem("theme", theme);
+            sessionStorage.clear();
+            sessionStorage.setItem("utTask", "2");
+        } catch (e) { }
+        location.replace("index.html");
+    </script>
+</head>
+
+<body></body>
+
+</html>

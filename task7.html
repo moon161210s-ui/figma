@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>태스크 7</title>
+    <script>
+        /* 사용성 테스트 태스크 7 — 저장돼 있던 데이터를 비우고 result.html 에서 시작해요 */
+        try {
+            var theme = localStorage.getItem("theme");
+            localStorage.clear();
+            if (theme) localStorage.setItem("theme", theme);
+            sessionStorage.clear();
+            sessionStorage.setItem("utTask", "7");
+            /* 태스크 7: 103호가 재청소를 마치고 재검수를 요청한 상태로 시작해요 */
+            var t = new Date(), key = t.getFullYear() + "-" + t.getMonth() + "-" + t.getDate();
+            localStorage.setItem("roomResult", JSON.stringify({
+                date: key, rooms: {
+                    "103": {
+                        status: "review", confirmed: false, resub: true, first: "11:50", at: "12:30", req: null, msg: null, prev: null,
+                        hist: [["11:50", "최초 청소 완료"], ["12:05", "재청소 요청", "요청사유: 침구 정리가 필요합니다."], ["12:30", "직원 재검수 요청", "전달된 메모: 침구를 다시 정리했어요."]],
+                        memo: ["12:30", "침구를 다시 정리했어요."]
+                    }
+                }
+            }));
+        } catch (e) { }
+        location.replace("result.html");
+    </script>
+</head>
+
+<body></body>
+
+</html>
