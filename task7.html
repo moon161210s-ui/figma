@@ -12,14 +12,17 @@
             if (theme) localStorage.setItem("theme", theme);
             sessionStorage.clear();
             sessionStorage.setItem("utTask", "7");
-            /* 태스크 7: 103호가 재청소를 마치고 재검수를 요청한 상태로 시작해요 */
+            /* 태스크 7: 107호가 재청소 요청(욕실 물기 제거)을 받고, 직원이 다시 청소해 재검수를 요청한 상태로 시작해요 */
             var t = new Date(), key = t.getFullYear() + "-" + t.getMonth() + "-" + t.getDate();
+            var memo = "욕실 바닥과 세면대에 남아 있던 물기를 다시 닦았어요. 환풍기가 작동하지 않아서 창문을 열어 환기도 했어요.";
+            var msg = "욕실 물기 제거가 필요합니다.";
             localStorage.setItem("roomResult", JSON.stringify({
                 date: key, rooms: {
-                    "103": {
-                        status: "review", confirmed: false, resub: true, first: "11:50", at: "12:30", req: null, msg: null, prev: null,
-                        hist: [["11:50", "최초 청소 완료"], ["12:05", "재청소 요청", "요청사유: 침구 정리가 필요합니다."], ["12:30", "직원 재검수 요청", "전달된 메모: 침구를 다시 정리했어요."]],
-                        memo: ["12:30", "침구를 다시 정리했어요."]
+                    "107": {
+                        status: "reclean", confirmed: false, resub: true, first: "11:50", at: "12:30",
+                        req: ["욕실 물기 제거"], msg: msg, prev: { status: "review", confirmed: false }, redo: { at: "11:50" },
+                        hist: [["11:10", "청소 시작"], ["11:50", "최초 청소 완료"], ["12:05", "재청소 요청", "요청사유: " + msg], ["12:30", "직원 재검수 요청", "전달된 메모: " + memo]],
+                        memo: ["12:30", memo]
                     }
                 }
             }));

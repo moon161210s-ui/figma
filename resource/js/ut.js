@@ -105,9 +105,9 @@
         });
     }
 
-    /* ---------- 태스크 4 · 105호 검수 완료 / 태스크 5 · 107호 재청소 요청 / 태스크 7 · 103호 재검수 결정 ---------- */
+    /* ---------- 태스크 4 · 105호 검수 완료 / 태스크 5 · 107호 재청소 요청 / 태스크 7 · 107호 재검수 결정 ---------- */
     if ((task === 4 || task === 5 || task === 7) && page === "result.html") {
-        const NO = { 4: "105", 5: "107", 7: "103" }[task];
+        const NO = { 4: "105", 5: "107", 7: "107" }[task];
         document.addEventListener("click", (e) => {
             if (rsSelected !== NO) return;
             const confirmBtn = e.target.closest("[data-rs-confirm]");
