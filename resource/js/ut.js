@@ -151,13 +151,22 @@
         <button class="btn btn-lg btn-dark" type="submit">제출</button>`;
         document.body.appendChild(box);
         const num = (v) => { const m = String(v).match(/\d+/); return m ? Number(m[0]) : NaN; };
+        /* 18 · 18시 · 18:00 · 1800 · 오후 6시 · 오후6:00 · pm 6시 · PM 6:00 · 6pm · 6시 … 모두 18:00 으로 읽어요 */
         const hhmm = (v) => {
-            const t = String(v);
-            const m = t.match(/(\d{1,2})\s*(?::|시)\s*(\d{1,2})?/);
-            if (!m) return "";
-            let h = Number(m[1]);
-            if (/오후|pm/i.test(t) && h < 12) h += 12;
-            return `${String(h).padStart(2, "0")}:${String(Number(m[2] || 0)).padStart(2, "0")}`;
+            const t = String(v).toLowerCase().replace(/\s+/g, "");
+            const pm = /오후|pm|p\.m/.test(t);
+            const am = /오전|am|a\.m/.test(t);
+            let h, m = 0;
+            const four = t.match(/^\D*(\d{2})(\d{2})\D*$/); /* 1800 */
+            const hm = t.match(/(\d{1,2})(?::|시)(\d{1,2})?/); /* 18:00 · 18시 · 6시30분 */
+            const only = t.match(/(\d{1,2})/); /* 18 · pm6 · 6pm */
+            if (four) { h = Number(four[1]); m = Number(four[2]); }
+            else if (hm) { h = Number(hm[1]); m = Number(hm[2] || 0); }
+            else if (only) h = Number(only[1]);
+            else return "";
+            if (pm && h < 12) h += 12;
+            else if (!pm && !am && h === 6) h = 18; /* 퇴실을 새벽 6시로 볼 일은 없으니 '6시'도 18시로 봐요 */
+            return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
         };
         box.addEventListener("submit", (e) => {
             e.preventDefault();
