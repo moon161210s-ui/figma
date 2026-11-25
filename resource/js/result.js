@@ -120,7 +120,10 @@ function syncResult(r) {
     saveResultState(r.no, r);
     if (typeof applyResultState === "function") {
         const room = ROOMS.find((x) => x.no === r.no);
-        if (room) room.status = r.status === "reclean" ? "todo" : r.status;
+        if (room) {
+            room.status = r.status === "reclean" ? "todo" : r.status;
+            room.confirmed = !!r.confirmed && r.status === "done"; /* 확인한 청소 완료는 메인에서도 회색 */
+        }
     }
 }
 

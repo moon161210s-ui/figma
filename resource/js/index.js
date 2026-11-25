@@ -190,6 +190,9 @@ const STATUS = {
     review: { label: "검수 대기", tile: "badge-review", panel: "badge-review" },
 };
 
+/* 청소 완료는 결과 화면에서 확인하기 전 = 초록 / 확인(검수 완료) 후 = 회색 (청소 결과 화면의 배지와 같아요) */
+const statusTile = (r) => (r.status === "done" && r.confirmed ? "badge-todo" : STATUS[r.status].tile);
+
 /* 객실 카드의 날짜는 항상 오늘 기준이에요 (오늘 입실 · nights 박 뒤 퇴실). 실제 서비스에서는 서버의 예약 날짜로 교체 */
 const todayMid = () => {
     const t = new Date();
@@ -591,6 +594,7 @@ function applyResultState() {
         const v = saved[r.no];
         if (!v || r.empty) return;
         r.status = v.status === "reclean" ? "todo" : v.status;
+        r.confirmed = !!v.confirmed && v.status === "done";
     });
 }
 applyResultState();
@@ -646,7 +650,7 @@ function roomCard(r) {
             }" data-room="${r.no}" tabindex="0" role="button" aria-pressed="${r.no === selectedNo
             }">
         <div class="room-top"><span class="room-no">${r.no}호</span>${reg
-                ? `<span class="badge ${STATUS[r.status].tile}">${STATUS[r.status].label
+                ? `<span class="badge ${statusTile(r)}">${STATUS[r.status].label
                 }</span>`
                 : ""
             }</div>
@@ -665,7 +669,7 @@ function roomCard(r) {
           <span class="room-no">${r.no}호</span>
           ${isStayOnly(r)
             ? ""
-            : `<span class="badge ${s.tile}">${s.label}</span>`
+            : `<span class="badge ${statusTile(r)}">${s.label}</span>`
         }
         </div>
         <dl class="room-info">
@@ -767,7 +771,7 @@ function renderDetail() {
         <span class="detail-room-no">${r.no}호</span>
 ${(r.empty && !r.status) || isStayOnly(r)
             ? ""
-            : `<span class="badge ${STATUS[r.status].tile}">${STATUS[r.status].label
+            : `<span class="badge ${statusTile(r)}">${STATUS[r.status].label
             }</span>`
         }
       </div>
