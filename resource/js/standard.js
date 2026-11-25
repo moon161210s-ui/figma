@@ -49,7 +49,7 @@ const rlData = (id) => {
   if (!d.proofs || !d.proofs.length) d.proofs = [{ t: "", g: "" }];
   return d;
 };
-/* 아무것도 입력하지 않은 상태인지 (저장하기 버튼 활성 조건) */
+/* 입력된 내용이 있는지 */
 const rlHasData = (id) => {
   const d = rlData(id);
   return (
@@ -139,6 +139,7 @@ function renderCard() {
   const d = rlData(rlSel);
   const pre = common ? "" : "추가 ";
   $("#rlCard").innerHTML = `
+    <div class="rl-sticky">
     <div class="rl-tit">
       <div class="rl-tit-tx">
         <h2>${esc(name)} 청소 기준</h2>
@@ -149,11 +150,11 @@ function renderCard() {
       </div>
       <div class="rl-tit-btns">
         <button class="rl-btn is-outline" type="button" id="rlPreview">직원 화면 미리보기</button>
-        <button class="rl-btn is-primary" type="button" id="rlSave"${rlHasData(rlSel) ? "" : " disabled"
-    }>변경 사항 일괄 저장</button>
+        <button class="rl-btn is-primary" type="button" id="rlSave">변경 사항 일괄 저장</button>
       </div>
     </div>
     <hr class="rl-line" />
+    </div>
     <div class="rl-sections">
       <section class="rl-sec">
         <div class="rl-sec-head"><div class="rl-sec-tx">
@@ -215,10 +216,8 @@ function renderAll() {
   renderTypes();
   renderCard();
 }
-const refreshSave = () => {
-  const b = $("#rlSave");
-  if (b) b.disabled = !rlHasData(rlSel);
-};
+/* 변경 사항 일괄 저장 버튼은 입력 여부와 상관없이 늘 활성화돼 있어요 */
+const refreshSave = () => { };
 
 /* ---------- 입력 / 클릭 ---------- */
 document.addEventListener("input", (e) => {

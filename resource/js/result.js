@@ -1,7 +1,7 @@
 /* ==========================================================
    청소 결과 화면 (result.html / index.js 뒤에 불러와요)
    - 날짜별 결과 목록 / 상태 칩 필터 / 호실 검색 / 객실 유형 필터
-   - 행 클릭 → 우측 패널 (검수 이력 · 인증 사진 · 체크리스트 · 메모 · 특이사항)
+   - 행 클릭 → 우측 패널 (검수 이력 · 인증 사진 · 체크리스트 · 메모 · 조치 필요 내용)
    - 재청소 요청 / 검수 완료 (서버 연결 전에는 이 화면 안에서만 바뀌어요)
    ========================================================== */
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -71,7 +71,7 @@ const resultCache = {};
 
 /* 사용성 테스트용으로 내용을 고정한 객실 (오늘 날짜 / 메인 · 업무 특이사항과 같은 이야기로 이어져요)
    - 105호: 문제없이 꼼꼼하게 끝낸 청소
-   - 107호: 욕실 환풍기가 고장 나서 욕실 물기가 덜 마른 청소 · 메모 없이 특이사항 보고만 (인증 사진은 FIXED_PHOTOS 로 고정) */
+   - 107호: 욕실 환풍기가 고장 나서 욕실 물기가 덜 마른 청소 · 메모 없이 조치 필요 내용만 (인증 사진은 FIXED_PHOTOS 로 고정) */
 const RESULT_FIXED = {
     105: {
         start: 10, /* 청소 가능 시각보다 몇 분 뒤에 시작했는지 */
@@ -85,7 +85,7 @@ const RESULT_FIXED = {
     107: {
         start: 10,
         hist: (s, e) => [[s, "청소 시작"], [e, "최초 청소 완료"]],
-        /* 전달된 메모 없이 특이사항 보고만 남겨요 */
+        /* 전달된 메모 없이 조치 필요 내용만 남겨요 */
         notes: [[0, addMinutes(cleanDoneAt("107"), -5), "유가은", "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다."]],
     },
 };
@@ -261,7 +261,7 @@ function renderResultDetail() {
 
     const b = resultBadge(r);
     const arrow = `<img class="rs-arrow" src="${ICON("arrow-up")}" alt="" />`;
-    /* 토글 기본값: 인증 사진 · 체크리스트는 펼침, 검수 이력 · 특이사항은 접힘 / 전달된 메모는 있을 때만 생기고 펼쳐서 보여줘요 */
+    /* 토글 기본값: 인증 사진 · 체크리스트는 펼침, 검수 이력은 접힘 / 전달된 메모와 조치 필요 내용은 있을 때만 생기고 펼쳐서 보여줘요 */
     const acc = (title, body, open = true) => `
       <section class="rs-acc${open ? "" : " is-closed"}">
         <button class="rs-acc-top" type="button" data-rs-acc aria-expanded="${open}"><span>${title}</span>${arrow}</button>
@@ -318,12 +318,12 @@ function renderResultDetail() {
     const memo = r.memo && r.memo[1] ? acc("전달된 메모", `<div class="rs-items">${item(fmtStamp(rsDate, r.memo[0]), r.memo[1])}</div>`, true) : "";
     const notes = r.notes && r.notes.length
         ? acc(
-            "특이사항",
+            "조치 필요 내용",
             `<div class="rs-items">${r.notes.map(([off, t, name, text]) => {
                 const dt = new Date(rsDate.getFullYear(), rsDate.getMonth(), rsDate.getDate() + off);
                 return item(fmtStamp(dt, t), name, text);
             }).join("")}</div>`,
-            false
+            true
         )
         : "";
 

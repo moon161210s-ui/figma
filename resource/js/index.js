@@ -2093,13 +2093,13 @@ setTimeout(function tick() {
    ========================================================== */
 const NOTI_TYPES = {
     exit: { tab: "퇴실 변경 확인", icon: "bell-green" },
-    issue: { tab: "특이사항", icon: "exclamation-triangle-orange" },
+    issue: { tab: "조치 필요 목록", icon: "exclamation-triangle-orange" },
     reassign: { tab: "직원 관리", icon: "user-red" },
     todo: { tab: "청소 현황", icon: "soap-gray" },
     review: { tab: "청소 현황", icon: "check-blue" },
     notice: { tab: "시스템 공지", icon: "notice-purple" },
 };
-const NOTI_TABS = ["전체", "퇴실 변경 확인", "청소 현황", "직원 관리", "특이사항", "시스템 공지"];
+const NOTI_TABS = ["전체", "퇴실 변경 확인", "청소 현황", "직원 관리", "조치 필요 목록", "시스템 공지"];
 let notiQuery = ""; /* 알림 검색어 (제목 · 내용에서 찾아요) */
 
 const NOTI_TODAY = `${todayMid().getFullYear()}-${pad(
@@ -2131,7 +2131,7 @@ let NOTIFICATIONS = [
     {
         id: 11,
         type: "issue",
-        title: "유가은 · 특이사항 등록",
+        title: "유가은 · 조치 필요 내용 등록",
         date: notiDate(0, addMinutes(cleanDoneAt("107"), -5)),
         text: "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다.",
         actions: [
@@ -2152,7 +2152,7 @@ let NOTIFICATIONS = [
     {
         id: 12,
         type: "issue",
-        title: "이서영 · 특이사항 등록",
+        title: "이서영 · 조치 필요 내용 등록",
         date: notiDate(0, addMinutes(cleanDoneAt("105"), -5)),
         text: "현관 천장등이 계속 깜빡여요.\n전등 교체 부탁드립니다.",
         actions: [
@@ -2192,7 +2192,7 @@ let NOTIFICATIONS = [
     {
         id: 13,
         type: "issue",
-        title: "이서영 · 특이사항 등록",
+        title: "이서영 · 조치 필요 내용 등록",
         date: notiDate(1, "17:03"),
         text: "에어컨을 켜면 표시등이 깜빡이고 곧 멈춰요. 시설 점검 부탁드립니다.",
         actions: [
@@ -2232,7 +2232,7 @@ let NOTIFICATIONS = [
     {
         id: 17,
         type: "issue",
-        title: "한다경 · 특이사항 등록",
+        title: "한다경 · 조치 필요 내용 등록",
         date: notiDate(2, "15:42"),
         text: "침대 왼쪽 콘센트에 꽂으면 전원이 들어오지 않아요.\n콘센트 점검 부탁드립니다.",
         actions: [
@@ -2281,7 +2281,7 @@ let NOTIFICATIONS = [
     {
         id: 22,
         type: "issue",
-        title: "최하석 · 특이사항 등록",
+        title: "최하석 · 조치 필요 내용 등록",
         date: notiDate(4, "16:47"),
         text: "빗 파손이요.\n교체 부탁드립니다.",
         actions: [

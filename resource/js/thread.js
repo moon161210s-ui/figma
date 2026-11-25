@@ -101,7 +101,7 @@ const TH_ITEMS = [
     T("clean", "207", "14:20", "욕실 거울에 얼룩이 심해요.\n다음 청소 때 닦아 주세요.", ["작성자", "한다경"], 1, "done", "이서영", 1),
     T("supply", "305", "11:05", "타월이 2장 부족해요.\n추가 보충 부탁드립니다.", ["작성자", "유가은"], 0, "wait", null, 1),
     T("etc", "408", "12:30", "복도 쪽 소음이 심하다는 손님 의견이 있었어요.", ["작성자", "최하석"], 0, "doing", "전재연", 1),
-    /* 지난 특이사항 (객실별 '특이사항 내역'에 쌓여 있는 기록 / 모두 처리 완료) */
+    /* 지난 특이사항 (객실별 '조치 필요 목록 내역'에 쌓여 있는 기록 / 모두 처리 완료) */
     T("broken", "303", "14:10", "욕실 문 손잡이가 헐거워서 덜컹거려요.\n나사 조임 부탁드립니다.", ["작성자", "한다경"], 1, "done", "유가은", 6),
     T("clean", "303", "11:25", "침대 헤드 뒤쪽에 먼지가 쌓여 있어요.", ["작성자", "최하석"], 0, "done", "이서영", 13),
     T("supply", "303", "12:05", "객실 슬리퍼가 한 켤레 부족해요.\n추가 비치 부탁드립니다.", ["작성자", "이서영"], 0, "done", "유가은", 13),
@@ -184,7 +184,7 @@ const thIsCarry = (i) => i.carry && thSameDay(tdDate, todayMid()) && !thSameDay(
 const thOrder = (a, b) => thIsCarry(b) - thIsCarry(a) || a.date - b.date || (a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
 
 /* ---------- 카드 ---------- */
-/* 처리 대기 = 처리하기 / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 = 내용만 / 완료 = 담당자까지 */
+/* 처리 대기 = 처리하기 (버튼은 컴포넌트 스몰 = btn-xs) / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 = 내용만 / 완료 = 담당자까지 */
 function thCard(i) {
     const st = TH_STATE[i.state];
     const mine = i.state === "doing" && i.handler === TH_ME;
@@ -550,12 +550,12 @@ function tdItemHtml(x, first) {
     const cur = x.id === tdItem.id;
     const users = [`<p>${x.by[0]}: ${thEsc(x.by[1])} (${tdWhen(x)} 등록)</p>`];
     if (x.handler) users.push(`<p>담당자: ${thEsc(x.handler)}${x.state === "done" && x.doneAt ? ` (${pad(x.doneAt.getMonth() + 1)}.${pad(x.doneAt.getDate())} ${pad(x.doneAt.getHours())}:${pad(x.doneAt.getMinutes())} 처리 완료)` : ""}</p>`);
-    /* 처리 대기 = 처리하기 / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 · 완료 = 버튼 없음 */
+    /* 처리 대기 = 처리하기 (버튼은 컴포넌트 스몰 = btn-xs) / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 · 완료 = 버튼 없음 */
     const btns =
         x.state === "wait"
-            ? `<button class="btn btn-sm btn-dark" type="button" data-td-act="take">처리하기</button>`
+            ? `<button class="btn btn-xs btn-dark" type="button" data-td-act="take">처리하기</button>`
             : x.state === "doing" && x.handler === TH_ME
-                ? `<button class="btn btn-sm btn-outline" type="button" data-td-act="cancel">처리 취소</button><button class="btn btn-sm btn-dark" type="button" data-td-act="finish">처리 완료</button>`
+                ? `<button class="btn btn-xs btn-outline" type="button" data-td-act="cancel">처리 취소</button><button class="btn btn-xs btn-dark" type="button" data-td-act="finish">처리 완료</button>`
                 : "";
     return `<div class="td-item" data-td-id="${x.id}">
       <span class="td-time">${x.time}</span>
@@ -572,7 +572,7 @@ function tdItemHtml(x, first) {
 
 function tdHistoryHtml() {
     const list = tdHistory();
-    if (!list.length) return `<p class="floor-empty">조건에 맞는 특이사항이 없어요.</p>`;
+    if (!list.length) return `<p class="floor-empty">조건에 맞는 조치 필요 내용이 없어요.</p>`;
     const years = [...new Set(list.map((x) => x.date.getFullYear()))];
     return years
         .map((y) => {
@@ -605,7 +605,7 @@ function tdRender(keep) {
     const stLabel = tdF.state === "all" ? "상태 전체" : TD_STATE[tdF.state];
     const perLabel = tdPick ? `${tdPick.getFullYear()}. ${pad(tdPick.getMonth() + 1)}. ${pad(tdPick.getDate())}.` : "기간 전체";
     tdEl.innerHTML = `
-    <aside class="th-dp-box" role="dialog" aria-modal="true" aria-label="${i.room}호 특이사항 상세">
+    <aside class="th-dp-box" role="dialog" aria-modal="true" aria-label="${i.room}호 조치 필요 목록 상세">
       <div class="td-head"><h2>${i.room}호</h2>
         <button class="hm-close" type="button" data-td-close aria-label="닫기">${icon("close", 20)}</button></div>
       <div class="td-body">
@@ -617,7 +617,7 @@ function tdRender(keep) {
         </section>
         <section class="td-hist">
           <div class="td-hist-head">
-          <h3>특이사항 내역 <span>(${tdHistory().length}건)</span></h3>
+          <h3>조치 필요 목록 내역 <span>(${tdHistory().length}건)</span></h3>
           <div class="td-filter-group">
           <div class="td-filters">
             <div class="td-dd"><button class="td-date${tdPick ? " is-active" : ""}" type="button" data-td-date-btn aria-haspopup="dialog" aria-expanded="false">${icon("calender", 20)}<span>${perLabel}</span></button></div>
