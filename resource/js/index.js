@@ -102,6 +102,12 @@ const outTag = (r) => {
         m = diff % 60;
     return `${h ? h + "시간" : ""}${h && m ? " " : ""}${m ? m + "분" : ""} 연장`;
 };
+/* 운영자가 퇴실 시간을 바꿨는데 담당 직원이 아직 확인하지 않았으면 '직원 미확인' 미니 배지를 달아요 (확인하면 사라져요) */
+const outUnconfirmedTag = (r) => (r.outChange === "unconfirmed" ? "직원 미확인" : "");
+const outChangeNote = (r) =>
+    r.outChange && r.staff
+        ? `${r.staff} · 퇴실 변경 ${r.outChange === "confirmed" ? "확인완료" : "미확인"} 상태`
+        : "";
 const cleanText = (r) =>
     r.clean ? `${r.clean} ~ ${addMinutes(r.clean, r.cleanLen)}` : "-";
 const staffText = (r) => (r.staff ? `${r.staff}${tagHtml(r.staffTag)}` : "-");
@@ -240,6 +246,7 @@ const RAW_ROOMS = [
         status: "done",
         out: "13:00",
         extHour: 2,
+        outChange: "confirmed" /* 퇴실 변경을 직원이 확인한 상태 */,
         staff: EARLY_LEAVER,
         clean: "12:00",
         nights: 2,
@@ -251,6 +258,7 @@ const RAW_ROOMS = [
         out: "11:00",
         staff: "유가은",
         nights: 1,
+        cleanMin: 40,
         nextIn: true,
         nextNights: 2,
     },
@@ -316,6 +324,7 @@ const RAW_ROOMS = [
     {
         no: "201",
         floor: 2,
+        outChange: "unconfirmed" /* 퇴실 변경을 직원이 아직 확인하지 못한 상태 */,
         status: "todo",
         out: "13:00",
         staff: "이서영",
@@ -421,6 +430,7 @@ function normalizeRoom(r) {
     r.outLocked = !!r.extHour;
     r.cleanLocked = !!r.clean;
     r.clean = r.clean || r.out;
+    if (r.status === "progress" && r.cleanMin == null) r.cleanMin = 12; /* 시안 샘플: 청소를 시작한 지 지난 분 */
     r.cleanLen = 0; /* applyHours() 가 운영 시간대 규칙으로 채워요 */
     syncStayStatus(r);
     if (r.cleanReq && r.status === "done")
@@ -623,6 +633,9 @@ function deriveSummary() {
 /* ---------- 상태 ---------- */
 let selectedNo = null;
 let query = "";
+/* '오늘 청소할 목록만 보기' (기본 켜짐): 숙박 중이라 청소가 없는 객실과 청소를 등록하지 않은 빈 객실은 꺼야 보여요 */
+let todayOnly = true;
+const inTodayList = (r) => inCleanList(r) && !isStayOnly(r);
 
 /* ---------- 객실 타일 ---------- */
 function roomCard(r) {
@@ -638,7 +651,6 @@ function roomCard(r) {
                 : ""
             }</div>
         <dl class="room-info">
-          <div><dt>일정</dt><dd>-</dd></div>
           <div><dt>퇴실</dt><dd>-</dd></div>
           <div><dt>담당</dt><dd>${staffText(r)}</dd></div>
         </dl>
@@ -657,8 +669,7 @@ function roomCard(r) {
         }
         </div>
         <dl class="room-info">
-          <div><dt>일정</dt><dd>${stayText(r)}${tagHtml(stayTag(r))}</dd></div>
-          <div><dt>퇴실</dt><dd>${r.out}${tagHtml(outTag(r))}</dd></div>
+          <div><dt>퇴실</dt><dd>${r.out}${tagHtml(outTag(r))}${tagHtml(outUnconfirmedTag(r))}</dd></div>
           <div><dt>담당</dt><dd>${staffText(r)}</dd></div>
         </dl>
       </article>`;
@@ -687,6 +698,7 @@ function renderFloors() {
                 (r) =>
                     r.floor === f &&
                     (!q || r.no.includes(q)) &&
+                    (!todayOnly || inTodayList(r)) &&
                     filterPass("floor", String(r.floor)) &&
                     /* 상태가 없는 빈 객실(304호)은 청소 상태 필터를 쓰지 않을 때만 보여요 */
                     (r.status
@@ -768,7 +780,10 @@ ${(r.empty && !r.status) || isStayOnly(r)
                 "clean"
             )}${row("담당 직원", staffText(r), "staff")}`
             : `${row("숙박 일정", `${stayText(r)}${tagHtml(stayTag(r))}`)}
-        ${row("퇴실 예정", `${r.out}${tagHtml(outTag(r))}`, "checkout")}
+        <div class="detail-group">
+          ${row("퇴실 예정", `${r.out}${tagHtml(outTag(r))}${tagHtml(outUnconfirmedTag(r))}`, "checkout")}
+          ${outChangeNote(r) ? `<p class="detail-note">${outChangeNote(r)}</p>` : ""}
+        </div>
         ${row("청소 가능 시간", cleanText(r), "clean")}
         ${row("담당 직원", staffText(r), "staff")}`
         }
@@ -880,7 +895,8 @@ function trackPopover() {
 function timePickerHtml(id, value) {
     const t = normTime(value) || "00:00";
     const h24 = +t.slice(0, 2);
-    const h12 = h24 % 12 || 12;
+    /* 시 목록은 1~24 / 13시부터는 자동으로 오후 (0시는 오전 12시, 12시는 오후 12시로 보여요) */
+    const hv = h24 === 0 ? 12 : h24;
     const col = (key, items, cur) =>
         `<div class="tp-col" data-col="${key}" role="listbox">${items
             .map(
@@ -907,8 +923,8 @@ function timePickerHtml(id, value) {
     )}
         ${col(
         "h",
-        Array.from({ length: 12 }, (_, i) => [String(i + 1), pad(i + 1)]),
-        String(h12)
+        Array.from({ length: 24 }, (_, i) => [String(i + 1), pad(i + 1)]),
+        String(hv)
     )}
         ${col(
         "m",
@@ -1069,8 +1085,10 @@ function openPopover(kind, anchor, room) {
         save = () => {
             const t = readTime();
             if (!t) return false;
+            const changed = room.out !== t || room.end.getTime() !== sel.getTime();
             room.end = sel;
             room.out = t;
+            if (changed && room.staff) room.outChange = "unconfirmed"; /* 직원이 확인하기 전까지 '직원 미확인' */
             room.outLocked = true; /* 직접 고친 시간이 기본 규칙보다 우선 */
             syncStayStatus(room); /* 퇴실일이 바뀌면 청소 대상 여부도 바뀌어요 */
             applyHours();
@@ -1290,37 +1308,89 @@ function initOneTimePicker(root, tp) {
     tp.querySelectorAll(".tp-col").forEach((c) => (cols[c.dataset.col] = c));
     const sel = (key) => $(".tp-item.is-selected", cols[key]).dataset.v;
     const sync = () => {
-        const h = +sel("h") % 12;
-        const h24 = sel("ap") === "PM" ? h + 12 : h;
+        /* 시 13~23 = 오후 / 24 = 자정(0시) / 1~12 = 오전·오후 칸을 따라가요 (12시: 오전 = 0시, 오후 = 12시) */
+        const v = +sel("h");
+        const h24 = v === 24 ? 0 : v >= 13 ? v : sel("ap") === "PM" ? (v % 12) + 12 : v % 12;
         input.value = `${pad(h24)}:${pad(+sel("m"))}`;
         text.textContent = input.value;
         input.classList.remove("is-error");
     };
-    const pick = (btn, focus) => {
-        const col = btn.parentElement;
+    const center = (col) => {
+        const b = $(".tp-item.is-selected", col);
+        col.scrollTop = b.offsetTop - (col.clientHeight - b.offsetHeight) / 2;
+    };
+    const mark = (col, btn) => {
         col.querySelectorAll(".tp-item").forEach((b) => {
             const on = b === btn;
             b.classList.toggle("is-selected", on);
             b.setAttribute("aria-selected", String(on));
             b.tabIndex = on ? 0 : -1;
         });
-        col.scrollTop = btn.offsetTop - (col.clientHeight - btn.offsetHeight) / 2;
+    };
+    const setKey = (key, val) => {
+        const btn = cols[key].querySelector(`.tp-item[data-v="${val}"]`);
+        if (btn) mark(cols[key], btn);
+    };
+    const pick = (btn, focus, keepScroll) => {
+        const col = btn.parentElement;
+        const key = col.dataset.col;
+        mark(col, btn);
+        /* 시를 13~23 으로 돌리면 자동으로 오후, 24 면 오전(자정) / 오전·오후를 직접 고르면 시도 맞춰져요 */
+        if (key === "h") {
+            const v = +btn.dataset.v;
+            if (v >= 13 && v <= 23) setKey("ap", "PM");
+            else if (v === 24) setKey("ap", "AM");
+        } else if (key === "ap") {
+            const v = +sel("h");
+            if (btn.dataset.v === "AM" && v >= 13 && v <= 23) {
+                setKey("h", v - 12);
+                center(cols.h);
+            } else if (btn.dataset.v === "PM" && v === 24) {
+                setKey("h", 12);
+                center(cols.h);
+            }
+        }
+        if (!keepScroll) center(col);
         if (focus) btn.focus();
         sync();
     };
+    /* 손으로(휠·터치) 돌리면 가운데 걸친 값이 선택돼요 (시 · 분 목록) */
+    ["h", "m"].forEach((key) => {
+        const col = cols[key];
+        let timer = null;
+        let lock = 0;
+        col._lock = () => (lock = Date.now() + 200);
+        col.addEventListener("scroll", () => {
+            if (Date.now() < lock || panel.hidden) return;
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                const mid = col.scrollTop + col.clientHeight / 2;
+                let best = null;
+                let gap = Infinity;
+                col.querySelectorAll(".tp-item").forEach((b) => {
+                    const d = Math.abs(b.offsetTop + b.offsetHeight / 2 - mid);
+                    if (d < gap) {
+                        gap = d;
+                        best = b;
+                    }
+                });
+                if (best && !best.classList.contains("is-selected")) pick(best, false, true);
+            }, 90);
+        });
+    });
     /* 시간 칸을 누르면 아래로 목록이 펼쳐지고, 다시 누르거나 바깥을 누르면 접혀요 */
     const field = $(".tp-field", tp);
     const panel = $(".tp-panel", tp);
-    const center = () =>
+    const centerAll = () =>
         Object.values(cols).forEach((c) => {
-            const b = $(".tp-item.is-selected", c);
-            c.scrollTop = b.offsetTop - (c.clientHeight - b.offsetHeight) / 2;
+            c._lock && c._lock();
+            center(c);
         });
     const setOpen = (on) => {
         panel.hidden = !on;
         field.setAttribute("aria-expanded", String(on));
         if (on) {
-            center();
+            centerAll();
         }
         placePopover(); /* 목록이 화면 아래로 넘치면 팝오버를 그만큼 위로 올려요 */
     };
@@ -1332,7 +1402,7 @@ function initOneTimePicker(root, tp) {
         const h24 = +t.slice(0, 2);
         const want = {
             ap: h24 < 12 ? "AM" : "PM",
-            h: String(h24 % 12 || 12),
+            h: String(h24 === 0 ? 12 : h24),
             m: String(+t.slice(3)),
         };
         Object.entries(cols).forEach(([key, col]) =>
@@ -1755,6 +1825,17 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+function setTodayOnly(on) {
+    todayOnly = on;
+    const sw = $("#todayOnly");
+    if (sw) {
+        sw.classList.toggle("is-on", on);
+        sw.setAttribute("aria-checked", String(on));
+    }
+    renderFloors();
+}
+$("#todayOnly")?.addEventListener("click", () => setTodayOnly(!todayOnly));
+
 $("#roomSearch")?.addEventListener("input", (e) => {
     query = e.target.value;
     renderFloors();
@@ -2014,20 +2095,22 @@ setTimeout(function tick() {
    - 읽음 처리 : 알림의 버튼을 누르면 그 알림이, 알림 센터를 닫으면 보고 있던 탭의 알림이 모두 읽음이 돼요
    - 서버 연결 : 서버에서 받은 알림 목록으로 setNotifications(list) 를 호출하세요
        알림 1건 = { id, type, title, date, text, actions: [{ label, room? }], read }
-       type : issue(특이사항) / reassign(재배정 필요) / todo(청소 필요) / review(검수 요청) / notice(시스템 공지)
+       type : exit(퇴실 변경 확인) / issue(특이사항) / reassign(재배정 필요) / todo(청소 필요) / review(검수 요청) / notice(시스템 공지)
        actions 의 room 이 있으면 그 객실을 선택해서 보여줘요 (없으면 읽음 처리만 해요 → 서버 연결 시 처리 동작을 넣으세요)
        actions 의 href 가 있으면 그 주소로 이동해요 (특이사항 '자세히 보기' → thread.html)
        actions 의 result({ room, date: "YYYY-MM-DD" })가 있으면 청소 결과 화면으로 이동해서 그 날짜의 그 객실 상세를 열어요 (검수 요청 알림)
        읽음 상태를 서버에 저장하려면 markRead() 안의 주석 위치에서 요청을 보내세요
    ========================================================== */
 const NOTI_TYPES = {
+    exit: { tab: "퇴실 변경 확인", icon: "bell-green" },
     issue: { tab: "특이사항", icon: "exclamation-triangle-orange" },
     reassign: { tab: "직원 관리", icon: "user-red" },
     todo: { tab: "청소 현황", icon: "soap-gray" },
     review: { tab: "청소 현황", icon: "check-blue" },
     notice: { tab: "시스템 공지", icon: "notice-purple" },
 };
-const NOTI_TABS = ["전체", "청소 현황", "직원 관리", "특이사항", "시스템 공지"];
+const NOTI_TABS = ["전체", "퇴실 변경 확인", "청소 현황", "직원 관리", "특이사항", "시스템 공지"];
+let notiQuery = ""; /* 알림 검색어 (제목 · 내용에서 찾아요) */
 
 const NOTI_TODAY = `${todayMid().getFullYear()}-${pad(
     todayMid().getMonth() + 1
@@ -2046,6 +2129,15 @@ const notiResult = (room, ago = 0) => ({
 });
 /* 위쪽 5건(오늘 · 사용성 테스트 고정): 107호 특이사항 · 105호 특이사항 · 108호 재배정 필요 · 105호 / 107호 검수 요청 */
 let NOTIFICATIONS = [
+    {
+        id: 99,
+        type: "exit",
+        title: "이서영 · 퇴실 변경 확인",
+        date: notiDate(0, "11:41"),
+        text: "201호 퇴실 시간 변경 알림을 확인했어요.\n오전 11시 → 낮 12시",
+        actions: [],
+        read: false,
+    },
     {
         id: 11,
         type: "issue",
@@ -2260,6 +2352,10 @@ const esc = (v) =>
     );
 const inTab = (n, tab) =>
     tab === "전체" || (NOTI_TYPES[n.type] || {}).tab === tab;
+const notiMatch = (n) => {
+    const q = notiQuery.trim().toLowerCase();
+    return !q || `${n.title} ${n.text}`.toLowerCase().includes(q);
+};
 
 function renderBell() {
     const unread = NOTIFICATIONS.filter((n) => !n.read).length;
@@ -2306,10 +2402,10 @@ function renderNoti() {
     }).join("");
     const list = $("#notiList");
     const top = list.scrollTop;
-    const items = NOTIFICATIONS.filter((n) => inTab(n, notiTab));
+    const items = NOTIFICATIONS.filter((n) => inTab(n, notiTab) && notiMatch(n));
     list.innerHTML = items.length
         ? items.map(notiItem).join("")
-        : `<p class="noti-empty">알림이 없어요.</p>`;
+        : `<p class="noti-empty">${notiQuery.trim() ? "검색 결과가 없어요." : "알림이 없어요."}</p>`;
     list.scrollTop = top;
 
     // 알림 센터 탭 마우스 드래그 코드추가
@@ -2400,6 +2496,17 @@ window.addEventListener("resize", () => {
     if (notiOpen) placeNoti();
 });
 
+/* 알림 검색: 입력할 때마다 목록만 다시 그려요 (탭은 그대로) */
+$("#notiSearch").addEventListener("input", (e) => {
+    notiQuery = e.target.value;
+    const list = $("#notiList");
+    const items = NOTIFICATIONS.filter((n) => inTab(n, notiTab) && notiMatch(n));
+    list.innerHTML = items.length
+        ? items.map(notiItem).join("")
+        : `<p class="noti-empty">${notiQuery.trim() ? "검색 결과가 없어요." : "알림이 없어요."}</p>`;
+    list.scrollTop = 0;
+});
+
 function openNoti() {
     closeFilterMenu();
     closePopover();
@@ -2413,6 +2520,8 @@ function closeNoti() {
     if (!notiOpen) return;
     const seen = NOTIFICATIONS.filter((n) => inTab(n, notiTab)).map((n) => n.id);
     notiOpen = false;
+    notiQuery = "";
+    $("#notiSearch").value = "";
     $("#notiPanel").hidden = true;
     $("#bellBtn").setAttribute("aria-expanded", "false");
     markRead(seen);
@@ -2428,6 +2537,7 @@ function showRoom(no) {
         /* 검색·필터에 가려져 있으면 풀어서 보여줘요 */
         query = "";
         $("#roomSearch").value = "";
+        if (!inTodayList(room)) setTodayOnly(false);
         Object.keys(FILTER_DEFS).forEach((k) => filters[k].clear());
         updateFilterButtons();
         renderFloors();

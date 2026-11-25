@@ -63,8 +63,7 @@ const RV_RESERVATIONS = [
 /* 시안(기업로고): 높이 15.83 상자 안에 로고 / 로고마다 가로폭이 달라요 (야놀자 24 · 여기어때 40 · 트립닷컴 40 / 온다 32 · 아고다 40은 시안 확인 전 임시값) */
 const RV_LOGO_W = { nol: 24, here: 40, trip: 40, onda: 32, agoda: 40 };
 const rvLogo = (file, name) =>
-  `<span class="rv-logo"><img src="resource/logo/${file}.svg" alt="${name}"${
-    RV_LOGO_W[file] ? ` style="width:${RV_LOGO_W[file]}px"` : ' class="is-auto"'
+  `<span class="rv-logo"><img src="resource/logo/${file}.svg" alt="${name}"${RV_LOGO_W[file] ? ` style="width:${RV_LOGO_W[file]}px"` : ' class="is-auto"'
   } /></span>`;
 const RV_CH = {
   nol: { name: "야놀자", html: rvLogo("nol", "야놀자") },
@@ -94,8 +93,7 @@ const rvKey = (d) =>
 const rvSame = (a, b) => rvKey(a) === rvKey(b);
 const rvFmtMD = (d) => `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
 const rvFmtFull = (d) =>
-  `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${
-    RV_DAYS[d.getDay()]
+  `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${RV_DAYS[d.getDay()]
   })`;
 const rvExtText = (m) =>
   m % 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분 연장` : `${m / 60}시간 연장`;
@@ -112,9 +110,9 @@ const rvOnDay = (d) =>
 let rvView = "month";
 try {
   if (localStorage.getItem(RV_VIEW_KEY) === "week") rvView = "week";
-} catch (e) {}
+} catch (e) { }
 let rvAnchor = todayMid(); /* 지금 보고 있는 달/주를 알려주는 날짜 */
-let rvSel = null; /* 선택한 날짜 (우측 패널) */
+let rvSel = rvView === "month" ? todayMid() : null; /* 선택한 날짜 (우측 패널) / 월별 보기는 처음에 오늘 날짜가 열려 있어요 */
 let rvTab = "all";
 let rvPop = null; /* {id, date, el} */
 
@@ -156,18 +154,14 @@ function rvBar(r, d) {
   const pick = rvPop && rvPop.id === r.id ? " is-picked" : "";
   /* 기업 로고는 시안처럼 (한 줄로 이어진) 막대의 오른쪽 끝에 둬요: 끝 칸 또는 줄이 바뀌는 토요일 칸 */
   const logoHere = !span || last || d.getDay() === 6;
-  return `<button class="rv-bar rv-${r.type}${first ? " is-first" : ""}${
-    last ? " is-last" : ""
-  }${show ? "" : " is-cont"}${pick}" type="button" data-rid="${
-    r.id
-  }" data-date="${rvKey(d)}">
-        <span class="rv-bar-top"><b>${r.room}</b>${
-    logoHere ? RV_CH[r.ch].html : ""
-  }</span>
+  return `<button class="rv-bar rv-${r.type}${first ? " is-first" : ""}${last ? " is-last" : ""
+    }${show ? "" : " is-cont"}${pick}" type="button" data-rid="${r.id
+    }" data-date="${rvKey(d)}">
+        <span class="rv-bar-top"><b>${r.room}</b>${logoHere ? RV_CH[r.ch].html : ""
+    }</span>
         <span class="rv-bar-time">${time || "&nbsp;"}</span>
-        ${first ? '<i class="rv-cap rv-cap-l"></i>' : ""}${
-    last ? '<i class="rv-cap rv-cap-r"></i>' : ""
-  }
+        ${first ? '<i class="rv-cap rv-cap-l"></i>' : ""}${last ? '<i class="rv-cap rv-cap-r"></i>' : ""
+    }
     </button>`;
 }
 
@@ -192,14 +186,12 @@ function rvDayHead(d, hidden, other) {
   const sel = rvSel && rvSame(d, rvSel);
   const more =
     hidden > 0 ? `<span class="rv-more">+ 외 ${hidden}건</span>` : "";
-  return `<button class="rv-dayhead${
-    other ? " is-other" : ""
-  }" type="button" data-pick="${rvKey(d)}" aria-label="${rvFmtFull(
-    d
-  )} 상세 열기">
-        <span class="rv-day${today ? " is-today" : ""}${
-    sel ? " is-sel" : ""
-  }">${d.getDate()}</span>${more}
+  return `<button class="rv-dayhead${other ? " is-other" : ""
+    }" type="button" data-pick="${rvKey(d)}" aria-label="${rvFmtFull(
+      d
+    )} 상세 열기">
+        <span class="rv-day${today ? " is-today" : ""}${sel ? " is-sel" : ""
+    }">${d.getDate()}</span>${more}
     </button>`;
 }
 
@@ -209,9 +201,8 @@ function renderReserve() {
   const todayD = todayMid();
   $("#rvTitle").textContent =
     rvView === "week"
-      ? `${start.getFullYear()}년 ${
-          start.getMonth() + 1
-        }월 ${start.getDate()}일 ~ ${end.getMonth() + 1}월 ${end.getDate()}일`
+      ? `${start.getFullYear()}년 ${start.getMonth() + 1
+      }월 ${start.getDate()}일 ~ ${end.getMonth() + 1}월 ${end.getDate()}일`
       : `${rvAnchor.getFullYear()}년 ${rvAnchor.getMonth() + 1}월`;
   document.querySelectorAll("#rvView button").forEach((b) => {
     const on = b.dataset.view === rvView;
@@ -234,9 +225,8 @@ function renderReserve() {
         .map((d) => {
           const today = rvSame(d, todayD);
           return `<div class="rv-th${today ? " is-today" : ""}">
-                        <small>${
-                          RV_DAYS[d.getDay()]
-                        }</small><strong>${d.getDate()}</strong></div>`;
+                        <small>${RV_DAYS[d.getDay()]
+            }</small><strong>${d.getDate()}</strong></div>`;
         })
         .join("")}</div>` +
       `<div class="rv-tbody"><div class="rv-wgrid">${days
@@ -261,9 +251,9 @@ function renderReserve() {
             other
           )}
                         <div class="rv-list">${slotHtml(
-                          d,
-                          RV_MONTH_CAP
-                        )}</div></div>`;
+            d,
+            RV_MONTH_CAP
+          )}</div></div>`;
         })
         .join("")}</div></div>`;
   }
@@ -296,22 +286,18 @@ function renderReserve() {
 function rvCard(r) {
   const stay = r.type === "stay";
   const nights = dayDiff(r.start, r.end);
-  const sched = `${rvFmtMD(r.start)} - ${rvFmtMD(r.end)}${
-    stay ? ` (${nights}박)` : ""
-  }`;
+  const sched = `${rvFmtMD(r.start)} - ${rvFmtMD(r.end)}${stay ? ` (${nights}박)` : ""
+    }`;
   return `<div class="rv-card">
-        <div class="rv-card-tit"><strong>${
-          r.room
-        }호</strong><span class="badge ${
-    stay ? "badge-primary" : "badge-todo"
-  }">${stay ? "숙박" : "대실"}</span></div>
+        <div class="rv-card-tit"><strong>${r.room
+    }호</strong><span class="badge ${stay ? "badge-primary" : "badge-todo"
+    }">${stay ? "숙박" : "대실"}</span></div>
         <dl class="rv-info">
             <div><dt>일정</dt><dd>${sched}</dd></div>
             <div><dt>인원</dt><dd>${r.guests}명</dd></div>
             <div><dt>입실</dt><dd>${r.in}</dd></div>
-            <div><dt>퇴실</dt><dd>${rvOut(r)}${
-    r.ext ? `<em class="rv-mini">${rvExtText(r.ext)}</em>` : ""
-  }</dd></div>
+            <div><dt>퇴실</dt><dd>${rvOut(r)}${r.ext ? `<em class="rv-mini">${rvExtText(r.ext)}</em>` : ""
+    }</dd></div>
             <div><dt>예약</dt><dd>${RV_CH[r.ch].html}</dd></div>
         </dl>
     </div>`;
@@ -336,32 +322,28 @@ function renderRvDetail() {
   const keepScroll = p.querySelector(".rv-d-body")?.scrollTop || 0;
   p.innerHTML = `<div class="rs-d-head"><h2>날짜 상세</h2>
             <button class="rs-x" type="button" data-rv="close-detail" aria-label="닫기">${icon(
-              "close",
-              24
-            )}</button></div>
+    "close",
+    24
+  )}</button></div>
         <div class="rv-d-body">
             <p class="rv-d-date">${rvFmtFull(rvSel)}</p>
             <section class="rv-d-sec"><h3>예약 요약</h3>
-                <dl class="rv-sum"><div><dt>총 예약</dt><dd>${
-                  all.length
-                }건</dd></div><div><dt>대실</dt><dd>${rest}건</dd></div><div><dt>숙박</dt><dd>${
-    all.length - rest
-  }건</dd></div></dl>
+                <dl class="rv-sum"><div><dt>총 예약</dt><dd>${all.length
+    }건</dd></div><div><dt>대실</dt><dd>${rest}건</dd></div><div><dt>숙박</dt><dd>${all.length - rest
+    }건</dd></div></dl>
             </section>
             <section class="rv-d-sec"><h3>예약 목록</h3>
                 <div class="rv-seg rv-seg-full" role="tablist">${tabs
-                  .map(
-                    ([k, v]) =>
-                      `<button type="button" role="tab" class="${
-                        rvTab === k ? "is-on" : ""
-                      }" data-rv-tab="${k}">${v}</button>`
-                  )
-                  .join("")}</div>
-                <div class="rv-cards">${
-                  list.length
-                    ? list.map(rvCard).join("")
-                    : '<p class="rv-empty">예약이 없어요.</p>'
-                }</div>
+      .map(
+        ([k, v]) =>
+          `<button type="button" role="tab" class="${rvTab === k ? "is-on" : ""
+          }" data-rv-tab="${k}">${v}</button>`
+      )
+      .join("")}</div>
+                <div class="rv-cards">${list.length
+      ? list.map(rvCard).join("")
+      : '<p class="rv-empty">예약이 없어요.</p>'
+    }</div>
             </section>
         </div>`;
   p.hidden = false;
@@ -394,13 +376,13 @@ function openRvPop(bar) {
   el.setAttribute("aria-label", "개별 일정");
   el.innerHTML = `<div class="rv-pop-head"><h3>${rvFmtFull(date)}</h3>
         <button class="rs-x" type="button" data-rv="close-pop" aria-label="닫기">${icon(
-          "close",
-          24
-        )}</button></div>
+    "close",
+    24
+  )}</button></div>
         <div class="rv-pop-body">${rvCard(r).replace(
-          'class="rv-card"',
-          'class="rv-card is-plain"'
-        )}</div>`;
+    'class="rv-card"',
+    'class="rv-card is-plain"'
+  )}</div>`;
   document.body.appendChild(el);
   rvPop = { id: r.id, date, el };
   rvPlacePop(bar);
@@ -443,21 +425,21 @@ function rvSetView(v) {
   if (v === rvView) return;
   closeRvPop();
   rvView = v;
-  /* 주별 보기에서는 우측 '날짜 상세' 패널을 쓰지 않아요 */
-  rvSel = null;
+  /* 주별 보기에서는 우측 '날짜 상세' 패널을 쓰지 않아요 / 월별 보기로 돌아오면 오늘 날짜가 다시 열려요 */
+  rvSel = v === "month" ? todayMid() : null;
   renderRvDetail();
   try {
     localStorage.setItem(RV_VIEW_KEY, v);
-  } catch (e) {}
+  } catch (e) { }
   /* 월 ↔ 주 전환 시 보던 날짜 근처를 유지해요 */
   if (v === "month")
     rvAnchor = new Date(
       rvAnchor.getFullYear(),
       rvAnchor.getMonth(),
       1 +
-        (rvSame(rvAnchor, todayMid())
-          ? todayMid().getDate() - 1
-          : rvAnchor.getDate() - 1)
+      (rvSame(rvAnchor, todayMid())
+        ? todayMid().getDate() - 1
+        : rvAnchor.getDate() - 1)
     );
   renderReserve();
 }

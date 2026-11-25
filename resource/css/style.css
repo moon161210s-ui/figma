@@ -455,6 +455,11 @@ button {
     background: var(--color-primary-50);
 }
 
+/* 시안: 2depth 메뉴가 있는 그룹은 1depth 에 배경 없이 선택된 2depth 메뉴만 진하게 표시 */
+.nav-group:has(.nav-sub)>.nav-item.is-active {
+    background: transparent;
+}
+
 .nav-sub {
     display: flex;
     flex-direction: column;
@@ -792,20 +797,73 @@ button {
     z-index: 10;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    /* 시안: 검색 + 필터 두 개가 오른쪽 정렬 */
+    justify-content: space-between;
     gap: 8px;
     margin: -20px -24px 0;
-    /* 시안: 필터 상자와 아래 층 제목 사이 가로 간격 0 */
-    padding: 20px 24px 0;
+    /* 위쪽 줄(토글 + 검색·필터)과 아래 층 제목 사이 간격 20 (스크롤해서 붙어도 같아요) */
+    padding: 20px 24px;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     background: var(--color-base-inverse);
 }
 
-/* 스크롤해서 위에 붙었을 때만 아래로 20px 더 덮어요 (예전 스크롤 모습 그대로 / 아래 내용 위치는 그대로) */
-.toolbar.is-stuck {
-    padding-bottom: 20px;
-    margin-bottom: -20px;
+/* 오늘 청소할 목록만 보기 (시안 onf/off버튼: 글자 20 bold + 스위치 54x28, 간격 9) */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+}
+
+.toggle-label {
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+    white-space: nowrap;
+}
+
+.switch {
+    position: relative;
+    flex-shrink: 0;
+    width: 54px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 100px;
+    background: var(--color-gray-100);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.switch.is-on {
+    background: var(--color-primary-500);
+}
+
+.switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 100px;
+    background: var(--color-white);
+    transition: left 0.2s ease;
+}
+
+.switch.is-on .switch-thumb {
+    left: 29px;
+}
+
+.switch:focus-visible {
+    outline: 2px solid var(--color-primary-300);
+    outline-offset: 2px;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
 /* 스크롤해서 패널의 원래 윗부분이 헤더 뒤로 올라가도 위쪽 모서리 radius 가 유지되도록,
@@ -1194,7 +1252,8 @@ button {
 }
 
 .room-card {
-    padding: 16px 16px 14px;
+    /* 시안: 안쪽 여백 16 (테두리 1px 포함이라 padding 15 + border 1) / 카드 높이 148 */
+    padding: 15px;
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-lg);
     background: var(--color-base-inverse);
@@ -1217,7 +1276,7 @@ button {
     align-items: center;
     justify-content: space-between;
     height: 36px;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
 }
 
 .room-no {
@@ -1226,11 +1285,11 @@ button {
     font-weight: var(--fw-bold);
 }
 
-/* info list : 행 24px, 행 사이 3px / 라벨 Regular, 값 Medium / 둘 다 gray-300 */
+/* info list : 행 24px, 행 사이 8px / 라벨 Regular, 값 Medium / 둘 다 gray-300 */
 .room-info {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 8px;
     margin: 0;
     padding: 0;
 }
@@ -1255,10 +1314,6 @@ button {
     margin: 0;
     font-weight: var(--fw-medium);
     color: var(--color-gray-300);
-}
-
-.room-info div:first-child dd {
-    gap: 2px;
 }
 
 .room-card:focus-visible {
@@ -1521,8 +1576,13 @@ button {
 .detail-row {
     display: flex;
     align-items: center;
-    height: 32px;
+    /* 줄 높이는 글자(24) 기준 / 수정 버튼(32)이 있어도 줄 간격 12 가 그대로 유지되게 버튼 위아래를 -4 로 겹쳐요 */
     font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.detail-row .btn-icon {
+    margin: -4px 0;
 }
 
 .detail-row dt {
@@ -1540,13 +1600,29 @@ button {
     color: var(--color-gray-900);
 }
 
+/* 퇴실 예정 + 아래 한 줄 알림 (시안: 간격 4 / 값 위치에 맞춰 14px gray-300) */
+.detail-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-note {
+    margin: 0;
+    padding-left: 116px;
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    color: var(--color-gray-300);
+}
+
 .detail-row dd.has-edit {
-    width: 108px;
+    min-width: 108px;
     margin-right: 8px;
 }
 
 .detail-section {
-    margin-top: 28px;
+    /* 담당 직원 ↔ 첨부파일 간격 40 */
+    margin-top: 40px;
 }
 
 .detail-section small {
@@ -1687,8 +1763,14 @@ button {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 4px;
+    /* 위·아래로 여백을 둬서 첫 값과 마지막 값도 가운데로 돌려 올 수 있어요 (목록 높이 124 기준: (122 - 36) / 2) */
+    padding: 43px 4px;
     overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.tp-col::-webkit-scrollbar {
+    display: none;
 }
 
 .tp-col+.tp-col {
@@ -1917,7 +1999,8 @@ button {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .toolbar {
+    .toolbar,
+    .toolbar-right {
         flex-wrap: wrap;
     }
 
@@ -2062,6 +2145,11 @@ button {
     background: var(--color-dangerous);
 }
 
+.noti-search {
+    flex-shrink: 0;
+    width: 100%;
+}
+
 .noti-list {
     display: flex;
     flex: 1;
@@ -2105,6 +2193,10 @@ button {
     width: 44px;
     height: 44px;
     border-radius: var(--radius-sm);
+}
+
+.noti-icon.is-exit {
+    background: var(--color-success-bg);
 }
 
 .noti-icon.is-issue {
@@ -3627,9 +3719,32 @@ body.as-dragging * {
 
 .as-user-tx {
     display: flex;
+    flex: 1;
     flex-direction: column;
     justify-content: center;
-    width: 70px;
+    min-width: 70px;
+}
+
+/* 청소 중 | 40분 째 / 다음청소 | 12시 */
+.as-sub {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.as-sub i {
+    font-style: normal;
+}
+
+.as-sub i+i::before {
+    content: "";
+    display: inline-block;
+    width: 1px;
+    height: 12px;
+    margin-right: 4px;
+    vertical-align: middle;
+    background: var(--color-gray-50);
 }
 
 .as-user-tx strong {
@@ -4023,7 +4138,13 @@ body.as-dragging * {
 .rl-sections {
     display: flex;
     flex-direction: column;
-    gap: 60px;
+    gap: 30px;
+}
+
+/* 항목 추가 버튼은 목록 아래 오른쪽 */
+.rl-add-row {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .rl-sec {

@@ -30,15 +30,15 @@
                         <img class="i20" src="resource/icon/soap.svg" alt="" />청소 관리
                     </a>
                     <div class="nav-sub">
-                        <a href="index.html">실시간 객실 청소 현황</a>
-                        <a class="is-active" href="standard.html" aria-current="page">청소 기준 설정</a>
-                        <a href="result.html">청소 결과</a>
+                        <a href="index.html">실시간 객실 청소 목록</a>
+                        <a class="is-active" href="standard.html" aria-current="page">청소 체크리스트 관리</a>
+                        <a href="result.html">청소 결과 확인</a>
                     </div>
                 </div>
 
                 <div class="nav-group">
                     <a class="nav-item" href="reservation.html">
-                        <img class="i20" src="resource/icon/calender.svg" alt="" />예약 현황
+                        <img class="i20" src="resource/icon/calender.svg" alt="" />예약 현황 관리
                     </a>
                 </div>
 
@@ -47,14 +47,15 @@
                         <img class="i20" src="resource/icon/users-profiles.svg" alt="" />직원 관리
                     </a>
                     <div class="nav-sub">
-                        <a href="user-info.html">직원 정보 설정</a>
-                        <a href="user-assign.html">직원 배정</a>
+                        <a href="user-info.html">직원 목록</a>
+                        <a href="user-assign.html">청소 직원 재배정</a>
+                        <a href="user-auto.html">청소 자동 배정 관리</a>
                     </div>
                 </div>
 
                 <div class="nav-group">
                     <a class="nav-item" href="thread.html">
-                        <img class="i20" src="resource/icon/message.svg" alt="" />업무 특이사항
+                        <img class="i20" src="resource/icon/message.svg" alt="" />조치 필요 목록
                     </a>
                 </div>
             </nav>
@@ -128,6 +129,11 @@
             </button>
         </div>
         <div class="noti-tabs" id="notiTabs" role="tablist"></div>
+        <label class="search noti-search">
+            <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
+            <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt="" aria-hidden="true" />
+            <input id="notiSearch" type="text" placeholder="검색어를 입력해 주세요." aria-label="알림 검색" autocomplete="off" />
+        </label>
         <div class="noti-list" id="notiList"></div>
         <div class="noti-dim" aria-hidden="true"></div>
     </aside>

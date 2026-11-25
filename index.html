@@ -30,15 +30,15 @@
                         <img class="i20" src="resource/icon/soap.svg" alt="" />청소 관리
                     </a>
                     <div class="nav-sub">
-                        <a class="is-active" href="#" aria-current="page">실시간 객실 청소 현황</a>
-                        <a href="standard.html">청소 기준 설정</a>
-                        <a href="result.html">청소 결과</a>
+                        <a class="is-active" href="#" aria-current="page">실시간 객실 청소 목록</a>
+                        <a href="standard.html">청소 체크리스트 관리</a>
+                        <a href="result.html">청소 결과 확인</a>
                     </div>
                 </div>
 
                 <div class="nav-group">
                     <a class="nav-item" href="reservation.html">
-                        <img class="i20" src="resource/icon/calender.svg" alt="" />예약 현황
+                        <img class="i20" src="resource/icon/calender.svg" alt="" />예약 현황 관리
                     </a>
                 </div>
 
@@ -47,14 +47,15 @@
                         <img class="i20" src="resource/icon/users-profiles.svg" alt="" />직원 관리
                     </a>
                     <div class="nav-sub">
-                        <a href="user-info.html">직원 정보 설정</a>
-                        <a href="user-assign.html">직원 배정</a>
+                        <a href="user-info.html">직원 목록</a>
+                        <a href="user-assign.html">청소 직원 재배정</a>
+                        <a href="user-auto.html">청소 자동 배정 관리</a>
                     </div>
                 </div>
 
                 <div class="nav-group">
                     <a class="nav-item" href="thread.html">
-                        <img class="i20" src="resource/icon/message.svg" alt="" />업무 특이사항
+                        <img class="i20" src="resource/icon/message.svg" alt="" />조치 필요 목록
                     </a>
                 </div>
             </nav>
@@ -153,23 +154,32 @@
 
                     <section class="panel">
                         <div class="toolbar">
-                            <label class="search">
-                                <!-- 기본은 회색 돋보기, 입력창을 클릭(포커스)하면 검은색 돋보기로 바뀌어요 -->
-                                <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="이미지" />
-                                <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt="이미지"
-                                    aria-hidden="true" />
-                                <input id="roomSearch" type="text" placeholder="호실로 검색" />
-                            </label>
-                            <button class="select" type="button" data-filter="floor" aria-haspopup="listbox"
-                                aria-expanded="false">
-                                <span class="select-label">층 전체</span>
-                                <img class="i24" src="resource/icon/arrow-down.svg" alt="이미지" />
-                            </button>
-                            <button class="select" type="button" data-filter="status" aria-haspopup="listbox"
-                                aria-expanded="false">
-                                <span class="select-label">청소 상태 전체</span>
-                                <img class="i24" src="resource/icon/arrow-down.svg" alt="이미지" />
-                            </button>
+                            <!-- 시안 onf/off버튼: 기본은 켜짐 -->
+                            <div class="toggle-row">
+                                <span class="toggle-label" id="todayOnlyLabel">오늘 청소할 목록만 보기</span>
+                                <button class="switch is-on" id="todayOnly" type="button" role="switch"
+                                    aria-checked="true" aria-labelledby="todayOnlyLabel"><span
+                                        class="switch-thumb"></span></button>
+                            </div>
+                            <div class="toolbar-right">
+                                <label class="search">
+                                    <!-- 기본은 회색 돋보기, 입력창을 클릭(포커스)하면 검은색 돋보기로 바뀌어요 -->
+                                    <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="이미지" />
+                                    <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt="이미지"
+                                        aria-hidden="true" />
+                                    <input id="roomSearch" type="text" placeholder="호실로 검색" />
+                                </label>
+                                <button class="select" type="button" data-filter="floor" aria-haspopup="listbox"
+                                    aria-expanded="false">
+                                    <span class="select-label">층 전체</span>
+                                    <img class="i24" src="resource/icon/arrow-down.svg" alt="이미지" />
+                                </button>
+                                <button class="select" type="button" data-filter="status" aria-haspopup="listbox"
+                                    aria-expanded="false">
+                                    <span class="select-label">청소 상태 전체</span>
+                                    <img class="i24" src="resource/icon/arrow-down.svg" alt="이미지" />
+                                </button>
+                            </div>
                         </div>
 
                         <!-- 층별 객실 타일은 index.js 의 ROOMS 데이터로 그려져요 -->
@@ -196,6 +206,11 @@
             </button>
         </div>
         <div class="noti-tabs" id="notiTabs" role="tablist"></div>
+        <label class="search noti-search">
+            <img class="i20 search-icon" src="resource/icon/search-gray.svg" alt="" />
+            <img class="i20 search-icon-focus" src="resource/icon/search.svg" alt="" aria-hidden="true" />
+            <input id="notiSearch" type="text" placeholder="검색어를 입력해 주세요." aria-label="알림 검색" autocomplete="off" />
+        </label>
         <div class="noti-list" id="notiList"></div>
         <div class="noti-dim" aria-hidden="true"></div>
     </aside>

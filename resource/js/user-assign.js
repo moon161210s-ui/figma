@@ -111,6 +111,20 @@ function asWorkers() {
         .sort((a, b) => a.n - b.n || a.i - b.i);
 }
 
+/* 근무자 카드 보조 문구: 청소 중이면 '청소 중 | N분 째', 아니면 '다음청소 | 00시' */
+function asStatusLine(name) {
+    const mine = ROOMS.filter((r) => !r.empty && asStaffOf(r) === name);
+    const busy = asDay === "tomorrow" ? null : mine.find((r) => r.status === "progress");
+    if (busy) return ["청소 중", `${busy.cleanMin == null ? 0 : busy.cleanMin}분 째`];
+    const next = (asDay === "tomorrow" ? asTomRooms().filter((r) => asTomStaff(r) === name) : mine.filter((r) => inCleanList(r) && (r.status === "todo" || r.status === "reassign")))
+        .map((r) => r.clean)
+        .filter(Boolean)
+        .sort()[0];
+    if (!next) return ["다음청소", "-"];
+    const [h, m] = next.split(":").map(Number);
+    return ["다음청소", `${h}시${m ? ` ${m}분` : ""}`];
+}
+
 function renderAssignWorkers() {
     const q = asWorkerQuery.trim();
     const list = asWorkers().filter((w) => !q || w.name.includes(q));
@@ -118,9 +132,9 @@ function renderAssignWorkers() {
         ? list
             .map(
                 (w) => `
-      <div class="as-user" data-as-user="${w.name}" tabindex="0" aria-label="${w.name}, 현재 ${w.n}실. 끌어서 객실에 배정">
+      <div class="as-user" data-as-user="${w.name}" tabindex="0" aria-label="${w.name}, ${asStatusLine(w.name).join(" ")}. 끌어서 객실에 배정">
         <img class="i24 as-handle" src="${ICON("handle")}" alt="" draggable="false" />
-        <div class="as-profile">${asAvatar(w.name)}<div class="as-user-tx"><strong>${w.name}</strong><span>현재 ${w.n}실</span></div></div>
+        <div class="as-profile">${asAvatar(w.name)}<div class="as-user-tx"><strong>${w.name}</strong><span class="as-sub">${asStatusLine(w.name).map((t) => `<i>${t}</i>`).join("")}</span></div></div>
       </div>`
             )
             .join("")
@@ -145,7 +159,7 @@ function asRooms() {
 const asDropped = (name) => `
       <div class="as-dropped">
         <img class="i24 as-handle" src="${ICON("handle")}" alt="" draggable="false" />
-        <div class="as-profile">${asAvatar(name)}<div class="as-user-tx"><strong>${name}</strong><span>현재 ${asCount(name)}실</span></div></div>
+        <div class="as-profile">${asAvatar(name)}<div class="as-user-tx"><strong>${name}</strong><span class="as-sub">${asStatusLine(name).map((t) => `<i>${t}</i>`).join("")}</span></div></div>
       </div>`;
 
 function asRoomCard(r) {
@@ -187,7 +201,7 @@ function renderAssignRooms() {
 function renderAssign() {
     renderAssignWorkers();
     renderAssignRooms();
-    $("#asSave").disabled = !asDirty();
+    $("#asSave").disabled = false; /* 변경사항 일괄저장은 항상 눌러볼 수 있어요 */
 }
 
 /* 두 카드(근무자 / 객실 목록)는 화면 아래(여백 20px)까지 채우고, 카드 안의 목록만 스크롤돼요 (좁은 화면에서는 페이지가 스크롤) */
@@ -605,7 +619,7 @@ document.addEventListener("keydown", (e) => {
 
 /* ---------- 이벤트 ---------- */
 $("#asAuto")?.addEventListener("click", openAsSet);
-$("#asSave").addEventListener("click", () => asDirty() && openAsModal("save"));
+$("#asSave").addEventListener("click", () => openAsModal("save"));
 $("#asWorkerSearch").addEventListener("input", (e) => {
     asWorkerQuery = e.target.value;
     renderAssignWorkers();

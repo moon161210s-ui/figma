@@ -23,7 +23,7 @@ function RL_LOAD() {
   try {
     const s = JSON.parse(localStorage.getItem(RL_KEY));
     if (s && Array.isArray(s.types) && s.data) return s;
-  } catch (e) {}
+  } catch (e) { }
   return RL_DEFAULT();
 }
 function RL_SAVE() {
@@ -32,7 +32,7 @@ function RL_SAVE() {
       RL_KEY,
       JSON.stringify({ types: rl.types, data: rl.data })
     );
-  } catch (e) {}
+  } catch (e) { }
 }
 
 const rl = RL_LOAD();
@@ -66,20 +66,19 @@ function renderTypes() {
     <div class="rl-types-top">
       <h2>객실 타입</h2>
       <button class="rl-icon-btn" type="button" id="rlTypeSet" aria-label="객실 타입 설정" aria-haspopup="dialog">${icon(
-        "setting"
-      )}</button>
+    "setting"
+  )}</button>
     </div>
     <div class="rl-types-list" id="rlTypeList">
       ${items
-        .map(
-          (t) => `
-        <button class="rl-type${
-          t.id === rlSel ? " is-active" : ""
-        }" type="button" data-type="${t.id}" aria-pressed="${t.id === rlSel}">
+      .map(
+        (t) => `
+        <button class="rl-type${t.id === rlSel ? " is-active" : ""
+          }" type="button" data-type="${t.id}" aria-pressed="${t.id === rlSel}">
           <span>${esc(t.name)}</span>${icon("arrow-right", 24)}
         </button>`
-        )
-        .join("")}
+      )
+      .join("")}
     </div>`;
   fitTypes();
 }
@@ -101,12 +100,12 @@ function checkRow(v, i) {
   return `
     <div class="rl-row" data-i="${i}">
       <button class="rl-handle" type="button" data-handle aria-label="순서 바꾸기">${icon(
-        "handle"
-      )}</button>
+    "handle"
+  )}</button>
       <div class="rl-input">
         <input type="text" value="${esc(
-          v
-        )}" data-check="${i}" placeholder="추가할 체크리스트 항목을 작성해 주세요." />
+    v
+  )}" data-check="${i}" placeholder="ex) 침구 정리하기" />
         <button class="rl-in-btn" type="button" data-del-check="${i}" aria-label="항목 삭제">${icon(
     "trash"
   )}</button>
@@ -118,15 +117,15 @@ function proofBox(p, i) {
   return `
     <div class="rl-proof" data-i="${i}">
       <button class="rl-handle" type="button" data-handle aria-label="순서 바꾸기">${icon(
-        "handle"
-      )}</button>
+    "handle"
+  )}</button>
       <div class="rl-proof-fields">
         <div class="rl-input"><input type="text" value="${esc(
-          p.t
-        )}" data-proof-t="${i}" placeholder="촬영 항목명" /></div>
+    p.t
+  )}" data-proof-t="${i}" placeholder="촬영 항목명 (ex. 침구 정리 상태)" /></div>
         <div class="rl-input"><input type="text" value="${esc(
-          p.g
-        )}" data-proof-g="${i}" placeholder="촬영 방법 안내 문구를 작성해 주세요." /></div>
+    p.g
+  )}" data-proof-g="${i}" placeholder="안내 문구 (ex. 침대 전체와 베개가 보이도록 촬영)" /></div>
       </div>
       <button class="rl-del" type="button" data-del-proof="${i}" aria-label="촬영 항목 삭제">${icon(
     "trash"
@@ -143,17 +142,15 @@ function renderCard() {
     <div class="rl-tit">
       <div class="rl-tit-tx">
         <h2>${esc(name)} 청소 기준</h2>
-        <p>${
-          common
-            ? "전체 객실 공통 청소 기준 항목을 추가해 주세요."
-            : "이 객실 타입에만 필요한 항목을 추가해 주세요.<br />직원 체크리스트에서 공통 항목 아래에 표시됩니다."
-        }</p>
+        <p>${common
+      ? "전체 객실 공통 청소 기준 항목을 추가해 주세요."
+      : "이 객실 타입에만 필요한 항목을 추가해 주세요.<br />직원 체크리스트에서 공통 항목 아래에 표시됩니다."
+    }</p>
       </div>
       <div class="rl-tit-btns">
         <button class="rl-btn is-outline" type="button" id="rlPreview" data-soon>직원 화면 미리보기</button>  
-        <button class="rl-btn is-primary" type="button" id="rlSave"${
-          rlHasData(rlSel) ? "" : " disabled"
-        }>저장하기</button>
+        <button class="rl-btn is-primary" type="button" id="rlSave"${rlHasData(rlSel) ? "" : " disabled"
+    }>변경 사항 일괄 저장</button>
       </div>
     </div>
     <hr class="rl-line" />
@@ -161,57 +158,55 @@ function renderCard() {
       <section class="rl-sec">
         <div class="rl-sec-head"><div class="rl-sec-tx">
           <h3>${pre}청소 참고 이미지</h3>
-          <p>청소 참고 이미지는 직원에게만 보이며, ${
-            common ? "전체" : esc(name)
-          } 객실의 정리 상태 예시입니다.</p>
+          <p>청소 참고 이미지는 직원에게만 보여지며, ${common ? "전체" : esc(name)
+    } 객실의 정리 상태 예시입니다.</p>
         </div></div>
         <div class="rl-imgs" id="rlImgs">
           ${d.images
-            .map(
-              (src, i) => `
+      .map(
+        (src, i) => `
             <button class="rl-img" type="button" data-del-img="${i}" aria-label="이미지 삭제">
-              <img src="${esc(src)}" alt="청소 참고 이미지 ${
-                i + 1
-              }" draggable="false" />
+              <img src="${esc(src)}" alt="청소 참고 이미지 ${i + 1
+          }" draggable="false" />
               <span class="rl-img-dim">${icon("trash-white", 36)}</span>
             </button>`
-            )
-            .join("")}
+      )
+      .join("")}
           <button class="rl-add" type="button" id="rlAddImg" aria-label="청소 참고 이미지 추가">${icon(
-            "plus-gray",
-            36
-          )}</button>
+        "plus-gray",
+        36
+      )}</button>
         </div>
       </section>
 
       <section class="rl-sec">
         <div class="rl-sec-head">
           <div class="rl-sec-tx">
-            <h3>${pre}관리 항목 체크리스트 <em>*직원 응답 필수</em></h3>
-            <p>직원이 청소 중 참고하는 항목입니다.</p>
+            <h3>${pre}청소 항목 체크리스트</h3>
+            <p>여기서 추가한 항목은 객실 담당 직원의 체크리스트에 표시되며, 직원은 모든 항목을 필수로 체크해야 합니다.</p>
           </div>
-          <button class="rl-btn is-sm" type="button" id="rlAddCheck">${icon(
-            "plus"
-          )}항목 추가</button>
         </div>
         <div class="rl-rows" id="rlChecks">${d.checks
-          .map(checkRow)
-          .join("")}</div>
+      .map(checkRow)
+      .join("")}</div>
+        <div class="rl-add-row"><button class="rl-btn is-sm" type="button" id="rlAddCheck">${icon(
+        "plus"
+      )}항목 추가</button></div>
       </section>
 
       <section class="rl-sec">
         <div class="rl-sec-head">
           <div class="rl-sec-tx">
-            <h3>${pre}청소 인증 사진 <em>*직원 응답 필수</em></h3>
+            <h3>${pre}청소 인증 사진</h3>
             <p>직원이 청소 완료 시 제출할 사진과 촬영 방법을 설정합니다.</p>
           </div>
-          <button class="rl-btn is-sm" type="button" id="rlAddProof">${icon(
-            "plus"
-          )}항목 추가</button>
         </div>
         <div class="rl-proofs" id="rlProofs">${d.proofs
-          .map(proofBox)
-          .join("")}</div>
+      .map(proofBox)
+      .join("")}</div>
+        <div class="rl-add-row"><button class="rl-btn is-sm" type="button" id="rlAddProof">${icon(
+        "plus"
+      )}항목 추가</button></div>
       </section>
     </div>`;
 }
@@ -447,30 +442,30 @@ function drawTypeModal() {
     <div class="hm-head">
       <h2 class="hm-title" id="rlTmTitle">객실 타입 설정</h2>
       <button class="hm-close" type="button" data-close aria-label="닫기">${icon(
-        "close"
-      )}</button>
+    "close"
+  )}</button>
     </div>
     <div class="rl-tm-body">
       <div class="rl-tm-list" id="rlTmList">
         <div class="rl-tm-fixed">전체 공통</div>
         ${draft
-          .map(
-            (t, i) => `
+      .map(
+        (t, i) => `
           <div class="rl-row" data-i="${i}">
             <button class="rl-handle" type="button" data-handle-m aria-label="순서 바꾸기">${icon(
-              "handle"
-            )}</button>
+          "handle"
+        )}</button>
             <div class="rl-input">
               <input type="text" value="${esc(
-                t.name
-              )}" data-name="${i}" placeholder="객실 타입명을 입력해 주세요." maxlength="20" />
+          t.name
+        )}" data-name="${i}" placeholder="객실 타입명을 입력해 주세요." maxlength="20" />
               <button class="rl-in-btn" type="button" data-del-type="${i}" aria-label="${esc(
-              t.name || "객실 타입"
-            )} 삭제">${icon("trash")}</button>
+          t.name || "객실 타입"
+        )} 삭제">${icon("trash")}</button>
             </div>
           </div>`
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
       <button class="rl-btn is-outline rl-tm-add" type="button" data-add-type>${icon(
         "plus"

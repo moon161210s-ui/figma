@@ -258,9 +258,10 @@ function renderResultDetail() {
 
     const b = resultBadge(r);
     const arrow = `<img class="rs-arrow" src="${ICON("arrow-up")}" alt="" />`;
-    const acc = (title, body) => `
-      <section class="rs-acc">
-        <button class="rs-acc-top" type="button" data-rs-acc aria-expanded="true"><span>${title}</span>${arrow}</button>
+    /* 토글 기본값: 인증 사진 · 체크리스트는 펼침, 검수 이력 · 전달된 메모 · 특이사항은 접힘 */
+    const acc = (title, body, open = true) => `
+      <section class="rs-acc${open ? "" : " is-closed"}">
+        <button class="rs-acc-top" type="button" data-rs-acc aria-expanded="${open}"><span>${title}</span>${arrow}</button>
         <div class="rs-acc-body">${body}</div>
       </section>`;
     const item = (stamp, main, sub) => `
@@ -271,7 +272,8 @@ function renderResultDetail() {
 
     const history = acc(
         "청소 검수 이력",
-        `<div class="rs-items">${r.hist.map(([t, title, note]) => item(fmtStamp(rsDate, t), title, note)).join("")}</div>`
+        `<div class="rs-items">${r.hist.map(([t, title, note]) => item(fmtStamp(rsDate, t), title, note)).join("")}</div>`,
+        false
     );
 
     const photos = acc(
@@ -300,21 +302,25 @@ function renderResultDetail() {
                 <span class="rs-box">${icon("check-white", 20)}</span><span>${c}</span></button>`;
                 }).join("")}</div>
           </div>
-          <div class="rs-textarea">
+          ${editable || r.msg
+                    ? `<div class="rs-textarea">
             <label for="rsMsg">${editable ? "직원에게 전달할 내용" : "직원에게 전달한 내용"}</label>
             <textarea id="rsMsg" placeholder="직원에게 요청할 내용을 작성해 주세요."${editable ? "" : " readonly"}>${editable ? "" : r.msg || ""}</textarea>
           </div>`
+                    : ""}`
             )
             : "";
 
-    const memo = r.memo ? acc("전달된 메모", `<div class="rs-items">${item(fmtStamp(rsDate, r.memo[0]), r.memo[1])}</div>`) : "";
+    /* 전달된 메모가 0건이면 토글 자체를 만들지 않아요 */
+    const memo = r.memo && r.memo[1] ? acc("전달된 메모", `<div class="rs-items">${item(fmtStamp(rsDate, r.memo[0]), r.memo[1])}</div>`, false) : "";
     const notes = r.notes && r.notes.length
         ? acc(
             "특이사항",
             `<div class="rs-items">${r.notes.map(([off, t, name, text]) => {
                 const dt = new Date(rsDate.getFullYear(), rsDate.getMonth(), rsDate.getDate() + off);
                 return item(fmtStamp(dt, t), name, text);
-            }).join("")}</div>`
+            }).join("")}</div>`,
+            false
         )
         : "";
 
@@ -434,9 +440,9 @@ function handleResultsClick(e) {
         r.status = "reclean";
         r.confirmed = false;
         r.req = req;
-        r.msg = msg || (req.length ? `${req.join(", ")} 재청소 요청` : "재청소 요청");
+        r.msg = msg; /* 사장이 직접 적은 내용만 남겨요 (안 적었으면 메모는 어디에도 보이지 않아요) */
         r.first = r.first || r.at;
-        r.hist.push([nowHHMM(), "재청소 요청", `요청사유: ${r.msg}`]);
+        r.hist.push(msg ? [nowHHMM(), "재청소 요청", `요청사유: ${msg}`] : [nowHHMM(), "재청소 요청"]);
         /* 사용성 테스트용: 107호는 재청소 요청을 하면 직원이 바로 다시 청소해서 재검수를 요청한 모습으로 바뀌어요 */
         const rc = RESULT_RECLEAN[r.no];
         if (rc && !r.redo) {
