@@ -2623,6 +2623,32 @@ document.addEventListener(
 );
 renderBell();
 
+/* 사이드바 '조치 필요 목록' 숫자 배지: 처리 대기 중인 특이사항 수 (0이면 숨겨요)
+   thread.js 가 처리 상태를 저장할 때마다 localStorage("threadWait") 에 개수를 적어 두고, 다른 화면은 그 값을 읽어요
+   서버 연결 시: 서버에서 받은 처리 대기 건수로 renderNavBadge(count) 를 호출하세요 */
+const NAV_WAIT_DEFAULT = 16; /* 아직 특이사항 화면을 열지 않았을 때 보여줄 처음 건수 */
+function renderNavBadge(count) {
+    if (count == null) {
+        let v = null;
+        try {
+            v = localStorage.getItem("threadWait");
+        } catch (e) { }
+        count = v == null ? NAV_WAIT_DEFAULT : Number(v) || 0;
+    }
+    document.querySelectorAll('.nav-item[href="thread.html"]').forEach((a) => {
+        let b = a.querySelector(".nav-badge");
+        if (!count) return b && b.remove();
+        if (!b) {
+            b = document.createElement("span");
+            b.className = "nav-badge";
+            a.appendChild(b);
+        }
+        b.textContent = count;
+        b.setAttribute("aria-label", `처리 대기 ${count}건`);
+    });
+}
+renderNavBadge();
+
 /* ==========================================================
    화면 모드 (해 아이콘 → 다크 모드(달 아이콘) / 다시 누르면 라이트 모드)
    - <html data-theme="dark"> 로 전환해요 (색은 style.css 의 토큰이 바뀌어요)

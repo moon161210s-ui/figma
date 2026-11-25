@@ -154,7 +154,17 @@ function thSaveState() {
         localStorage.setItem(TH_STATE_KEY, JSON.stringify(st));
     } catch (e) { }
     /* TODO: 서버 연결 시 여기서 처리 상태를 전송 */
+    thSyncWait();
 }
+/* 사이드바 배지용 '처리 대기' 건수 */
+function thSyncWait() {
+    const wait = TH_ITEMS.filter((i) => i.state === "wait").length;
+    try {
+        localStorage.setItem("threadWait", wait);
+    } catch (e) { }
+    renderNavBadge(wait);
+}
+thSyncWait();
 
 /* ---------- 상태 ---------- */
 let tdDate = todayMid(); /* 보고 있는 날짜 (처음에는 오늘) */

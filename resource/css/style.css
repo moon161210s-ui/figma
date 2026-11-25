@@ -455,6 +455,23 @@ button {
     background: var(--color-primary-50);
 }
 
+/* 조치 필요 목록 숫자 배지 (시안 mini badge) */
+.nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 22px;
+    margin-left: auto;
+    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+    background: var(--color-dangerous-bg);
+    font-size: var(--fs-body3);
+    line-height: var(--lh-body3);
+    font-weight: var(--fw-bold);
+    color: var(--color-dangerous);
+}
+
 /* 시안: 2depth 메뉴가 있는 그룹은 1depth 에 배경 없이 선택된 2depth 메뉴만 진하게 표시 */
 .nav-group:has(.nav-sub)>.nav-item.is-active {
     background: transparent;
@@ -5504,6 +5521,72 @@ body.rl-dragging * {
     line-height: var(--lh-body1);
 }
 
+/* 카드의 퇴실: 시간 + 연장 배지(108 폭) 아래에 '퇴실 시간 변경' 버튼 */
+.rv-info .is-top {
+    align-items: flex-start;
+}
+
+.rv-info dd.rv-out {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.rv-out-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    min-width: 108px;
+}
+
+.rv-out-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-static-white, #fff);
+    font: inherit;
+    font-size: var(--fs-body3);
+    line-height: var(--lh-body3);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.rv-out-btn:hover {
+    border-color: var(--color-gray-100);
+}
+
+/* 퇴실 시간 변경 모달 */
+.rv-out-md .hm-box {
+    width: 400px;
+}
+
+.rv-out-md .hm-body {
+    gap: 12px;
+    overflow: visible;
+}
+
+.rv-out-sub {
+    margin: 0;
+    color: var(--color-gray-300);
+}
+
+/* 시간 목록이 모달 안에서 펼쳐져 모달이 같이 커져요 */
+.rv-out-md .tp {
+    margin-top: 0;
+}
+
+.rv-out-md .tp-panel {
+    position: static;
+    margin-top: 4px;
+}
+
 .rv-mini {
     padding: 2px 6px;
     border-radius: var(--radius-xs);
@@ -5541,7 +5624,7 @@ body.rl-dragging * {
 }
 
 .rv-pop-body {
-    padding: 8px 24px 24px;
+    padding: 16px 24px;
 }
 
 /* 한 주의 맨 왼쪽/오른쪽 칸에서는 이어 붙이는 여백이 달력 밖으로 나가지 않게 해요 */

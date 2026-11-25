@@ -75,7 +75,7 @@ const RV_CH = {
 
 /* ---------- 계산 ---------- */
 /* 숙박 퇴실 시간: 메인 화면에서 직접 고친 시간이 가장 우선이고, 없으면 '운영 시간대 설정'의 퇴실 시간(평일/주말은 퇴실 날짜 기준)이에요 */
-function rvOut(r) {
+function rvBaseOut(r) {
   if (r.type !== "stay") return r.out;
   const m = ROOMS.find(
     (x) =>
@@ -97,6 +97,23 @@ const rvFmtFull = (d) =>
   })`;
 const rvExtText = (m) =>
   m % 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분 연장` : `${m / 60}시간 연장`;
+
+/* 퇴실 시간을 직접 바꾼 예약은 그 시간이 가장 우선이에요 (이 브라우저에 보관 / 서버 연결 시 서버 값으로 교체) */
+const RV_OVER_KEY = "rvOutOver";
+let RV_OVER = {};
+try {
+  RV_OVER = JSON.parse(localStorage.getItem(RV_OVER_KEY)) || {};
+} catch (e) { }
+const rvOut = (r) => RV_OVER[r.id] || rvBaseOut(r);
+const rvToMin = (t) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
+/* 연장 시간: 처음 퇴실 시간(운영 규칙 · 예약 원래 시간)보다 늦춘 만큼 */
+const rvExt = (r) => {
+  const orig = rvToMin(rvBaseOut(r)) - (r.ext || 0);
+  return RV_OVER[r.id] ? Math.max(0, rvToMin(RV_OVER[r.id]) - orig) : r.ext || 0;
+};
 
 /* 그 날짜에 걸친 예약: 대실 → 숙박, 입실 시간이 이른 순 */
 const rvOnDay = (d) =>
@@ -283,8 +300,12 @@ function renderReserve() {
 }
 
 /* ---------- 우측 '날짜 상세' 패널 ---------- */
-function rvCard(r) {
+function rvCard(r, pop) {
   const stay = r.type === "stay";
+  const ext = rvExt(r);
+  const outBtn = `<button class="rv-out-btn" type="button" data-rv-out="${r.id}">퇴실 시간 변경</button>`;
+  const miniExt = ext ? `<em class="rv-mini">${rvExtText(ext)}</em>` : "";
+  const chRow = `<div><dt>예약</dt><dd>${RV_CH[r.ch].html}</dd></div>`;
   const nights = dayDiff(r.start, r.end);
   const sched = `${rvFmtMD(r.start)} - ${rvFmtMD(r.end)}${stay ? ` (${nights}박)` : ""
     }`;
@@ -293,12 +314,15 @@ function rvCard(r) {
     }호</strong><span class="badge ${stay ? "badge-primary" : "badge-todo"
     }">${stay ? "숙박" : "대실"}</span></div>
         <dl class="rv-info">
+            ${pop ? "" : chRow}
             <div><dt>일정</dt><dd>${sched}</dd></div>
             <div><dt>인원</dt><dd>${r.guests}명</dd></div>
             <div><dt>입실</dt><dd>${r.in}</dd></div>
-            <div><dt>퇴실</dt><dd>${rvOut(r)}${r.ext ? `<em class="rv-mini">${rvExtText(r.ext)}</em>` : ""
-    }</dd></div>
-            <div><dt>예약</dt><dd>${RV_CH[r.ch].html}</dd></div>
+            ${pop
+      ? `<div><dt>퇴실</dt><dd>${rvOut(r)}${miniExt}${outBtn}</dd></div>`
+      : `<div class="is-top"><dt>퇴실</dt><dd class="rv-out"><span class="rv-out-line"><span>${rvOut(r)}</span>${miniExt}</span>${outBtn}</dd></div>`
+    }
+            ${pop ? chRow : ""}
         </dl>
     </div>`;
 }
@@ -379,7 +403,7 @@ function openRvPop(bar) {
     "close",
     24
   )}</button></div>
-        <div class="rv-pop-body">${rvCard(r).replace(
+        <div class="rv-pop-body">${rvCard(r, true).replace(
     'class="rv-card"',
     'class="rv-card is-plain"'
   )}</div>`;
@@ -410,6 +434,52 @@ function rvPlacePop(bar) {
   top = Math.max(M, top);
   el.style.left = `${Math.round(left)}px`;
   el.style.top = `${Math.round(top)}px`;
+}
+
+/* ---------- 퇴실 시간 변경 ---------- */
+function rvOpenOutModal(id) {
+  const r = RV_RESERVATIONS.find((x) => x.id === id);
+  if (!r) return;
+  const el = document.createElement("div");
+  el.className = "hm rv-out-md";
+  el.innerHTML = `<div class="hm-box" role="dialog" aria-modal="true" aria-label="퇴실 시간 변경">
+      <div class="hm-head"><h2 class="hm-title">퇴실 시간 변경</h2>
+        <button class="hm-close" type="button" data-out-x aria-label="닫기">${icon("close", 24)}</button></div>
+      <div class="hm-body"><p class="rv-out-sub">${r.room}호 · 현재 ${rvOut(r)}</p>${timePickerHtml("rvOutTime", rvOut(r))}</div>
+      <div class="hm-foot"><button class="btn btn-lg btn-outline" type="button" data-out-x>취소</button>
+        <button class="btn btn-lg btn-primary" type="button" data-out-save>저장</button></div>
+    </div>`;
+  document.body.appendChild(el);
+  initTimePicker(el);
+  const close = () => {
+    el.remove();
+    document.removeEventListener("keydown", onKey, true);
+  };
+  const onKey = (e) => {
+    if (e.key === "Escape" && el.querySelector(".tp-panel[hidden]")) close();
+  };
+  document.addEventListener("keydown", onKey, true);
+  el.addEventListener("mousedown", (e) => (el._down = e.target === el));
+  el.addEventListener("click", (e) => {
+    if ((e.target === el && el._down) || e.target.closest("[data-out-x]")) return close();
+    if (!e.target.closest("[data-out-save]")) return;
+    const t = $("#rvOutTime", el).value;
+    if (t === rvBaseOut(r)) delete RV_OVER[r.id];
+    else RV_OVER[r.id] = t;
+    try {
+      localStorage.setItem(RV_OVER_KEY, JSON.stringify(RV_OVER));
+    } catch (err) { }
+    close();
+    const pop = rvPop;
+    renderReserve();
+    renderRvDetail();
+    if (pop) {
+      const bar = document.querySelector(`.rv-bar[data-rid="${pop.id}"][data-date="${rvKey(pop.date)}"]`);
+      closeRvPop();
+      if (bar) openRvPop(bar);
+    }
+  });
+  el.querySelector(".tp-field").focus();
 }
 
 /* ---------- 이동 / 선택 ---------- */
@@ -468,6 +538,12 @@ function handleReserveClick(e) {
   if (bar) {
     if (rvPop && rvPop.id === +bar.dataset.rid) closeRvPop();
     else openRvPop(bar);
+    return true;
+  }
+
+  const outBtn = e.target.closest("[data-rv-out]");
+  if (outBtn) {
+    rvOpenOutModal(+outBtn.dataset.rvOut);
     return true;
   }
 
