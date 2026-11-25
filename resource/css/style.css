@@ -8256,3 +8256,37 @@ html.is-modal-open {
 .au-menu .filter-item.is-selected {
     background: var(--color-primary-50);
 }
+
+/* 검수 대기 청소 결과: 침구 정리 상태 옆 영상 칸 (사진 칸과 같은 크기) */
+.rs-video video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.rs-video-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.5);
+    transform: translate(-50%, -50%);
+}
+
+.rs-vw-main.is-video {
+    cursor: default;
+    background: var(--color-gray-900);
+}
+
+.rs-vw-main.is-video video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}

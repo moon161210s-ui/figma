@@ -241,6 +241,11 @@ const rsPhoto = (r, gi, i) => {
     };
 };
 
+/* 검수 대기 객실의 침구 정리 상태: 사진 옆에 영상 (resource/room.mp4) — 눌러서 크게 재생 */
+const RS_VIDEO = "resource/room.mp4";
+const rsVideoTile = (r) => `
+            <button class="rs-photo rs-video" type="button" data-rs-video aria-label="${r.no}호 침구 정리 영상 재생"><video src="${RS_VIDEO}#t=0.1" preload="metadata" muted playsinline tabindex="-1"></video><span class="rs-video-play"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 4.8v10.4a.8.8 0 0 0 1.2.7l8.4-5.2a.8.8 0 0 0 0-1.4L8.2 4.1A.8.8 0 0 0 7 4.8Z" fill="#fff"/></svg></span></button>`;
+
 function renderResultDetail() {
     const box = $("#rsDetail");
     const r = currentRows().find((x) => x.no === rsSelected);
@@ -286,7 +291,7 @@ function renderResultDetail() {
         <div class="rs-photo-group">
           <div class="rs-photo-tit"><strong>${g.name}</strong><span>${g.desc}</span></div>
           <div class="rs-photo-list">${Array.from({ length: rsCount(r, gi) }, (_, i) => `
-            <button class="rs-photo" type="button" data-rs-photo="${gi}:${i}" aria-label="${g.name} ${i + 1}번 사진 크게 보기"><img src="${rsPhoto(r, gi, i).src}" alt="" onerror="this.style.visibility='hidden'" />${rsPhoto(r, gi, i).fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</button>`).join("")}
+            <button class="rs-photo" type="button" data-rs-photo="${gi}:${i}" aria-label="${g.name} ${i + 1}번 사진 크게 보기"><img src="${rsPhoto(r, gi, i).src}" alt="" onerror="this.style.visibility='hidden'" />${rsPhoto(r, gi, i).fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</button>`).join("")}${gi === 0 && r.status === "review" ? rsVideoTile(r) : ""}
           </div>
         </div>`
         ).join("")
@@ -479,6 +484,10 @@ function handleResultsClick(e) {
         openRsModal("cancelAsk");
         return true;
     }
+    if (r && e.target.closest("[data-rs-video]")) {
+        openRsVideo();
+        return true;
+    }
     const photo = e.target.closest("[data-rs-photo]");
     if (r && photo) {
         const [gi, i] = photo.dataset.rsPhoto.split(":").map(Number);
@@ -526,6 +535,20 @@ function openRsModal(kind) {
 /* 인증 사진 뷰어: 큰 사진을 좌우로 끌면(드래그) 끈 방향의 다음 사진으로 넘어가요.
    아래 작은 사진들은 지금 보는 사진만 선명하고 나머지는 흐려요 (눌러서 바꾸는 게 아니라 위치 표시예요) */
 let rsView = null;
+function openRsVideo() {
+    rsView = null;
+    rsModalEl.innerHTML = `
+    <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="침구 정리 영상">
+      <div class="hm-head">
+        <h2 class="hm-title">인증 영상</h2>
+        <button class="hm-close" type="button" data-rs-m="close" aria-label="닫기"><img class="i20" src="${ICON("close")}" alt="" /></button>
+      </div>
+      <div class="rs-vw-body">
+        <div class="rs-vw-main is-video"><video src="${RS_VIDEO}" controls autoplay playsinline></video></div>
+      </div>
+    </div>`;
+    rsModalEl.hidden = false;
+}
 function openRsViewer(r, gi, i) {
     const g = PHOTO_GROUPS[gi];
     rsView = { photos: Array.from({ length: rsCount(r, gi) }, (_, k) => rsPhoto(r, gi, k)), i, dx: 0 };
