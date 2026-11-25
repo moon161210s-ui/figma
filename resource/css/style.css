@@ -5465,6 +5465,132 @@ body.rl-dragging * {
 }
 
 /* ==========================================================
+ 근무 일정표 등록 모달 (user-info.html / user-info.js) — Figma 2431:83238 · 2431:83280
+ ========================================================== */
+.hm-box.sc-set {
+    width: 1200px;
+}
+
+.sc-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    min-height: 0;
+    padding: 16px 24px;
+    overflow-y: auto;
+}
+
+.sc-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.sc-btn {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    gap: 4px;
+}
+
+.sc-btn svg {
+    flex-shrink: 0;
+}
+
+.sc-msg {
+    align-self: stretch;
+    margin: 0;
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2, 20px);
+    color: var(--color-dangerous);
+}
+
+.sc-msg[hidden] {
+    display: none;
+}
+
+/* 표: 직원명 160 + 요일 7칸 (남는 폭을 똑같이 나눠요) */
+.sc-table {
+    align-self: stretch;
+}
+
+.sc-tr {
+    display: grid;
+    grid-template-columns: 160px repeat(7, minmax(0, 1fr));
+}
+
+.sc-th {
+    display: flex;
+    align-items: center;
+    height: 56px;
+    padding: 15px 16px;
+    border-top: 1px solid var(--color-line-normal);
+    border-bottom: 1px solid var(--color-line-normal);
+    background: var(--color-bg-low);
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.sc-th:first-child {
+    border-left: 1px solid var(--color-line-normal);
+    border-top-left-radius: var(--radius-sm);
+}
+
+.sc-th:last-child {
+    border-right: 1px solid var(--color-line-normal);
+    border-top-right-radius: var(--radius-sm);
+}
+
+.sc-td {
+    display: flex;
+    align-items: center;
+    padding: 4px 16px;
+    border-bottom: 1px solid var(--color-line-normal);
+}
+
+.sc-td.is-name {
+    padding: 15px 16px;
+}
+
+.sc-in {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    height: 40px;
+    padding: 0 4px 0 12px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+}
+
+.sc-in:focus-within {
+    border-color: var(--color-gray-900);
+}
+
+.sc-in.is-error {
+    border-color: var(--color-dangerous);
+}
+
+.sc-in input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+}
+
+.sc-in input::placeholder {
+    color: var(--color-gray-200);
+}
+
+/* ==========================================================
  예약 현황 (reservation.html)
  ========================================================== */
 #viewReserve {
@@ -7726,4 +7852,407 @@ html.is-modal-open {
 /* 업무 특이사항 화면만: 가로로 넘친 보드가 화면 전체를 옆으로 밀지 않게 해요 */
 #viewThread {
     overflow-x: hidden;
+}
+
+/* ==========================================================
+ 청소 자동 배정 관리 (user-auto.html)
+ - 위: 숫자 카드 3개 / 아래: 청소 조 목록(왼쪽, 가변) + 기준 설정 패널(오른쪽, 640px)
+ ========================================================== */
+#viewAuto {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.au-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.au-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 20px 24px 16px;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.au-stat-t {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-300);
+}
+
+.au-stat-v {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.au-stat-v strong {
+    font-size: var(--fs-h3);
+    line-height: var(--lh-h3);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.au-stat-v small {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-900);
+}
+
+.au-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.au-teams {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 20px 0;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.au-teams-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px 16px;
+}
+
+.au-teams-tit {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.au-teams-tit h2 {
+    margin: 0;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5, 36px);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.au-teams-tit span {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+}
+
+.au-teams-head .btn {
+    padding: 0 20px;
+    border-radius: var(--radius-md);
+}
+
+.au-team-card {
+    padding: 0 20px;
+}
+
+.au-team {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    height: 95px;
+    border-bottom: 1px solid var(--color-line-normal);
+}
+
+.au-team:last-child {
+    border-bottom: 0;
+}
+
+.au-team-name {
+    flex-shrink: 0;
+    width: 48px;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.au-members {
+    display: flex;
+    flex: 1 1 0;
+    gap: 150px;
+    min-width: 0;
+}
+
+.au-member {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.au-member-tx {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.au-member-tx strong {
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.au-member-tx span {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+    white-space: nowrap;
+}
+
+.au-team-btns {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+}
+
+.au-team-btns .au-edit {
+    width: 97px;
+    padding: 0;
+    border-radius: 10px;
+}
+
+.au-del {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--color-line-low, var(--color-line-normal));
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.au-del:hover {
+    background: var(--color-bg-disable);
+}
+
+.au-avatar {
+    position: relative;
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--color-primary-50);
+}
+
+.au-avatar.is-sm {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+}
+
+.au-avatar-ph {
+    width: 32px;
+    height: 32px;
+}
+
+.au-avatar.is-sm .au-avatar-ph {
+    width: 20px;
+    height: 20px;
+}
+
+.au-avatar-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 오른쪽 기준 설정 패널: 640px 흰 카드 (모달 .hm-box.as-set 과 같은 내용이라 같은 규칙을 써요) */
+.au-panel.as-set {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 640px;
+    border: 0;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+    box-shadow: none;
+}
+
+.au-panel .hm-body {
+    margin-right: 0;
+    padding-right: 24px;
+    scrollbar-gutter: auto;
+    overflow: visible;
+}
+
+.au-panel .as-set-top {
+    gap: 8px;
+}
+
+.au-panel .as-set-tx {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.au-panel .as-set-top .as-set-tx p {
+    white-space: nowrap;
+}
+
+/* 팀 추가하기 / 수정하기 모달 */
+.hm-box.au-form {
+    width: 640px;
+}
+
+.hm-box.au-cm {
+    width: 400px;
+    overflow: hidden;
+}
+
+.au-form .hm-head {
+    align-items: flex-start;
+}
+
+.au-form-tit {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.au-form-tit span {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+}
+
+.au-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    min-height: 0;
+    padding: 16px 24px;
+    overflow-y: auto;
+}
+
+.au-form-grp {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.au-form-lb,
+.au-form-lbs strong {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.au-form-lbs {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.au-form-lbs span {
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    color: var(--color-gray-300);
+}
+
+.au-name {
+    display: block;
+    height: 48px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+}
+
+.au-name:focus-within {
+    border-color: var(--color-gray-900);
+}
+
+.au-name.is-error,
+.au-sel.is-error {
+    border-color: var(--color-dangerous, #e5484d);
+}
+
+.au-name input {
+    width: 100%;
+    height: 100%;
+    padding: 0 16px;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    outline: 0;
+    font: inherit;
+    font-size: var(--fs-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-900);
+}
+
+.au-mcards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.au-mcard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-md);
+}
+
+.au-mcard-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.au-mcard-head strong {
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.au-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.au-field-lb {
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    color: var(--color-gray-300);
+}
+
+.au-sel {
+    width: 100%;
+}
+
+.au-menu {
+    z-index: 200;
+    overflow-y: auto;
+    gap: 0;
+}
+
+.au-menu .filter-item.is-selected {
+    background: var(--color-primary-50);
 }

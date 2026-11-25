@@ -101,7 +101,7 @@ const TH_ITEMS = [
     T("clean", "207", "14:20", "욕실 거울에 얼룩이 심해요.\n다음 청소 때 닦아 주세요.", ["작성자", "한다경"], 1, "done", "이서영", 1),
     T("supply", "305", "11:05", "타월이 2장 부족해요.\n추가 보충 부탁드립니다.", ["작성자", "유가은"], 0, "wait", null, 1),
     T("etc", "408", "12:30", "복도 쪽 소음이 심하다는 손님 의견이 있었어요.", ["작성자", "최하석"], 0, "doing", "전재연", 1),
-    /* 지난 특이사항 (객실별 '조치 필요 목록 내역'에 쌓여 있는 기록 / 모두 처리 완료) */
+    /* 지난 특이사항 (객실별 '조치 필요 내역'에 쌓여 있는 기록 / 모두 처리 완료) */
     T("broken", "303", "14:10", "욕실 문 손잡이가 헐거워서 덜컹거려요.\n나사 조임 부탁드립니다.", ["작성자", "한다경"], 1, "done", "유가은", 6),
     T("clean", "303", "11:25", "침대 헤드 뒤쪽에 먼지가 쌓여 있어요.", ["작성자", "최하석"], 0, "done", "이서영", 13),
     T("supply", "303", "12:05", "객실 슬리퍼가 한 켤레 부족해요.\n추가 비치 부탁드립니다.", ["작성자", "이서영"], 0, "done", "유가은", 13),
@@ -617,7 +617,7 @@ function tdRender(keep) {
         </section>
         <section class="td-hist">
           <div class="td-hist-head">
-          <h3>조치 필요 목록 내역 <span>(${tdHistory().length}건)</span></h3>
+          <h3>조치 필요 내역 <span>(${tdHistory().length}건)</span></h3>
           <div class="td-filter-group">
           <div class="td-filters">
             <div class="td-dd"><button class="td-date${tdPick ? " is-active" : ""}" type="button" data-td-date-btn aria-haspopup="dialog" aria-expanded="false">${icon("calender", 20)}<span>${perLabel}</span></button></div>

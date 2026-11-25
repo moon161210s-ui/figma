@@ -560,7 +560,7 @@ $("#uiSearch").addEventListener("input", (e) => {
 renderStaffInfo();
 renderStaffDetail();
 
-["#uiUpload", "#uiInvite"].forEach((q) =>
+["#uiInvite"].forEach((q) =>
     $(q)?.setAttribute("data-soon", "")
 );
 
@@ -690,3 +690,202 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !wsModal.hidden && !wsModal.querySelector(".tp-panel:not([hidden])")) closeWorkShifts();
 });
 $("#uiHours")?.addEventListener("click", (e) => openWorkShifts(e.currentTarget));
+
+
+/* ==========================================================
+   근무 일정표 등록 모달 (Figma 2431:83238 값이 있을 때 / 2431:83280 입력된 값이 없을 때)
+   - 처음에는 빈 줄 하나로 열려요 (직원명 · 요일별 근무 시간대 입력칸 / 안내 문구는 ex. 예시)
+   - 엑셀 양식 다운로드: 이번 주 날짜가 들어간 양식(CSV, 엑셀에서 열려요) / 엑셀 파일 업로드: 양식을 채운 CSV 를 읽어 표에 채워요
+   - 한줄 추가 = 빈 줄 추가 / 저장 = 등록된 직원의 그 주 근무 일정을 한꺼번에 바꿔요 (빈 줄은 무시해요)
+   - 칸에는 '근무 시간대 설정'에 있는 이름 또는 휴무를 써요 / 직원명이 등록된 직원이 아니거나 칸 값이 알 수 없는 이름이면 빨간 테두리가 떠요
+   - 닫기 · X · 바깥 클릭 · Esc 로 닫으면 쓰던 내용은 버려요
+   ========================================================== */
+const scModal = document.createElement("div");
+scModal.className = "hm";
+scModal.id = "scModal";
+scModal.hidden = true;
+document.body.appendChild(scModal);
+let scTrigger = null;
+let scWeek = null; /* 모달이 열릴 때 왼쪽 목록이 보여주던 주 */
+const SC_ICON_DISK = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.5 3.5h9l2 2v11h-11v-13z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7 3.5v4h5v-4M7 16.5v-5h6v5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+const SC_ICON_UP = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 13V4M6.5 7.5L10 4l3.5 3.5M4 13.5v2.5h12v-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const scDays = () => Array.from({ length: 7 }, (_, i) => dayAdd(scWeek, i));
+const scDayText = (d) => `${pad(d.getMonth() + 1)}/${pad(d.getDate())} (${SI_DAYS[d.getDay()]})`;
+const scLabelOf = (id) => (id && SI_SHIFTS[id] ? SI_SHIFTS[id].label : "휴무");
+const scIdOf = (label) => Object.keys(SI_SHIFTS).find((k) => SI_SHIFTS[k].label === label);
+
+function scRow(name, vals) {
+    const v = vals || [];
+    return `
+    <div class="sc-tr" data-sc-row>
+      <div class="sc-td is-name"><span class="sc-in"><input class="sc-name" type="text" value="${wsEsc(name || "")}" maxlength="10" autocomplete="off" placeholder="ex. 홍길동" aria-label="직원명" /></span></div>
+      ${Array.from({ length: 7 }, (_, i) => `<div class="sc-td"><span class="sc-in"><input type="text" data-sc-cell value="${wsEsc(v[i] || "")}" maxlength="10" autocomplete="off" placeholder="ex. ${wsEsc(scLabelOf(SI_SHIFT_ORDER[0]))}" aria-label="${scDayText(scDays()[i])}" /></span></div>`).join("")}
+    </div>`;
+}
+
+function openSchedule(trigger) {
+    scTrigger = trigger || null;
+    scWeek = siWeek;
+    scModal.innerHTML = `
+    <div class="hm-box sc-set" role="dialog" aria-modal="true" aria-labelledby="scTitle">
+      <div class="hm-head">
+        <h2 class="hm-title" id="scTitle">근무 일정표 등록</h2>
+        <button class="hm-close" type="button" data-sc-m="close" aria-label="닫기">${icon("close", 20)}</button>
+      </div>
+      <div class="sc-body">
+        <div class="sc-btns">
+          <button class="btn btn-sm btn-outline sc-btn" type="button" data-sc-m="down">${SC_ICON_DISK}엑셀 양식 다운로드</button>
+          <button class="btn btn-sm btn-outline sc-btn" type="button" data-sc-m="up">${SC_ICON_UP}엑셀 파일 업로드</button>
+          <input type="file" id="scFile" accept=".csv,text/csv" hidden />
+        </div>
+        <p class="sc-msg" id="scMsg" hidden></p>
+        <div class="sc-table" role="table">
+          <div class="sc-tr is-head" role="row"><div class="sc-th">직원명</div>${scDays().map((d) => `<div class="sc-th">${scDayText(d)}</div>`).join("")}</div>
+          <div id="scRows">${scRow()}</div>
+        </div>
+        <button class="btn btn-sm btn-outline sc-btn" type="button" data-sc-m="add">${icon("plus", 20)}한줄 추가</button>
+      </div>
+      <div class="hm-foot">
+        <button class="btn btn-lg btn-outline" type="button" data-sc-m="close">닫기</button>
+        <button class="btn btn-lg btn-primary" type="button" data-sc-m="save">저장</button>
+      </div>
+    </div>`;
+    scModal.hidden = false;
+    scModal.querySelector(".sc-name").focus();
+}
+function closeSchedule() {
+    scModal.hidden = true;
+    scModal.innerHTML = "";
+    if (scTrigger) scTrigger.focus();
+}
+function scMsg(t) {
+    const m = $("#scMsg", scModal);
+    m.textContent = t || "";
+    m.hidden = !t;
+}
+
+/* 양식(CSV) 내려받기: 이번 주 날짜 + 지금 등록된 직원들의 그 주 근무 (엑셀이 한글을 깨뜨리지 않게 BOM 을 붙여요) */
+function scDownload() {
+    const days = scDays();
+    const rows = [["직원명", ...days.map(scDayText)]];
+    SI_STAFF.filter((s) => s.account !== "resigned").forEach((s) => rows.push([s.name, ...days.map((d) => scLabelOf(siShiftOn(s, d)))]));
+    const csv = "\ufeff" + rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = "근무 일정표 양식.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function scParseCsv(text) {
+    return text
+        .replace(/^\ufeff/, "")
+        .split(/\r?\n/)
+        .map((line) => {
+            const out = [];
+            let cur = "";
+            let q = false;
+            for (let i = 0; i < line.length; i++) {
+                const c = line[i];
+                if (q) {
+                    if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+                    else if (c === '"') q = false;
+                    else cur += c;
+                } else if (c === '"') q = true;
+                else if (c === "," || c === "\t") { out.push(cur.trim()); cur = ""; }
+                else cur += c;
+            }
+            out.push(cur.trim());
+            return out;
+        })
+        .filter((r) => r.some((c) => c));
+}
+
+function scFill(text) {
+    let rows = scParseCsv(text);
+    if (rows.length && rows[0][0] === "직원명") rows = rows.slice(1);
+    rows = rows.filter((r) => r[0]);
+    if (!rows.length) return scMsg("불러올 일정이 없어요. 엑셀 양식에 맞춰 작성해 주세요.");
+    scMsg("");
+    $("#scRows", scModal).innerHTML = rows.map((r) => scRow(r[0], r.slice(1, 8))).join("");
+}
+
+function scSave() {
+    const byName = {};
+    SI_STAFF.filter((s) => s.account !== "resigned").forEach((s) => (byName[s.name] = s));
+    const days = scDays();
+    let bad = null;
+    const todo = [];
+    scModal.querySelectorAll("[data-sc-row]").forEach((r) => {
+        r.querySelectorAll(".sc-in").forEach((x) => x.classList.remove("is-error"));
+        const nameIn = r.querySelector(".sc-name");
+        const cells = [...r.querySelectorAll("[data-sc-cell]")];
+        const vals = cells.map((c) => c.value.trim());
+        if (!nameIn.value.trim() && vals.every((v) => !v)) return; /* 빈 줄은 무시해요 */
+        const mark = (el) => {
+            el.closest(".sc-in").classList.add("is-error");
+            if (!bad) bad = el;
+        };
+        const st = byName[nameIn.value.trim()];
+        if (!st) mark(nameIn);
+        const ids = vals.map((v, i) => {
+            if (v === "휴무") return null;
+            const id = scIdOf(v);
+            if (!id) mark(cells[i]);
+            return id;
+        });
+        if (st && ids.every((x) => x !== undefined)) todo.push([st, ids]);
+    });
+    if (bad) return bad.focus();
+    if (!todo.length) return scModal.querySelector(".sc-name").focus();
+    try {
+        const all = staffOver();
+        todo.forEach(([st, ids]) => {
+            all[st.name] = { ...(all[st.name] || {}) };
+            days.forEach((d, i) => (all[st.name][siKey(d)] = ids[i]));
+        });
+        localStorage.setItem(STAFF_OVER_KEY, JSON.stringify(all));
+    } catch (e) { }
+    /* TODO: 서버 연결 시 여기서 todo 를 전송 */
+    todo.forEach(([st, ids]) => {
+        days.forEach((d, i) => (st.over[siKey(d)] = ids[i]));
+        if (st.state !== null && st.state !== "early") st.state = staffWorksOn(st.name, todayMid()) ? "work" : "off";
+        if (siDraft && siSelId === st.id) siDraft.over = { ...st.over };
+    });
+    renderStaffInfo();
+    renderStaffDetail();
+    closeSchedule();
+}
+
+scModal.addEventListener("click", (e) => {
+    if (e.target === scModal) return closeSchedule();
+    const b = e.target.closest("[data-sc-m]");
+    if (!b) return;
+    const act = b.dataset.scM;
+    if (act === "close") closeSchedule();
+    else if (act === "save") scSave();
+    else if (act === "down") scDownload();
+    else if (act === "up") $("#scFile", scModal).click();
+    else if (act === "add") {
+        const rows = $("#scRows", scModal);
+        rows.insertAdjacentHTML("beforeend", scRow());
+        rows.lastElementChild.scrollIntoView({ block: "nearest" });
+        rows.lastElementChild.querySelector(".sc-name").focus();
+    }
+});
+scModal.addEventListener("change", (e) => {
+    if (e.target.id !== "scFile") return;
+    const f = e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    f.text().then(scFill);
+});
+scModal.addEventListener("input", (e) => {
+    if (e.target.matches(".sc-in input")) e.target.closest(".sc-in").classList.remove("is-error");
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !scModal.hidden) closeSchedule();
+});
+$("#uiUpload")?.addEventListener("click", (e) => openSchedule(e.currentTarget));

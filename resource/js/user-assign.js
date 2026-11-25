@@ -18,9 +18,9 @@ const asStaffOf = (r) => asChanges[r.no] || r.staff;
    - 객실의 담당자는 "김이레, 전재연"처럼 이름을 ", "로 이은 문자열이에요 (1명이면 이름만)
    - ★ 조는 나중에 '조 편성' 화면에서 직접 짜면 localStorage 'cleanTeams' 에 저장돼요. 아직 없을 때는 아래 임시 조를 써요 */
 const AS_TEAMS_DEFAULT = [
-    { name: "A조", members: ["유가은", "이서영"] },
-    { name: "B조", members: ["한다경", "최하석"] },
-    { name: "C조", members: ["김이레", "전재연"] },
+    { name: "1팀", members: ["최하석", "유가은"] },
+    { name: "2팀", members: ["한다경", "김이레"] },
+    { name: "3팀", members: ["이서영", "전재연"] },
 ];
 function asTeams() {
     try {
@@ -36,11 +36,11 @@ const asHolds = (staff, members) => asNames(staff).some((n) => members.includes(
 /* ---------- 자동 배정 기준 (모달에서 바꾸는 값 / 서버 연결 시 서버 설정으로 교체) ---------- */
 const AS_SET_KEY = "assignSettings";
 const AS_CRITERIA = {
-    time: ["청소 가능 시간 균등분배", "객실 수보다 설정된 청소 가능 시간을 기준으로 고르게 나눕니다."],
+    near: ["가까운 객실 순서로 배정", "그날 처음 맡은 객실에서 가까운 위치의 객실을 우선 배정합니다."],
     count: ["담당 객실 수를 비슷하게 배정", "직원마다 맡는 객실 수가 비슷하도록 배정합니다."],
-    skill: ["숙련도에 맞춰 배정", "설정된 숙련도를 기준으로"],
+    skill: ["숙련도에 맞춰 배정", "직원 정보에서 설정한 숙련도를 기준으로 객실을 배정합니다."],
 };
-const AS_SET_DEFAULT = { mode: "auto", order: ["time", "count", "skill"], maxMin: 0, apply: "future", keepManual: false };
+const AS_SET_DEFAULT = { mode: "auto", unit: "team", order: ["near", "count", "skill"], maxMin: 0, apply: "future", keepManual: false };
 function asSettings() {
     try {
         const v = JSON.parse(localStorage.getItem(AS_SET_KEY)) || {};
