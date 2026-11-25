@@ -3665,7 +3665,7 @@ html:has(#viewResults) {
     flex-shrink: 0;
     justify-content: flex-start;
     gap: 8px;
-    padding: 8px 20px 8px 8px;
+    padding: 10px 16px 10px 8px;
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-md);
     background: var(--color-base-inverse);
@@ -3719,7 +3719,7 @@ body.as-dragging * {
 .as-profile {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
 }
 
 .as-avatar {
@@ -3751,30 +3751,34 @@ body.as-dragging * {
     display: flex;
     flex: 1;
     flex-direction: column;
+    gap: 4px;
     justify-content: center;
     min-width: 70px;
 }
 
-/* 청소 중 | 40분 째 / 다음청소 | 12시 */
+/* 남은객실 7실 / 청소 중 1시간 20분 째 (또는 다음청소 13시): 두 줄, 앞 글자 칸은 49px */
 .as-sub {
     display: flex;
+    flex-direction: column;
+    opacity: 0.9;
+}
+
+.as-sub-row {
+    display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     white-space: nowrap;
 }
 
-.as-sub i {
+.as-sub-row i {
+    flex-shrink: 0;
+    width: 49px;
     font-style: normal;
+    font-weight: var(--fw-regular, 400);
 }
 
-.as-sub i+i::before {
-    content: "";
-    display: inline-block;
-    width: 1px;
-    height: 12px;
-    margin-right: 4px;
-    vertical-align: middle;
-    background: var(--color-gray-50);
+.as-sub-row b {
+    font-weight: var(--fw-medium);
 }
 
 .as-user-tx strong {
@@ -3783,14 +3787,36 @@ body.as-dragging * {
     font-weight: var(--fw-bold);
     color: var(--color-gray-900);
     opacity: 0.9;
-    white-space: nowrap;
 }
 
-.as-user-tx span {
+/* 조 카드: 이름이 길면 줄바꿈 / 조퇴한 조원은 이름 옆에 작게 */
+.as-user.is-team .as-user-tx strong,
+.as-dropped .as-user-tx strong {
+    white-space: normal;
+    word-break: keep-all;
+}
+
+.as-user-tx strong em {
+    font-style: normal;
+    white-space: nowrap;
+    font-size: var(--fs-body2);
+    font-weight: var(--fw-regular, 400);
+    color: var(--color-gray-300);
+}
+
+.as-user-tx .as-sub {
     font-size: var(--fs-body2);
     line-height: var(--lh-body2);
     color: var(--color-gray-300);
-    opacity: 0.9;
+}
+
+/* 조 프로필: 사진 대신 'A조' 글자 */
+.as-avatar.is-team {
+    background: var(--color-bg-base);
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-300);
 }
 
 /* ---- 배정 가능 객실 목록 ---- */
@@ -3864,15 +3890,11 @@ body.as-dragging * {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-height: 155px;
+    min-height: 193px;
     padding: 16px;
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-lg);
     background: var(--color-base-inverse);
-}
-
-.as-room.is-need {
-    min-height: 0;
 }
 
 /* 담당자 카드를 끌어서 닿았을 때 (닿는 동안만 / 멀리 치우면 다시 원래대로) */
@@ -3918,8 +3940,8 @@ body.as-dragging * {
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    height: 60px;
-    margin-top: 9px;
+    height: 88px;
+    margin-top: 7px;
     padding: 13px 16px;
     border: 1px dashed var(--color-line-normal);
     border-radius: var(--radius-sm);
@@ -4732,11 +4754,6 @@ body.rl-dragging * {
 .th-btns {
     display: flex;
     gap: 8px;
-}
-
-/* 담당자 배정하기 + 직접 처리하기 (시안 간격 16) */
-.th-btns.is-assign {
-    gap: 16px;
 }
 
 .th-btns .btn {
@@ -6166,7 +6183,7 @@ html.is-modal-open {
     align-items: center;
     gap: 8px;
     margin-top: 9px;
-    padding: 8px 20px 8px 8px;
+    padding: 10px 16px 10px 8px;
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-md);
     background: var(--color-base-inverse);

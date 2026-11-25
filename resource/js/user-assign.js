@@ -14,6 +14,25 @@ const AS_ACTIVE = ["todo", "progress", "reassign"]; /* '현재 n실' 로 세는 
 const asDirty = () => Object.keys(asChanges).length + Object.keys(asTomChanges).length > 0;
 const asStaffOf = (r) => asChanges[r.no] || r.staff;
 
+/* ---------- 조 (청소 담당자는 1명일 수도, 조로 묶인 2명일 수도 있어요) ----------
+   - 객실의 담당자는 "김이레, 전재연"처럼 이름을 ", "로 이은 문자열이에요 (1명이면 이름만)
+   - ★ 조는 나중에 '조 편성' 화면에서 직접 짜면 localStorage 'cleanTeams' 에 저장돼요. 아직 없을 때는 아래 임시 조를 써요 */
+const AS_TEAMS_DEFAULT = [
+    { name: "A조", members: ["유가은", "이서영"] },
+    { name: "B조", members: ["한다경", "최하석"] },
+    { name: "C조", members: ["김이레", "전재연"] },
+];
+function asTeams() {
+    try {
+        const v = JSON.parse(localStorage.getItem("cleanTeams"));
+        if (Array.isArray(v)) return v.filter((t) => t && t.name && Array.isArray(t.members) && t.members.length);
+    } catch (e) { }
+    return AS_TEAMS_DEFAULT;
+}
+const asNames = (str) => (str ? String(str).split(", ").filter(Boolean) : []);
+/* 이 객실의 담당자 중에 members 가 있는지 */
+const asHolds = (staff, members) => asNames(staff).some((n) => members.includes(n));
+
 /* ---------- 자동 배정 기준 (모달에서 바꾸는 값 / 서버 연결 시 서버 설정으로 교체) ---------- */
 const AS_SET_KEY = "assignSettings";
 const AS_CRITERIA = {
@@ -85,7 +104,7 @@ function asAutoPlan() {
 /* 수동 배정이면 시스템이 미리 배정하지 않아요 (자동 배정 기준 설정 모달에서 바꿔요) */
 let AS_PLAN = asSettings().mode === "manual" ? {} : asAutoPlan();
 /* 퇴사한 직원에게 미리 저장해 둔 담당자는 무시하고, 남은 직원끼리 새로 자동 배정한 값을 써요 */
-const asTomSavedOk = (r) => !!asTomSaved[r.no] && asTomWorkers().includes(asTomSaved[r.no]);
+const asTomSavedOk = (r) => !!asTomSaved[r.no] && asNames(asTomSaved[r.no]).every((n) => asTomWorkers().includes(n));
 const asTomBase = (r) => (asTomSavedOk(r) ? asTomSaved[r.no] : AS_PLAN[r.no] || "-");
 const asTomStaff = (r) => asTomChanges[r.no] || asTomBase(r);
 const asTomManual = (r) => !!(asTomChanges[r.no] || asTomSavedOk(r));
@@ -93,48 +112,66 @@ const asTomManual = (r) => !!(asTomChanges[r.no] || asTomSavedOk(r));
 const asNeed = (r) => r.status === "reassign";
 
 /* ---------- 오늘 근무자 ---------- */
-const asAvatar = (name) => {
-    const photo = STAFF_PHOTO[name] ? `<img class="as-avatar-photo" src="${STAFF_PHOTO[name]}" alt="" draggable="false" onerror="this.remove()" />` : "";
-    return `<span class="as-avatar"><img class="as-avatar-ph" src="${ICON("user-purple")}" alt="" draggable="false" />${photo}</span>`;
+/* members 가 맡은 남은 객실 수 (조는 두 사람이 맡은 객실을 합쳐서 세요) */
+function asCount(members) {
+    if (asDay === "tomorrow") return asTomRooms().filter((r) => asHolds(asTomStaff(r), members)).length;
+    return ROOMS.filter((r) => inCleanList(r) && AS_ACTIVE.includes(r.status) && asHolds(asStaffOf(r), members)).length;
+}
+
+/* 근무자 카드 목록: 조 카드가 맨 앞, 그 뒤에 직원 개인 카드 (각각 맡은 객실이 적은 쪽이 앞) */
+function asWorkers() {
+    const holds = (n) => ROOMS.some((r) => !r.empty && asNames(r.staff).includes(n));
+    const tom = asDay === "tomorrow";
+    const works = (n) => (tom ? staffWorksOn(n, AS_TOMORROW) : !LEFT_EARLY.has(n) && (staffWorksOn(n, todayMid()) || holds(n)));
+    const solo = (tom ? asTomWorkers() : STAFF.filter(works)).map((name) => ({ name, members: [name], team: null }));
+    /* 조는 조원 중 한 명이라도 근무하면 보여요 (조퇴한 조원은 이름 옆에 표시) */
+    const teams = asTeams()
+        .filter((t) => t.members.some((n) => (tom ? staffWorksOn(n, AS_TOMORROW) : staffWorksOn(n, todayMid()) || holds(n))))
+        .map((t) => ({ name: t.members.join(", "), members: t.members, team: t.name }));
+    const rank = (list) => list.map((w, i) => ({ ...w, n: asCount(w.members), i })).sort((a, b) => a.n - b.n || a.i - b.i);
+    return [...rank(teams), ...rank(solo)];
+}
+
+const asMinText = (m) => {
+    const h = Math.floor(m / 60), mm = m % 60;
+    return `${h ? `${h}시간` : ""}${h && mm ? " " : ""}${mm || !h ? `${mm}분` : ""} 째`;
 };
 
-function asCount(name) {
-    if (asDay === "tomorrow") return asTomRooms().filter((r) => asTomStaff(r) === name).length;
-    return ROOMS.filter((r) => inCleanList(r) && AS_ACTIVE.includes(r.status) && asStaffOf(r) === name).length;
-}
-
-/* 현재 맡은 객실이 적은 사람이 맨 앞 (같으면 직원 목록 순서) */
-function asWorkers() {
-    const holds = (n) => ROOMS.some((r) => !r.empty && r.staff === n);
-    return (asDay === "tomorrow" ? asTomWorkers() : STAFF.filter((n) => !LEFT_EARLY.has(n) && (staffWorksOn(n, todayMid()) || holds(n))))
-        .map((name, i) => ({ name, n: asCount(name), i }))
-        .sort((a, b) => a.n - b.n || a.i - b.i);
-}
-
-/* 근무자 카드 보조 문구: 청소 중이면 '청소 중 | N분 째', 아니면 '다음청소 | 00시' */
-function asStatusLine(name) {
-    const mine = ROOMS.filter((r) => !r.empty && asStaffOf(r) === name);
+/* 근무자 카드 보조 문구: 남은객실 N실 / 청소 중이면 '청소 중 | 1시간 20분 째', 아니면 '다음청소 | 00시' */
+function asStatusLines(w) {
+    const mine = ROOMS.filter((r) => !r.empty && asHolds(asStaffOf(r), w.members));
     const busy = asDay === "tomorrow" ? null : mine.find((r) => r.status === "progress");
-    if (busy) return ["청소 중", `${busy.cleanMin == null ? 0 : busy.cleanMin}분 째`];
-    const next = (asDay === "tomorrow" ? asTomRooms().filter((r) => asTomStaff(r) === name) : mine.filter((r) => inCleanList(r) && (r.status === "todo" || r.status === "reassign")))
+    const lines = [["남은객실", `${asCount(w.members)}실`]];
+    if (busy) return [...lines, ["청소 중", asMinText(busy.cleanMin == null ? 0 : busy.cleanMin)]];
+    const next = (asDay === "tomorrow" ? asTomRooms().filter((r) => asHolds(asTomStaff(r), w.members)) : mine.filter((r) => inCleanList(r) && (r.status === "todo" || r.status === "reassign")))
         .map((r) => r.clean)
         .filter(Boolean)
         .sort()[0];
-    if (!next) return ["다음청소", "-"];
+    if (!next) return [...lines, ["다음청소", "-"]];
     const [h, m] = next.split(":").map(Number);
-    return ["다음청소", `${h}시${m ? ` ${m}분` : ""}`];
+    return [...lines, ["다음청소", `${h}시${m ? ` ${m}분` : ""}`]];
 }
+
+/* 프로필: 조는 'A조' 글자 칸, 한 명이면 사진(없으면 기본 아이콘) */
+const asAvatar = (w) => {
+    if (w.team) return `<span class="as-avatar is-team">${w.team}</span>`;
+    const photo = STAFF_PHOTO[w.name] ? `<img class="as-avatar-photo" src="${STAFF_PHOTO[w.name]}" alt="" draggable="false" onerror="this.remove()" />` : "";
+    return `<span class="as-avatar"><img class="as-avatar-ph" src="${ICON("user-purple")}" alt="" draggable="false" />${photo}</span>`;
+};
+/* 이름 줄: 조퇴한 조원은 이름 옆에 (조퇴) */
+const asNameHtml = (w) => w.members.map((n) => (w.team && LEFT_EARLY.has(n) ? `${n}<em>(조퇴)</em>` : n)).join(", ");
+const asWorkerInner = (w) => `
+        <img class="i24 as-handle" src="${ICON("handle")}" alt="" draggable="false" />
+        <div class="as-profile">${asAvatar(w)}<div class="as-user-tx"><strong>${asNameHtml(w)}</strong><span class="as-sub">${asStatusLines(w).map(([k, v]) => `<span class="as-sub-row"><i>${k}</i><b>${v}</b></span>`).join("")}</span></div></div>`;
 
 function renderAssignWorkers() {
     const q = asWorkerQuery.trim();
-    const list = asWorkers().filter((w) => !q || w.name.includes(q));
+    const list = asWorkers().filter((w) => !q || w.name.includes(q) || (w.team && w.team.includes(q)));
     $("#asWorkers").innerHTML = list.length
         ? list
             .map(
                 (w) => `
-      <div class="as-user" data-as-user="${w.name}" tabindex="0" aria-label="${w.name}, ${asStatusLine(w.name).join(" ")}. 끌어서 객실에 배정">
-        <img class="i24 as-handle" src="${ICON("handle")}" alt="" draggable="false" />
-        <div class="as-profile">${asAvatar(w.name)}<div class="as-user-tx"><strong>${w.name}</strong><span class="as-sub">${asStatusLine(w.name).map((t) => `<i>${t}</i>`).join("")}</span></div></div>
+      <div class="as-user${w.team ? " is-team" : ""}" data-as-user="${w.name}" tabindex="0" aria-label="${w.team ? `${w.team} ` : ""}${w.name}, ${asStatusLines(w).map((l) => l.join(" ")).join(", ")}. 끌어서 객실에 배정">${asWorkerInner(w)}
       </div>`
             )
             .join("")
@@ -155,12 +192,15 @@ function asRooms() {
         .sort((a, b) => a.floor - b.floor || (asNeed(b) ? 1 : 0) - (asNeed(a) ? 1 : 0) || Number(a.no) - Number(b.no));
 }
 
-/* 끌어다 놓은 직원 (저장 전) */
-const asDropped = (name) => `
-      <div class="as-dropped">
-        <img class="i24 as-handle" src="${ICON("handle")}" alt="" draggable="false" />
-        <div class="as-profile">${asAvatar(name)}<div class="as-user-tx"><strong>${name}</strong><span class="as-sub">${asStatusLine(name).map((t) => `<i>${t}</i>`).join("")}</span></div></div>
+/* 끌어다 놓은 직원 (저장 전) — 조를 끌어다 놨으면 조 카드 모양 그대로 */
+const asDropped = (staff) => {
+    const names = asNames(staff);
+    const t = names.length > 1 ? asTeams().find((x) => x.members.join(", ") === staff) : null;
+    const w = { name: staff, members: names, team: t ? t.name : null };
+    return `
+      <div class="as-dropped">${asWorkerInner(w)}
       </div>`;
+};
 
 function asRoomCard(r) {
     const tom = asDay === "tomorrow";
