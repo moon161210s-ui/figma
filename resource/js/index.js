@@ -3065,3 +3065,61 @@ document.addEventListener("dragstart", (e) => {
 });
 document.addEventListener("pointerup", stopDragX);
 document.addEventListener("pointercancel", stopDragX);
+/* ---------- 가로 길이 정수로 맞추기 ----------
+   Figma 는 글자 폭을 올림한 정수로 써요 (예: 배정완료 14px 볼드 = 48.41 → 49). 브라우저는 소수점 그대로라서
+   글자 길이에 맞춰 늘어나는 요소(버튼 · 배지 · 태그 · 칩 · 탭 · 라벨 등)의 가로가 78.84 같은 소수점으로 나와요.
+   → 그런 요소는 가로를 올림해서 정수 px 로 맞춰요 (글자 올림 + 정수 패딩 = 올림한 가로).
+   - '글자 길이에 맞춰 늘어나는 요소'만 맞춰요: 가로 한 줄(flex row)에 놓인 채 늘어나지 않는 요소, 세로 칸에서 늘어나지 않게 정렬된 요소, inline-block · inline-flex
+   - 컨테이너를 나눠 갖는 요소(flex: 1, 달력 칸, 가로 100%)와 말줄임 · 스크롤 영역은 건드리지 않아요
+   - 화면이 다시 그려지거나 글자가 바뀌거나 웹폰트가 들어오면 다시 맞춰요 */
+const PX_SKIP = new Set(["HTML", "BODY", "SCRIPT", "STYLE", "SVG", "IMG", "INPUT", "TEXTAREA", "SELECT", "PATH", "CANVAS", "VIDEO", "BR"]);
+let pxSnapRaf = 0;
+function pxHug(el, cs) {
+    if (PX_SKIP.has(el.tagName.toUpperCase()) || el.closest("svg")) return false;
+    if (cs.display === "none" || cs.display === "inline" || cs.display === "contents" || cs.display.startsWith("table")) return false;
+    if (cs.position === "absolute" || cs.position === "fixed") return false;
+    if (cs.flexGrow !== "0" || cs.overflowX !== "visible" || cs.textOverflow === "ellipsis") return false;
+    if (el.style.width) return false;
+    if (cs.display.startsWith("inline")) return true;
+    const par = el.parentElement && getComputedStyle(el.parentElement);
+    if (!par || !par.display.endsWith("flex")) return false;
+    if (par.flexDirection.startsWith("row")) return true;
+    /* 세로로 쌓인 칸에서는 가운데 · 왼쪽 정렬처럼 늘어나지 않을 때만 글자 길이에 맞춰져요 */
+    const self = cs.alignSelf !== "auto" ? cs.alignSelf : par.alignItems;
+    return self !== "normal" && self !== "stretch";
+}
+function pxSnap() {
+    pxSnapRaf = 0;
+    const els = [...document.body.querySelectorAll("*")];
+    els.forEach((el) => {
+        if (el.dataset.pxMin) {
+            el.style.minWidth = "";
+            delete el.dataset.pxMin;
+        }
+    });
+    /* 안쪽 요소의 가로가 올림되면 바깥 요소가 다시 커질 수 있어서, 더 바뀔 게 없을 때까지(최대 4번) 반복해요 */
+    for (let n = 0; n < 4; n++) {
+        const todo = [];
+        els.forEach((el) => {
+            const w = el.getBoundingClientRect().width;
+            if (w > 0 && Math.abs(w - Math.round(w)) > 0.05 && pxHug(el, getComputedStyle(el))) todo.push([el, Math.ceil(w)]);
+        });
+        if (!todo.length) break;
+        todo.forEach(([el, w]) => {
+            el.style.minWidth = w + "px";
+            el.dataset.pxMin = "1";
+        });
+    }
+}
+const pxSnapSoon = () => {
+    if (!pxSnapRaf) pxSnapRaf = requestAnimationFrame(pxSnap);
+};
+new MutationObserver((list) => {
+    /* 우리가 직접 바꾼 값(min-width · data-px-min)에는 반응하지 않아요 */
+    if (list.some((m) => m.type !== "attributes")) pxSnapSoon();
+}).observe(document.body, { childList: true, subtree: true, characterData: true });
+document.fonts?.ready.then(pxSnapSoon);
+document.fonts?.addEventListener("loadingdone", pxSnapSoon); /* 웹폰트(Pretendard)가 늦게 들어오면 그 글자 폭으로 다시 맞춰요 */
+window.addEventListener("load", pxSnapSoon);
+window.addEventListener("resize", pxSnapSoon);
+pxSnapSoon();
