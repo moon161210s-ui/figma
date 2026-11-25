@@ -175,7 +175,7 @@ function renderAssignWorkers() {
       </div>`
             )
             .join("")
-        : `<p class="floor-empty">${q ? "검색 결과가 없어요." : asDay === "tomorrow" ? "내일 근무자가 없어요." : "오늘 근무자가 없어요."}</p>`;
+        : `<p class="floor-empty">${q ? "검색 결과가 없어요." : asDay === "tomorrow" ? "내일 근무자가 없어요." : "현재 근무자가 없어요."}</p>`;
 }
 
 /* ---------- 배정 가능 객실 ---------- */
@@ -677,7 +677,7 @@ document.querySelector(".as-tabs").addEventListener("click", (e) => {
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", String(on));
     });
-    $("#asWorkersTitle").textContent = asDay === "tomorrow" ? "내일 근무자 목록" : "오늘 근무자 목록";
+    $("#asWorkersTitle").textContent = asDay === "tomorrow" ? "내일 근무자 목록" : "현재 근무자 목록";
     renderAssignWorkers();
     renderAssignRooms();
 });

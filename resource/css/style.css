@@ -3973,7 +3973,7 @@ body.as-dragging * {
 }
 
 /* ==========================================================
- 청소 기준 설정 (standard.html / standard.js)
+ 청소 체크리스트 관리 (standard.html / standard.js)
  ========================================================== */
 .rl-body {
     display: grid;
@@ -4889,6 +4889,539 @@ body.rl-dragging * {
 .th-set-add:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+}
+
+/* ==========================================================
+ 직원 화면 미리보기 (standard.js / Figma 2430:40659 · 2430:35554)
+ - 딤(.hm) 가운데에 390 x 812 휴대폰 화면 / 화면 안쪽만 스크롤
+ ========================================================== */
+.rp-phone {
+    display: flex;
+    flex-direction: column;
+    width: 390px;
+    max-width: 100%;
+    height: 812px;
+    max-height: calc(100dvh - 40px);
+    overflow: hidden;
+    background: var(--color-white);
+    color: var(--color-gray-900);
+}
+
+.rp-head {
+    flex-shrink: 0;
+    background: var(--color-base-inverse);
+}
+
+.rp-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 62px;
+    padding: 2px 9px 0;
+}
+
+.rp-time {
+    flex: 1;
+    padding-right: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro", sans-serif;
+    font-size: 17px;
+    line-height: 22px;
+    font-weight: 600;
+    text-align: center;
+    color: #000;
+}
+
+.rp-island {
+    display: flex;
+    flex-shrink: 0;
+    width: 125px;
+    height: 37px;
+}
+
+.rp-levels {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding-right: 1px;
+}
+
+.rp-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 60px;
+    padding: 12px 20px;
+}
+
+.rp-bar strong {
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+}
+
+.rp-back {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.rp-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+}
+
+.rp-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.rp-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+}
+
+.rp-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 3px;
+    background: var(--color-line-normal);
+}
+
+.rp-fill {
+    width: 0;
+    height: 8px;
+    border-radius: 3px;
+    background: var(--color-gray-900);
+    transition: width 0.2s ease;
+}
+
+.rp-cont {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding: 20px 20px 40px;
+}
+
+.rp-sec {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rp-sec-tx h3 {
+    margin: 0;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    font-weight: var(--fw-bold);
+}
+
+.rp-req {
+    color: var(--color-dangerous);
+}
+
+.rp-sec-tx p {
+    margin: 2px 0 0;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+}
+
+/* 현재 객실 카드 */
+.rp-room {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 16px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-lg);
+}
+
+.rp-room-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.rp-room-top strong {
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5, 36px);
+    font-weight: var(--fw-bold);
+}
+
+.rp-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--radius-xs);
+    background: var(--color-bg-base);
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-300);
+    white-space: nowrap;
+}
+
+/* 앞 글자 칸 너비가 달라도(퇴실 / 다음 입실) 값은 같은 줄에 맞춰요 */
+.rp-room-info {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 8px;
+    margin: 0;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+}
+
+.rp-room-info>div {
+    display: contents;
+}
+
+.rp-room-info dt {
+    min-width: 60px;
+}
+
+.rp-room-info dd {
+    margin: 0;
+    font-weight: var(--fw-medium);
+}
+
+/* 체크리스트 */
+.rp-checks {
+    display: flex;
+    flex-direction: column;
+}
+
+.rp-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+    text-align: left;
+    cursor: pointer;
+}
+
+.rp-check>span:last-child {
+    opacity: 0.9;
+}
+
+.rp-box {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-xs);
+    background: var(--color-base-inverse);
+}
+
+.rp-box img {
+    visibility: hidden;
+}
+
+.rp-check.is-checked .rp-box {
+    border-color: var(--color-primary-500);
+    background: var(--color-primary-500);
+}
+
+.rp-check.is-checked .rp-box img {
+    visibility: visible;
+}
+
+/* 청소 참고 이미지 (옆으로 넘겨요) */
+.rp-swiper {
+    display: flex;
+    gap: 12px;
+    margin-right: -20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+
+.rp-swiper::-webkit-scrollbar {
+    display: none;
+}
+
+.rp-slide {
+    flex-shrink: 0;
+    width: 310px;
+    height: 200px;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    scroll-snap-align: start;
+}
+
+.rp-slide:last-child {
+    margin-right: 20px;
+}
+
+.rp-slide img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 청소 인증 사진 */
+.rp-proofs {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.rp-proof {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-low);
+}
+
+.rp-proof-tx {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+}
+
+.rp-proof-tx strong {
+    font-weight: var(--fw-bold);
+}
+
+.rp-proof-tx span {
+    color: var(--color-gray-300);
+}
+
+.rp-noimg {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    height: 200px;
+    border: 1px dashed var(--color-line-normal);
+    border-radius: var(--radius-lg);
+    background: var(--color-white);
+}
+
+.rp-cam,
+.rp-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 48px;
+    padding: 0 19px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
+    color: var(--color-white);
+    cursor: pointer;
+}
+
+.rp-cam {
+    background: var(--color-gray-900);
+}
+
+.rp-cam img {
+    filter: brightness(0) invert(1);
+}
+
+.rp-submit {
+    background: var(--color-primary-500);
+}
+
+/* 조치 필요 · 메모 */
+.rp-select {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    padding: 0 10px 0 11px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-300);
+    text-align: left;
+    cursor: pointer;
+}
+
+.rp-select span {
+    flex: 1;
+}
+
+.rp-text {
+    box-sizing: border-box;
+    width: 100%;
+    height: 120px;
+    padding: 11px 3px 11px 11px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+    resize: none;
+    outline: 0;
+}
+
+.rp-text::placeholder {
+    color: var(--color-gray-200);
+}
+
+.rp-text:focus {
+    border-color: var(--color-gray-900);
+}
+
+.rp-foot {
+    flex-shrink: 0;
+    padding: 20px;
+    background: var(--color-base-inverse);
+}
+
+/* ==========================================================
+ 근무 시간대 설정 모달 (user-info.js / Figma 2431:69314 · 2431:69450)
+ ========================================================== */
+.hm-box.ws-set {
+    width: 640px;
+}
+
+.ws-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    min-height: 0;
+    padding: 16px 24px;
+    overflow-y: auto;
+}
+
+.ws-list {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    gap: 12px;
+}
+
+/* 시간대 하나: 이름 + 시작 ~ 끝 시간, 오른쪽에 삭제 */
+.ws-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-lg);
+}
+
+.ws-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.ws-name {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 4px 0 12px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+    background: var(--color-base-inverse);
+}
+
+.ws-name:focus-within {
+    border-color: var(--color-gray-900);
+}
+
+.ws-name.is-error {
+    border-color: var(--color-dangerous);
+}
+
+.ws-name input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+}
+
+.ws-name input::placeholder {
+    color: var(--color-gray-200);
+}
+
+.ws-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ws-time .tp {
+    flex: 1;
+    min-width: 0;
+    margin-top: 0;
+}
+
+.ws-tilde {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+}
+
+.ws-del {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+}
+
+.ws-del:hover {
+    background: var(--color-bg-disable);
 }
 
 /* ==========================================================

@@ -735,26 +735,18 @@ function renderDetail() {
     }
 
     const done = r.status === "done";
-    /* 청소가 이미 시작됐거나 끝난 객실은 퇴실(연장)을 바꿀 수 없어요 → 연장은 새 예약으로 들어와요 */
-    const outLockedNow = ["progress", "review", "done"].includes(r.status);
+    /* 우측 패널에서는 '청소 가능 시간'만 수정할 수 있어요 (담당 직원은 청소 직원 재배정, 퇴실 시간은 예약 현황에서 바꿔요) */
+    const editable = (kind) => kind === "clean" && !done;
     const edit = (kind, label) =>
-        done ||
-            (r.empty && kind === "checkout") ||
-            (kind === "checkout" && outLockedNow)
-            ? ""
-            : `<button class="btn-icon" type="button" data-edit="${kind}" aria-label="${label} 수정">${icon(
+        editable(kind)
+            ? `<button class="btn-icon" type="button" data-edit="${kind}" aria-label="${label} 수정">${icon(
                 "pen"
-            )}</button>`;
+            )}</button>`
+            : "";
     const row = (label, value, kind) => `
       <div class="detail-row">
         <dt>${label}</dt>
-        <dd${kind &&
-            !done &&
-            !(r.empty && kind === "checkout") &&
-            !(kind === "checkout" && outLockedNow)
-            ? ' class="has-edit"'
-            : ""
-        }>${value}</dd>
+        <dd${kind && editable(kind) ? ' class="has-edit"' : ""}>${value}</dd>
         ${kind ? edit(kind, label) : ""}
       </div>`;
 

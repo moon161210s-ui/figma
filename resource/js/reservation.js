@@ -268,20 +268,23 @@ function renderReserve() {
       ).join("")}</div>` +
       `<div class="rv-tbody"><div class="rv-mgrid">${days
         .map((d) => {
-          const total = rvOnDay(d).length;
-          const hidden = slots[rvKey(d)]
-            .slice(RV_MONTH_CAP)
-            .filter(Boolean).length;
+          /* 보이는 줄에 빈 칸이 있는데 넘친 예약이 따로 숨어 있으면, 빈 칸에 그 예약을 올려요 (빈 칸만 보이고 '외 N건'이 뜨지 않게) */
+          const all = slots[rvKey(d)];
+          const rows = all.slice(0, RV_MONTH_CAP);
+          while (rows.length < RV_MONTH_CAP) rows.push(null);
+          const rest = all.slice(RV_MONTH_CAP).filter(Boolean);
+          for (let i = 0; i < rows.length && rest.length; i++)
+            if (!rows[i]) rows[i] = rest.shift();
+          const hidden = rest.length;
           const other = d < first || d > last;
           return `<div class="rv-cell${other ? " is-other" : ""}">${rvDayHead(
             d,
             hidden,
             other
           )}
-                        <div class="rv-list">${slotHtml(
-            d,
-            RV_MONTH_CAP
-          )}</div></div>`;
+                        <div class="rv-list">${rows
+              .map((r) => (r ? rvBar(r, d) : '<i class="rv-gap"></i>'))
+              .join("")}</div></div>`;
         })
         .join("")}</div></div>`;
   }
@@ -325,7 +328,7 @@ function rvCard(r, pop) {
     }호</strong><span class="badge ${stay ? "badge-primary" : "badge-todo"
     }">${stay ? "숙박" : "대실"}</span></div>
         <dl class="rv-info">
-            ${pop ? "" : chRow}
+            ${chRow}
             <div><dt>일정</dt><dd>${sched}</dd></div>
             <div><dt>인원</dt><dd>${r.guests}명</dd></div>
             <div><dt>입실</dt><dd>${r.in}</dd></div>
@@ -333,7 +336,6 @@ function rvCard(r, pop) {
       ? `<div><dt>퇴실</dt><dd>${rvOut(r)}${miniExt}${outBtn}</dd></div>`
       : `<div class="is-top"><dt>퇴실</dt><dd class="rv-out"><span class="rv-out-line"><span>${rvOut(r)}</span>${miniExt}</span>${outBtn}</dd></div>`
     }
-            ${pop ? chRow : ""}
         </dl>
     </div>`;
 }

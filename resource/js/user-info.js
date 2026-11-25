@@ -8,18 +8,34 @@
    ========================================================== */
 const SI_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
-/* 근무 형태 (시간은 '근무 시간대 설정' 값으로 교체) */
-const SI_SHIFTS = {
-    day: { label: "주간", time: "09:00~18:00" },
-    aft: { label: "오후", time: "15:00~22:00" },
-    night: { label: "야간", time: "22:00~07:00" },
-};
-const SI_SHIFT_ORDER = [
-    "day",
-    "aft",
-    "night",
-    null,
-]; /* '근무 형태 변경' 을 누를 때 도는 순서 (null = 휴무) */
+/* 근무 형태 = '근무 시간대 설정' 모달에서 정한 목록 (이름 · 시작 ~ 끝) / 저장한 값이 없으면 아래 기본 3개
+   - SI_SHIFTS: { 아이디: { label, time } } / SI_SHIFT_ORDER: '근무 형태 변경'을 누를 때 도는 순서 (null = 휴무)
+   - 서버 연결 시 WS_DEFAULT 와 localStorage('workShifts') 를 서버 값으로 바꾸면 돼요 */
+const WS_KEY = "workShifts";
+const WS_DEFAULT = [
+    { id: "day", name: "오전", start: "08:00", end: "13:00" },
+    { id: "aft", name: "오후", start: "13:00", end: "22:00" },
+    { id: "night", name: "야간", start: "22:00", end: "07:00" },
+];
+const SI_SHIFTS = {};
+const SI_SHIFT_ORDER = [];
+function wsLoad() {
+    try {
+        const v = JSON.parse(localStorage.getItem(WS_KEY));
+        if (Array.isArray(v) && v.length) return v;
+    } catch (e) { }
+    return JSON.parse(JSON.stringify(WS_DEFAULT));
+}
+function wsApply(list) {
+    Object.keys(SI_SHIFTS).forEach((k) => delete SI_SHIFTS[k]);
+    SI_SHIFT_ORDER.length = 0;
+    list.forEach((w) => {
+        SI_SHIFTS[w.id] = { label: w.name, time: `${w.start}~${w.end}` };
+        SI_SHIFT_ORDER.push(w.id);
+    });
+    SI_SHIFT_ORDER.push(null);
+}
+wsApply(wsLoad());
 
 /* 현재 근무 상태 (목록의 이름 옆 배지 / 필터) */
 const SI_WSTATE = { work: "근무 중", off: "휴무", early: "조퇴", resigned: "퇴사" };
@@ -100,6 +116,15 @@ SI_STAFF.forEach((s) => {
         s.account =
             "resigned"; /* 퇴사 처리한 직원: 기록은 남기고 목록에서만 빠져요 */
 });
+
+/* 지워진(또는 없는) 시간대를 쓰는 근무 일정은 휴무로 돌려요 (저장한 시간대 목록이 샘플 일정과 다를 때도 안전하게) */
+function wsFixStaff(st) {
+    st.pattern = st.pattern.map((f) => (f && SI_SHIFTS[f] ? f : null));
+    Object.keys(st.over || {}).forEach((k) => {
+        if (st.over[k] && !SI_SHIFTS[st.over[k]]) st.over[k] = null;
+    });
+}
+SI_STAFF.forEach(wsFixStaff);
 
 /* ---------- 날짜 ---------- */
 const siKey = (d) =>
@@ -535,6 +560,133 @@ $("#uiSearch").addEventListener("input", (e) => {
 renderStaffInfo();
 renderStaffDetail();
 
-["#uiHours", "#uiUpload", "#uiInvite"].forEach((q) =>
+["#uiUpload", "#uiInvite"].forEach((q) =>
     $(q)?.setAttribute("data-soon", "")
 );
+
+/* ==========================================================
+   근무 시간대 설정 모달 (Figma 2431:69314 비어 있을 때 / 2431:69450 값이 있을 때)
+   - 시간대마다 이름 + 시작 ~ 끝 시간 (시간은 알람처럼 돌려서 골라요)
+   - 항목 추가 / 휴지통(삭제) / 저장 / 닫기 · X · 바깥 클릭 · Esc 로 닫기 (저장 전 내용은 버려요)
+   - 저장하면 근무 형태(SI_SHIFTS)가 바뀌고, 지워진 시간대를 쓰던 근무 일정은 휴무로 돌아가요
+   ========================================================== */
+const wsModal = document.createElement("div");
+wsModal.className = "hm";
+wsModal.id = "wsModal";
+wsModal.hidden = true;
+document.body.appendChild(wsModal);
+let wsTrigger = null;
+const wsEsc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const wsNewId = () => `w${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+
+function wsRow(w) {
+    return `
+    <div class="ws-item" data-ws-row="${w.id}">
+      <div class="ws-main">
+        <label class="ws-name"><input type="text" value="${wsEsc(w.name)}" maxlength="10" autocomplete="off" placeholder="근무 시간대 이름을 설정해 주세요. (ex. 오전)" aria-label="근무 시간대 이름" /></label>
+        <div class="ws-time">${timePickerHtml("wsS-" + w.id, w.start)}<span class="ws-tilde">~</span>${timePickerHtml("wsE-" + w.id, w.end)}</div>
+      </div>
+      <button class="ws-del" type="button" aria-label="삭제" data-ws-m="del">${icon("trash", 20)}</button>
+    </div>`;
+}
+
+function openWorkShifts(trigger) {
+    wsTrigger = trigger || null;
+    wsModal.innerHTML = `
+    <div class="hm-box ws-set" role="dialog" aria-modal="true" aria-labelledby="wsTitle">
+      <div class="hm-head">
+        <h2 class="hm-title" id="wsTitle">근무 시간대 설정</h2>
+        <button class="hm-close" type="button" data-ws-m="close" aria-label="닫기">${icon("close", 20)}</button>
+      </div>
+      <div class="ws-body">
+        <div class="ws-list" id="wsList">${wsLoad().map(wsRow).join("")}</div>
+        <button class="btn btn-sm btn-outline ws-add" type="button" data-ws-m="add">${icon("plus", 20)}항목 추가</button>
+      </div>
+      <div class="hm-foot">
+        <button class="btn btn-lg btn-outline" type="button" data-ws-m="close">닫기</button>
+        <button class="btn btn-lg btn-primary" type="button" data-ws-m="save">저장</button>
+      </div>
+    </div>`;
+    initTimePicker(wsModal);
+    wsModal.hidden = false;
+    wsModal.querySelector(".ws-name input").focus();
+}
+function closeWorkShifts() {
+    wsModal.hidden = true;
+    wsModal.innerHTML = "";
+    if (wsTrigger) wsTrigger.focus();
+}
+
+function wsRead() {
+    return [...wsModal.querySelectorAll("[data-ws-row]")].map((r) => ({
+        id: r.dataset.wsRow,
+        name: r.querySelector(".ws-name input").value.trim(),
+        start: normTime($("input[type=hidden]", r.querySelector(".tp")).value) || "00:00",
+        end: normTime($("input[type=hidden]", r.querySelectorAll(".tp")[1]).value) || "00:00",
+    }));
+}
+
+function wsSave() {
+    const list = wsRead();
+    const seen = new Set();
+    let bad = null;
+    wsModal.querySelectorAll("[data-ws-row]").forEach((r, i) => {
+        const n = list[i].name;
+        const err = !n || seen.has(n); /* 이름이 비었거나 같은 이름이 또 있으면 빨간 테두리 */
+        seen.add(n);
+        r.querySelector(".ws-name").classList.toggle("is-error", err);
+        if (err && !bad) bad = r.querySelector(".ws-name input");
+    });
+    if (bad) return bad.focus();
+    try {
+        localStorage.setItem(WS_KEY, JSON.stringify(list));
+    } catch (e) { }
+    /* TODO: 서버 연결 시 여기서 list 를 전송 */
+    wsApply(list);
+    SI_STAFF.forEach(wsFixStaff);
+    if (siDraft) wsFixStaff(siDraft);
+    renderStaffInfo();
+    renderStaffDetail();
+    closeWorkShifts();
+}
+
+wsModal.addEventListener("click", (e) => {
+    if (e.target === wsModal) return closeWorkShifts();
+    const b = e.target.closest("[data-ws-m]");
+    if (!b) return;
+    const act = b.dataset.wsM;
+    if (act === "close") closeWorkShifts();
+    else if (act === "save") wsSave();
+    else if (act === "add") {
+        const w = { id: wsNewId(), name: "", start: "00:00", end: "00:00" };
+        const list = $("#wsList", wsModal);
+        list.insertAdjacentHTML("beforeend", wsRow(w));
+        const row = list.lastElementChild;
+        row.querySelectorAll(".tp").forEach((tp) => initOneTimePicker(wsModal, tp));
+        row.scrollIntoView({ block: "nearest" });
+        row.querySelector(".ws-name input").focus();
+    } else if (act === "del") {
+        const rows = wsModal.querySelectorAll("[data-ws-row]");
+        const row = b.closest("[data-ws-row]");
+        if (rows.length > 1) row.remove();
+        else {
+            /* 하나만 남았을 때는 지우지 않고 비워요 (비어 있는 상태) */
+            row.querySelector(".ws-name input").value = "";
+            row.querySelectorAll(".tp").forEach((tp) => tp._set("00:00"));
+            row.querySelector(".ws-name input").focus();
+        }
+    }
+});
+/* 시간 목록을 열면 모달 안에서 잘리지 않게 스크롤해서 보여줘요 */
+wsModal.addEventListener("click", (e) => {
+    const f = e.target.closest(".tp-field");
+    if (!f) return;
+    setTimeout(() => f.parentElement.querySelector(".tp-panel:not([hidden])")?.scrollIntoView({ block: "nearest" }), 0);
+});
+wsModal.addEventListener("input", (e) => {
+    if (e.target.matches(".ws-name input")) e.target.closest(".ws-name").classList.remove("is-error");
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !wsModal.hidden && !wsModal.querySelector(".tp-panel:not([hidden])")) closeWorkShifts();
+});
+$("#uiHours")?.addEventListener("click", (e) => openWorkShifts(e.currentTarget));

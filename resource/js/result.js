@@ -359,18 +359,17 @@ function renderResultDetail() {
     rsSyncCta();
 }
 
-/* 재청소 요청 CTA 색: 체크리스트에 표시하거나 전달할 메모를 쓰면 '재청소 요청'이 보라색 / 아무것도 안 건드리면 '검수 완료'가 보라색 */
+/* 재청소 요청 CTA 색: 체크리스트에 하나라도 표시하면 '재청소 요청'이 보라색 (메모는 색에 영향이 없어요) / 체크리스트가 모두 비어 있으면 '검수 완료'가 보라색 */
 function rsSyncCta() {
     const rc = $("#rsDetail [data-rs-reclean]");
     const cf = $("#rsDetail [data-rs-confirm]");
     if (!rc || !cf) return; /* 두 버튼이 같이 있는 검수 대기 상태에서만 바뀌어요 */
-    const touched = !!document.querySelector("#rsDetail .rs-check-item.is-checked") || !!($("#rsMsg")?.value || "").trim();
+    const touched = !!document.querySelector("#rsDetail .rs-check-item.is-checked");
     rc.classList.toggle("btn-primary", touched);
     rc.classList.toggle("btn-outline", !touched);
     cf.classList.toggle("btn-primary", !touched);
     cf.classList.toggle("btn-outline", touched);
 }
-document.addEventListener("input", (e) => e.target.id === "rsMsg" && rsSyncCta());
 
 /* 상세 패널은 화면 맨 아래(여백 20px)까지 채우고, 스크롤하면 헤더 아래(120px)에 붙어요 */
 function fitRsDetail() {
