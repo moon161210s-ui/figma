@@ -258,7 +258,7 @@ function renderResultDetail() {
 
     const b = resultBadge(r);
     const arrow = `<img class="rs-arrow" src="${ICON("arrow-up")}" alt="" />`;
-    /* 토글 기본값: 인증 사진 · 체크리스트는 펼침, 검수 이력 · 전달된 메모 · 특이사항은 접힘 */
+    /* 토글 기본값: 인증 사진 · 체크리스트는 펼침, 검수 이력 · 특이사항은 접힘 / 전달된 메모는 있을 때만 생기고 펼쳐서 보여줘요 */
     const acc = (title, body, open = true) => `
       <section class="rs-acc${open ? "" : " is-closed"}">
         <button class="rs-acc-top" type="button" data-rs-acc aria-expanded="${open}"><span>${title}</span>${arrow}</button>
@@ -312,7 +312,7 @@ function renderResultDetail() {
             : "";
 
     /* 전달된 메모가 0건이면 토글 자체를 만들지 않아요 */
-    const memo = r.memo && r.memo[1] ? acc("전달된 메모", `<div class="rs-items">${item(fmtStamp(rsDate, r.memo[0]), r.memo[1])}</div>`, false) : "";
+    const memo = r.memo && r.memo[1] ? acc("전달된 메모", `<div class="rs-items">${item(fmtStamp(rsDate, r.memo[0]), r.memo[1])}</div>`, true) : "";
     const notes = r.notes && r.notes.length
         ? acc(
             "특이사항",
@@ -353,7 +353,21 @@ function renderResultDetail() {
     </div>
     ${foot}`;
     fitRsDetail();
+    rsSyncCta();
 }
+
+/* 재청소 요청 CTA 색: 체크리스트에 표시하거나 전달할 메모를 쓰면 '재청소 요청'이 보라색 / 아무것도 안 건드리면 '검수 완료'가 보라색 */
+function rsSyncCta() {
+    const rc = $("#rsDetail [data-rs-reclean]");
+    const cf = $("#rsDetail [data-rs-confirm]");
+    if (!rc || !cf) return; /* 두 버튼이 같이 있는 검수 대기 상태에서만 바뀌어요 */
+    const touched = !!document.querySelector("#rsDetail .rs-check-item.is-checked") || !!($("#rsMsg")?.value || "").trim();
+    rc.classList.toggle("btn-primary", touched);
+    rc.classList.toggle("btn-outline", !touched);
+    cf.classList.toggle("btn-primary", !touched);
+    cf.classList.toggle("btn-outline", touched);
+}
+document.addEventListener("input", (e) => e.target.id === "rsMsg" && rsSyncCta());
 
 /* 상세 패널은 화면 맨 아래(여백 20px)까지 채우고, 스크롤하면 헤더 아래(120px)에 붙어요 */
 function fitRsDetail() {
@@ -421,6 +435,7 @@ function handleResultsClick(e) {
         const on = chk.getAttribute("aria-checked") !== "true";
         chk.setAttribute("aria-checked", String(on));
         chk.classList.toggle("is-checked", on);
+        rsSyncCta();
         return true;
     }
     const r = currentRows().find((x) => x.no === rsSelected);
