@@ -6729,7 +6729,7 @@ html.is-modal-open {
     user-select: none;
 }
 
-/* 맨 위(현재 항목)는 글자를 한 단계 키워요: 내용 20/30, 작성자·처리자 16/24 */
+/* 맨 위(현재 항목)는 글자를 한 단계 키워요: 내용 20/30, 작성자·담당자 16/24 */
 .td-cur .td-msg {
     font-size: var(--fs-h6);
     line-height: var(--lh-h6);

@@ -39,7 +39,7 @@ try {
     if (Array.isArray(saved) && saved.length) TH_CATS = saved;
 } catch (e) { }
 
-/* 특이사항 1건: T(번호, 카테고리, 호실, 시각, 내용, [작성자|담당자, 이름], 사진 수, 상태, 처리자, 며칠 전) */
+/* 특이사항 1건: T(번호, 카테고리, 호실, 시각, 내용, [작성자, 이름], 사진 수, 상태, 담당자, 며칠 전) */
 let thSeq = 0;
 const T = (cat, room, time, text, by, photos, state, handler, ago = 0, img = null) => ({
     id: ++thSeq, cat, room, time, text, by, photos, state, handler: handler || null, img,
@@ -72,33 +72,33 @@ const thImgs = (i) => {
 const TH_ITEMS = [
     /* 처리 대기 14 */
     T("broken", "303", "11:42", "샤워기를 온수 쪽으로 돌려도 찬물만 나와요.\n다음 입실 전 점검 부탁드립니다.", ["작성자", "이서영"], 0, "wait"),
-    T("broken", "105", addMinutes(cleanDoneAt("105"), -5), "현관 천장등이 계속 깜빡여요.\n전등 교체 부탁드립니다.", ["담당자", "이서영"], 1, "wait"),
+    T("broken", "105", addMinutes(cleanDoneAt("105"), -5), "현관 천장등이 계속 깜빡여요.\n전등 교체 부탁드립니다.", ["작성자", "이서영"], 1, "wait"),
     T("broken", "104", "13:03", "에어컨을 켜면 표시등이 깜빡이고 곧 멈춰요. 시설 점검 부탁드립니다.", ["작성자", "이서영"], 1, "wait"),
-    T("broken", "105", addMinutes(cleanDoneAt("105"), -5), "암막 커튼 레일 한쪽이 천장에서 빠져 처져 있어요. 다음 입실 전에 레일 고정 부탁드립니다.", ["담당자", "이서영"], 1, "wait"),
-    T("broken", "107", addMinutes(cleanDoneAt("107"), -5), "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다.", ["담당자", "유가은"], 1, "wait", null, 0, FIXED_PHOTOS[107][1][0]),
+    T("broken", "105", addMinutes(cleanDoneAt("105"), -5), "암막 커튼 레일 한쪽이 천장에서 빠져 처져 있어요. 다음 입실 전에 레일 고정 부탁드립니다.", ["작성자", "이서영"], 1, "wait"),
+    T("broken", "107", addMinutes(cleanDoneAt("107"), -5), "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n물기가 잘 마르지 않으니 시설 점검 부탁드립니다.", ["작성자", "유가은"], 1, "wait", null, 0, FIXED_PHOTOS[107][1][0]),
     T("broken", "303", "11:42", "침대 왼쪽 콘센트에 꽂으면 전원이 들어오지 않아요.\n콘센트 점검 부탁드립니다.", ["작성자", "한다경"], 0, "wait"),
     T("broken", "303", "11:42", "욕실 환풍기 스위치를 켜도 작동하지 않아요.\n시설 점검 부탁드립니다.", ["작성자", "최하석"], 0, "wait"),
     T("broken", "104", "13:03", "현관 전신거울 오른쪽 아래가 깨져 금이 갔어요.\n파손 위험이 있어 교체 부탁드립니다.", ["작성자", "김이레"], 1, "wait"),
     T("broken", "303", "11:42", "책상 의자에 앉으면 다리 한쪽이 흔들려요.\n다음 입실 전 수리 부탁드립니다.", ["작성자", "유가은"], 0, "wait"),
-    T("clean", "204", "12:42", "시트를 걷어보니 매트리스에 얼룩이 남아 있어요.\n매트리스 교체 또는 세척 부탁드립니다.", ["담당자", "유가은"], 3, "wait"),
-    T("clean", "403", "12:42", "세면대 배수구 주변에 물때가 남아 있어요.\n재청소 부탁드립니다.", ["담당자", "유가은"], 0, "wait"),
-    T("supply", "204", "12:47", "빗 파손이요.\n교체 부탁드립니다.", ["담당자", "이서영"], 1, "wait"),
-    T("supply", "102", "12:47", "드라이기 선이 끊어지려해요.\n교체해야 할 것 같아요.", ["담당자", "이서영"], 4, "wait"),
+    T("clean", "204", "12:42", "시트를 걷어보니 매트리스에 얼룩이 남아 있어요.\n매트리스 교체 또는 세척 부탁드립니다.", ["작성자", "유가은"], 3, "wait"),
+    T("clean", "403", "12:42", "세면대 배수구 주변에 물때가 남아 있어요.\n재청소 부탁드립니다.", ["작성자", "유가은"], 0, "wait"),
+    T("supply", "204", "12:47", "빗 파손이요.\n교체 부탁드립니다.", ["작성자", "이서영"], 1, "wait"),
+    T("supply", "102", "12:47", "드라이기 선이 끊어지려해요.\n교체해야 할 것 같아요.", ["작성자", "이서영"], 4, "wait"),
     T("supply", "303", "11:42", "빗 파손이요.\n교체 부탁드립니다.", ["작성자", "이서영"], 0, "wait"),
     T("etc", "502", "13:03", "객실 안에서 벽을 타고 웅웅거리는 소리가 반복돼요.\n소음이 어디서 나는지 확인 부탁드립니다.", ["작성자", "한다경"], 0, "wait"),
     /* 처리 중 7 (다른 사람이 처리하는 중이라 버튼 없이 보여요) */
     T("broken", "303", "11:42", "샤워기 수압이 약하고 물이 한쪽으로만 나와요.\n교체가 필요할 것 같아요.", ["작성자", "이서영"], 3, "doing", "유가은"),
-    T("broken", "105", "11:37", "현관 천장등이 금 간거 같아요.\n전등 교체 부탁드립니다.", ["담당자", "이서영"], 4, "doing", "한다경"),
-    T("clean", "206", "12:42", "욕실 세면대에 물때가 남아 있어요. 재청소 요청했습니다.", ["담당자", "유가은"], 0, "doing", "최하석"),
-    T("supply", "204", "12:47", "객실 수건이 2장만 비치되어 있어요.\n추가 비치 부탁드립니다.", ["담당자", "이서영"], 2, "doing", "김이레"),
-    T("supply", "102", "12:47", "화장실 휴지걸이가 흔들려요.\n고정이 필요할 것 같아요.", ["담당자", "이서영"], 4, "doing", "유가은"),
+    T("broken", "105", "11:37", "현관 천장등이 금 간거 같아요.\n전등 교체 부탁드립니다.", ["작성자", "이서영"], 4, "doing", "한다경"),
+    T("clean", "206", "12:42", "욕실 세면대에 물때가 남아 있어요. 재청소 요청했습니다.", ["작성자", "유가은"], 0, "doing", "최하석"),
+    T("supply", "204", "12:47", "객실 수건이 2장만 비치되어 있어요.\n추가 비치 부탁드립니다.", ["작성자", "이서영"], 2, "doing", "김이레"),
+    T("supply", "102", "12:47", "화장실 휴지걸이가 흔들려요.\n고정이 필요할 것 같아요.", ["작성자", "이서영"], 4, "doing", "유가은"),
     T("supply", "303", "11:42", "객실에 비치할 샴푸 재고가 부족해요.\n추가 보충 요청했습니다.", ["작성자", "이서영"], 0, "doing", "한다경"),
     T("etc", "502", "13:03", "객실 안에서 벽을 타고 웅웅거리는 소리가 반복돼요.\n소음이 어디서 나는지 확인 부탁드립니다.", ["작성자", "한다경"], 1, "doing", "최하석"),
     /* 처리 완료 2 */
     T("broken", "303", "11:42", "샤워기 수압이 약해요.", ["작성자", "이서영"], 2, "done", "유가은"),
-    T("broken", "105", "11:37", "현관 천장등 군데 군데가 불이 안들어와요.", ["담당자", "이서영"], 5, "done", "한다경"),
+    T("broken", "105", "11:37", "현관 천장등 군데 군데가 불이 안들어와요.", ["작성자", "이서영"], 5, "done", "한다경"),
     /* 어제 */
-    T("clean", "207", "14:20", "욕실 거울에 얼룩이 심해요.\n다음 청소 때 닦아 주세요.", ["담당자", "한다경"], 1, "done", "이서영", 1),
+    T("clean", "207", "14:20", "욕실 거울에 얼룩이 심해요.\n다음 청소 때 닦아 주세요.", ["작성자", "한다경"], 1, "done", "이서영", 1),
     T("supply", "305", "11:05", "타월이 2장 부족해요.\n추가 보충 부탁드립니다.", ["작성자", "유가은"], 0, "wait", null, 1),
     T("etc", "408", "12:30", "복도 쪽 소음이 심하다는 손님 의견이 있었어요.", ["작성자", "최하석"], 0, "doing", "전재연", 1),
     /* 지난 특이사항 (객실별 '특이사항 내역'에 쌓여 있는 기록 / 모두 처리 완료) */
@@ -107,12 +107,12 @@ const TH_ITEMS = [
     T("supply", "303", "12:05", "객실 슬리퍼가 한 켤레 부족해요.\n추가 비치 부탁드립니다.", ["작성자", "이서영"], 0, "done", "유가은", 13),
     T("broken", "303", "13:40", "TV 리모컨이 반응하지 않아요. 건전지 교체 부탁드립니다.", ["작성자", "유가은"], 0, "done", "한다경", 29),
     T("etc", "303", "11:20", "객실 창문 틈으로 바람 소리가 들려요.", ["작성자", "김이레"], 1, "done", "유가은", 410),
-    T("broken", "105", "12:30", "욕실 샤워 커튼 고리가 부러졌어요.\n교체 부탁드립니다.", ["담당자", "이서영"], 1, "done", "한다경", 9),
-    T("clean", "105", "11:50", "창틀에 먼지가 남아 있어요.", ["담당자", "이서영"], 0, "done", "최하석", 21),
-    T("supply", "204", "13:15", "일회용 칫솔이 부족해요.\n추가 보충 부탁드립니다.", ["담당자", "이서영"], 0, "done", "김이레", 7),
+    T("broken", "105", "12:30", "욕실 샤워 커튼 고리가 부러졌어요.\n교체 부탁드립니다.", ["작성자", "이서영"], 1, "done", "한다경", 9),
+    T("clean", "105", "11:50", "창틀에 먼지가 남아 있어요.", ["작성자", "이서영"], 0, "done", "최하석", 21),
+    T("supply", "204", "13:15", "일회용 칫솔이 부족해요.\n추가 보충 부탁드립니다.", ["작성자", "이서영"], 0, "done", "김이레", 7),
     T("broken", "204", "10:50", "옷장 문 경첩이 빠졌어요.", ["작성자", "유가은"], 1, "done", "한다경", 18),
-    T("clean", "206", "14:45", "욕실 배수구에서 냄새가 올라와요.", ["담당자", "유가은"], 0, "done", "최하석", 11),
-    T("supply", "102", "11:35", "물컵이 한 개 깨져 있어요.\n교체 부탁드립니다.", ["담당자", "이서영"], 0, "done", "유가은", 5),
+    T("clean", "206", "14:45", "욕실 배수구에서 냄새가 올라와요.", ["작성자", "유가은"], 0, "done", "최하석", 11),
+    T("supply", "102", "11:35", "물컵이 한 개 깨져 있어요.\n교체 부탁드립니다.", ["작성자", "이서영"], 0, "done", "유가은", 5),
 ];
 /* 처리 완료 시각 (샘플은 등록 50분 뒤로 해 둬요 / 처리 완료를 누르면 그 순간의 시각이 기록돼요) */
 TH_ITEMS.forEach((i) => {
@@ -184,14 +184,13 @@ const thIsCarry = (i) => i.carry && thSameDay(tdDate, todayMid()) && !thSameDay(
 const thOrder = (a, b) => thIsCarry(b) - thIsCarry(a) || a.date - b.date || (a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
 
 /* ---------- 카드 ---------- */
-/* 처리 대기 = 처리하기 / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 = 내용만 / 완료 = 처리자까지 */
+/* 처리 대기 = 처리하기 / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 = 내용만 / 완료 = 담당자까지 */
 function thCard(i) {
     const st = TH_STATE[i.state];
     const mine = i.state === "doing" && i.handler === TH_ME;
-    /* 담당자를 배정했으면 '담당자' 줄이 그 직원으로 바뀌어요 (작성자 줄은 그대로) */
-    const showHandler = mine || i.state === "done";
-    const users = i.assignee && !(showHandler && i.handler === i.assignee) ? (i.by[0] === "담당자" ? [["담당자", i.assignee]] : [i.by, ["담당자", i.assignee]]) : [i.by];
-    if (showHandler) users.push(["처리자", i.handler]);
+    /* 작성자 줄은 그대로, 배정했거나 처리한 직원은 '담당자' 줄로 보여요 */
+    const users = [i.by];
+    if (mine || i.assignee || i.state === "done") users.push(["담당자", i.handler]);
     const img = thImgs(i).length
         ? `<div class="th-img"><img src="${thImgs(i)[0]}" alt="" onerror="this.style.visibility='hidden'" />${thImgs(i).length > 1 ? `<span class="th-img-more">+${thImgs(i).length - 1}</span>` : ""}</div>`
         : "";
@@ -535,7 +534,7 @@ const tdMini = (st) => `<span class="mini-badge${st === "wait" ? " is-blue" : ""
 const tdCatName = (id) => (TH_CATS.find((c) => c.id === id) || { name: "기타" }).name;
 const tdWhen = (i) => `${pad(i.date.getMonth() + 1)}.${pad(i.date.getDate())} ${i.time}`;
 
-/* 내용 또는 이름(작성자 · 처리자)으로 검색해요 */
+/* 내용 또는 이름(작성자 · 담당자)으로 검색해요 */
 function tdMatch(x) {
     const q = tdF.q.trim().toLowerCase();
     return !q || [x.text, x.by[1], x.handler || ""].some((t) => String(t).toLowerCase().includes(q));
@@ -550,7 +549,7 @@ function tdHistory() {
 function tdItemHtml(x, first) {
     const cur = x.id === tdItem.id;
     const users = [`<p>${x.by[0]}: ${thEsc(x.by[1])} (${tdWhen(x)} 등록)</p>`];
-    if (x.handler) users.push(`<p>처리자: ${thEsc(x.handler)}${x.state === "done" && x.doneAt ? ` (${pad(x.doneAt.getMonth() + 1)}.${pad(x.doneAt.getDate())} ${pad(x.doneAt.getHours())}:${pad(x.doneAt.getMinutes())} 처리 완료)` : ""}</p>`);
+    if (x.handler) users.push(`<p>담당자: ${thEsc(x.handler)}${x.state === "done" && x.doneAt ? ` (${pad(x.doneAt.getMonth() + 1)}.${pad(x.doneAt.getDate())} ${pad(x.doneAt.getHours())}:${pad(x.doneAt.getMinutes())} 처리 완료)` : ""}</p>`);
     /* 처리 대기 = 처리하기 / 내가 처리 중 = 처리 취소 · 처리 완료 / 다른 사람이 처리 중 · 완료 = 버튼 없음 */
     const btns =
         x.state === "wait"
@@ -601,7 +600,7 @@ const tdSelect = (kind, label, on) =>
 function tdRender(keep) {
     const i = tdItem;
     const users = [`<p>${i.by[0]}: ${thEsc(i.by[1])} (${tdWhen(i)} 등록)</p>`];
-    if (i.handler) users.push(`<p>처리자: ${thEsc(i.handler)}</p>`);
+    if (i.handler) users.push(`<p>담당자: ${thEsc(i.handler)}</p>`);
     const catLabel = tdF.cat === "all" ? "유형 전체" : tdCatName(tdF.cat);
     const stLabel = tdF.state === "all" ? "상태 전체" : TD_STATE[tdF.state];
     const perLabel = tdPick ? `${tdPick.getFullYear()}. ${pad(tdPick.getMonth() + 1)}. ${pad(tdPick.getDate())}.` : "기간 전체";
@@ -757,7 +756,7 @@ function handleThreadClick(e) {
         closeFilterMenu();
         openPopover("staff", asg, {
             noRooms: true,
-            staff: item.assignee || (item.by[0] === "담당자" ? item.by[1] : null),
+            staff: item.assignee || (null),
             onAssign(name) {
                 /* 배정하면 그 직원이 처리할 거라서 바로 '처리 중'으로 넘어가요 */
                 item.assignee = name;
