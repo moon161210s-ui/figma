@@ -129,6 +129,7 @@ try {
             i.state = v.state;
             i.handler = v.handler;
             i.carry = !!v.carry;
+            i.assignee = v.assignee || null;
             if (v.doneAt) i.doneAt = new Date(v.doneAt);
             else if (v.state !== "done") i.doneAt = null;
         }
@@ -149,7 +150,7 @@ function thRollover() {
 thRollover();
 function thSaveState() {
     const st = {};
-    TH_ITEMS.forEach((i) => (st[i.id] = { state: i.state, handler: i.handler, carry: !!i.carry, doneAt: i.doneAt ? +i.doneAt : null }));
+    TH_ITEMS.forEach((i) => (st[i.id] = { state: i.state, handler: i.handler, carry: !!i.carry, doneAt: i.doneAt ? +i.doneAt : null, assignee: i.assignee || null }));
     try {
         localStorage.setItem(TH_STATE_KEY, JSON.stringify(st));
     } catch (e) { }
@@ -187,14 +188,19 @@ const thOrder = (a, b) => thIsCarry(b) - thIsCarry(a) || a.date - b.date || (a.t
 function thCard(i) {
     const st = TH_STATE[i.state];
     const mine = i.state === "doing" && i.handler === TH_ME;
-    const users = [i.by];
-    if (mine || i.state === "done") users.push(["처리자", i.handler]);
+    /* 담당자를 배정했으면 '담당자' 줄이 그 직원으로 바뀌어요 (작성자 줄은 그대로) */
+    const showHandler = mine || i.state === "done";
+    const users = i.assignee && !(showHandler && i.handler === i.assignee) ? (i.by[0] === "담당자" ? [["담당자", i.assignee]] : [i.by, ["담당자", i.assignee]]) : [i.by];
+    if (showHandler) users.push(["처리자", i.handler]);
     const img = thImgs(i).length
         ? `<div class="th-img"><img src="${thImgs(i)[0]}" alt="" onerror="this.style.visibility='hidden'" />${thImgs(i).length > 1 ? `<span class="th-img-more">+${thImgs(i).length - 1}</span>` : ""}</div>`
         : "";
     const btns =
         i.state === "wait"
-            ? `<div class="th-btns"><button class="btn btn-md btn-dark" type="button" data-th-act="take">처리하기</button></div>`
+            ? `<div class="th-btns is-assign">
+          <button class="btn btn-lg btn-outline" type="button" data-th-assign>담당자 배정하기</button>
+          <button class="btn btn-lg btn-dark" type="button" data-th-act="take">직접 처리하기</button>
+        </div>`
             : mine
                 ? `<div class="th-btns">
           <button class="btn btn-md btn-outline" type="button" data-th-act="cancel">처리 취소</button>
@@ -501,6 +507,7 @@ function thApply(item, k) {
     } else if (k === "cancel") {
         item.state = "wait";
         item.handler = null;
+        item.assignee = null; /* 배정했던 담당자도 같이 풀려요 */
         item.doneAt = null;
     } else if (k === "finish") {
         item.state = "done";
@@ -736,6 +743,36 @@ document.addEventListener(
 
 /* ---------- 클릭 처리 (index.js 의 공용 click 이 먼저 불러줘요) ---------- */
 function handleThreadClick(e) {
+    /* 담당자 배정 팝오버 안쪽 클릭은 팝오버가 알아서 처리해요 */
+    if (pop && e.composedPath().includes(pop)) return false;
+    const asg = e.target.closest("[data-th-assign]");
+    if (asg) {
+        const item = TH_ITEMS.find((x) => String(x.id) === asg.closest("[data-th-id]").dataset.thId);
+        if (!item) return true;
+        if (pop && popAnchor === asg) {
+            closePopover();
+            return true;
+        }
+        closePopover();
+        closeFilterMenu();
+        openPopover("staff", asg, {
+            noRooms: true,
+            staff: item.assignee || (item.by[0] === "담당자" ? item.by[1] : null),
+            onAssign(name) {
+                /* 배정하면 그 직원이 처리할 거라서 바로 '처리 중'으로 넘어가요 */
+                item.assignee = name;
+                item.state = "doing";
+                item.handler = name;
+                item.doneAt = null;
+                thSaveState();
+            },
+            afterSave() {
+                renderThread();
+            },
+        });
+        return true;
+    }
+    if (pop && popAnchor && popAnchor.closest && popAnchor.closest(".th-card")) closePopover(); /* 팝오버 바깥을 누르면 닫아요 */
     const dateBtn = e.target.closest("#thDate");
     if (dateBtn) {
         const same = pop && popAnchor === dateBtn;

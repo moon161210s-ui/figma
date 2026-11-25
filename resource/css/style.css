@@ -1687,7 +1687,8 @@ button {
  ========================================================== */
 .popover {
     position: fixed;
-    z-index: 50;
+    z-index: 70;
+    /* 예약 현황의 개별 일정 카드(60) 위에도 떠요 */
     width: 353px;
     padding: 15px;
     /* 시안 padding 16 (테두리 1px 포함) */
@@ -1761,13 +1762,13 @@ button {
 .tp-panel {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    /* 시간 칸 아래 4px 간격으로 떠서 열려요 (모달 높이는 그대로, 숫자 3개 정도 보임) */
+    /* 시간 칸 아래 4px 간격으로 떠서 열려요 (알람처럼 위·가운데·아래 세 줄이 보여요) */
     position: absolute;
     left: 0;
     right: 0;
     top: calc(100% + 4px);
     z-index: 2;
-    height: 124px;
+    height: 122px;
     box-shadow: var(--shadow-popover);
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-sm);
@@ -1775,46 +1776,53 @@ button {
     overflow: hidden;
 }
 
+/* 가운데 선택 줄 (알람의 회색 띠) */
+.tp-panel::before {
+    content: "";
+    position: absolute;
+    top: 40px;
+    left: 4px;
+    right: 4px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-low);
+    pointer-events: none;
+}
+
 .tp-col {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    /* 위·아래로 여백을 둬서 첫 값과 마지막 값도 가운데로 돌려 올 수 있어요 (목록 높이 124 기준: (122 - 36) / 2) */
-    padding: 43px 4px;
+    /* 위·아래 여백으로 첫 값과 마지막 값도 가운데로 돌려 올 수 있어요 */
+    padding: 40px 0;
     overflow-y: auto;
+    scroll-snap-type: y mandatory;
     scrollbar-width: none;
+    overscroll-behavior: contain;
 }
 
 .tp-col::-webkit-scrollbar {
     display: none;
 }
 
-.tp-col+.tp-col {
-    border-left: 1px solid var(--color-line-low);
-}
-
 .tp-item {
     flex-shrink: 0;
-    height: 36px;
+    height: 40px;
     padding: 0;
     border: 0;
-    border-radius: var(--radius-xs);
     background: transparent;
     font: inherit;
-    font-size: var(--fs-body1);
-    color: var(--color-gray-900);
+    font-size: var(--fs-h6);
+    color: var(--color-gray-100);
+    opacity: 0.6;
+    scroll-snap-align: center;
     cursor: pointer;
 }
 
-.tp-item:hover {
-    background: var(--color-bg-disable);
-}
-
 .tp-item.is-selected {
-    background: var(--color-primary-500);
-    color: var(--color-white);
-    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+    font-weight: var(--fw-medium);
+    opacity: 1;
 }
 
 .tp-item:focus-visible {
@@ -1926,6 +1934,11 @@ button {
     background: var(--color-base-inverse);
     text-align: left;
     cursor: pointer;
+}
+
+/* 호실 줄 없이 이름만 보여주는 목록 (업무 특이사항 담당자 배정) */
+.staff-item.is-simple {
+    min-height: 56px;
 }
 
 .staff-item.is-selected {
@@ -4721,6 +4734,11 @@ body.rl-dragging * {
     gap: 8px;
 }
 
+/* 담당자 배정하기 + 직접 처리하기 (시안 간격 16) */
+.th-btns.is-assign {
+    gap: 16px;
+}
+
 .th-btns .btn {
     flex: 1;
     min-width: 0;
@@ -5544,8 +5562,11 @@ body.rl-dragging * {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    width: 96px;
+    /* 시안 가로 96 (글자 폭에 따라 소수점이 생기지 않게 고정) */
     height: 32px;
-    padding: 0 12px;
+    padding: 0;
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-sm);
     background: var(--color-static-white, #fff);
@@ -5560,31 +5581,6 @@ body.rl-dragging * {
 
 .rv-out-btn:hover {
     border-color: var(--color-gray-100);
-}
-
-/* 퇴실 시간 변경 모달 */
-.rv-out-md .hm-box {
-    width: 400px;
-}
-
-.rv-out-md .hm-body {
-    gap: 12px;
-    overflow: visible;
-}
-
-.rv-out-sub {
-    margin: 0;
-    color: var(--color-gray-300);
-}
-
-/* 시간 목록이 모달 안에서 펼쳐져 모달이 같이 커져요 */
-.rv-out-md .tp {
-    margin-top: 0;
-}
-
-.rv-out-md .tp-panel {
-    position: static;
-    margin-top: 4px;
 }
 
 .rv-mini {

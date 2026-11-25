@@ -890,22 +890,19 @@ function trackPopover() {
     requestAnimationFrame(tick);
 }
 
-/* 시간 선택 목록 HTML: 오전/오후 · 시 · 분 목록에서 골라요 (고른 값은 숨겨진 #id 에 "HH:MM" 으로 들어가요)
+/* 시간 선택 목록 HTML: 휴대폰 알람처럼 오전/오후 · 시 · 분 세 줄을 돌려서 골라요 (고른 값은 숨겨진 #id 에 "HH:MM" 으로 들어가요)
+   - 시(1~12)와 분(00~59)은 끝없이 이어져서 계속 돌릴 수 있고, 11시에서 12시로 넘어갈 때 오전 ↔ 오후가 알아서 바뀌어요
+   - 분이 59 에서 00 으로 넘어가면 시도 하나 넘어가요 (11:59 → 12:00 오후)
    팝오버(퇴실 시간 등)와 운영 시간대 설정 모달이 같이 써요 */
+const TP_H_COPIES = 9;
+const TP_M_COPIES = 5;
 function timePickerHtml(id, value) {
     const t = normTime(value) || "00:00";
-    const h24 = +t.slice(0, 2);
-    /* 시 목록은 1~24 / 13시부터는 자동으로 오후 (0시는 오전 12시, 12시는 오후 12시로 보여요) */
-    const hv = h24 === 0 ? 12 : h24;
-    const col = (key, items, cur) =>
-        `<div class="tp-col" data-col="${key}" role="listbox">${items
-            .map(
-                ([v, label]) =>
-                    `<button type="button" class="tp-item${v === cur ? " is-selected" : ""
-                    }" data-v="${v}" role="option" aria-selected="${v === cur
-                    }" tabindex="${v === cur ? 0 : -1}">${label}</button>`
-            )
-            .join("")}</div>`;
+    const items = (vals, label) =>
+        vals.map((v) => `<button type="button" class="tp-item" data-v="${v}" role="option" aria-selected="false" tabindex="-1">${label(v)}</button>`).join("");
+    const rep = (arr, n) => Array.from({ length: n }, () => arr).flat();
+    const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+    const mins = Array.from({ length: 60 }, (_, i) => i);
     return `
     <div class="tp" id="tp-${id}">
       <button type="button" class="tp-field" aria-haspopup="listbox" aria-expanded="false">${icon(
@@ -913,24 +910,9 @@ function timePickerHtml(id, value) {
     )}<span class="tp-text">${t}</span></button>
       <input id="${id}" type="hidden" value="${t}" />
       <div class="tp-panel" hidden>
-        ${col(
-        "ap",
-        [
-            ["AM", "오전"],
-            ["PM", "오후"],
-        ],
-        h24 < 12 ? "AM" : "PM"
-    )}
-        ${col(
-        "h",
-        Array.from({ length: 24 }, (_, i) => [String(i + 1), pad(i + 1)]),
-        String(hv)
-    )}
-        ${col(
-        "m",
-        Array.from({ length: 60 }, (_, i) => [String(i), pad(i)]),
-        String(+t.slice(3))
-    )}
+        <div class="tp-col" data-col="ap" role="listbox">${items(["AM", "PM"], (v) => (v === "AM" ? "오전" : "오후"))}</div>
+        <div class="tp-col" data-col="h" role="listbox">${items(rep(hours, TP_H_COPIES), String)}</div>
+        <div class="tp-col" data-col="m" role="listbox">${items(rep(mins, TP_M_COPIES), pad)}</div>
       </div>
     </div>`;
 }
@@ -1030,8 +1012,9 @@ function openPopover(kind, anchor, room) {
             for (let i = 0; i < first; i++) cells.push("<span></span>");
             for (let n = 1; n <= days; n++) {
                 const dt = new Date(view.getFullYear(), view.getMonth(), n);
-                const disabled =
-                    dt <= room.start; /* 입실일 이전·당일은 퇴실일로 선택 불가 */
+                const disabled = room.dayOk
+                    ? !room.dayOk(dt) /* 예약 현황의 대실처럼 날짜를 정해 둔 경우 */
+                    : dt <= room.start; /* 입실일 이전·당일은 퇴실일로 선택 불가 */
                 const on = dt.getTime() === sel.getTime();
                 cells.push(
                     `<button type="button" data-day="${n}"${disabled ? " disabled" : ""}${on ? ' class="is-selected"' : ""
@@ -1085,6 +1068,11 @@ function openPopover(kind, anchor, room) {
         save = () => {
             const t = readTime();
             if (!t) return false;
+            /* 예약 현황에서 연 팝오버는 예약 데이터에 저장해요 (reservation.js) */
+            if (room.rvSave) {
+                room.rvSave(sel, t);
+                return true;
+            }
             const changed = room.out !== t || room.end.getTime() !== sel.getTime();
             room.end = sel;
             room.out = t;
@@ -1101,19 +1089,20 @@ function openPopover(kind, anchor, room) {
         let chosen = room.staff;
         const drawStaff = () => {
             $(".staff-list", pop).innerHTML = STAFF.map((name) => {
-                const rooms =
-                    ROOMS.filter((x) => x.staff === name)
+                const rooms = room.noRooms
+                    ? "" /* 업무 특이사항의 담당자 배정은 호실 줄 없이 이름만 보여줘요 */
+                    : ROOMS.filter((x) => x.staff === name)
                         .map((x) => x.no + "호")
                         .join(", ") || "배정된 객실 없음";
                 const photo = STAFF_PHOTO[name]
                     ? `<img src="${STAFF_PHOTO[name]}" alt="" />`
                     : `<span class="staff-initial">${name[0]}</span>`; /* 사진이 없는 직원은 이름 첫 글자 */
                 return `
-          <button class="staff-item${name === chosen ? " is-selected" : ""
+          <button class="staff-item${name === chosen ? " is-selected" : ""}${room.noRooms ? " is-simple" : ""
                     }" type="button" data-staff="${name}" role="radio" aria-checked="${name === chosen
                     }">
             ${photo}
-            <span class="staff-text"><strong>${name}</strong><span>${rooms}</span></span>
+            <span class="staff-text"><strong>${name}</strong>${rooms ? `<span>${rooms}</span>` : ""}</span>
             <span class="radio"></span>
           </button>`;
             }).join("");
@@ -1131,6 +1120,11 @@ function openPopover(kind, anchor, room) {
             }
         });
         save = () => {
+            if (room.onAssign) {
+                /* 업무 특이사항: 고른 직원을 그 특이사항의 담당자로 저장해요 (thread.js) */
+                room.onAssign(chosen);
+                return true;
+            }
             if (chosen !== room.staff) {
                 room.staff = chosen;
                 room.staffTag = ""; /* 조퇴 표시는 이전 직원 기준이라 지워요 */
@@ -1259,6 +1253,7 @@ function openPopover(kind, anchor, room) {
         if (e.target.closest("[data-pop-save]")) {
             if (save()) {
                 closePopover();
+                if (room && room.afterSave) return room.afterSave();
                 renderFloors();
                 renderDetail();
             }
@@ -1297,132 +1292,137 @@ function openPopover(kind, anchor, room) {
     placePopover();
 }
 
-/* 시간 선택 목록 동작: 클릭 / 위·아래 방향키로 고르고, 열릴 때 선택된 값이 가운데 오게 스크롤해요 */
+/* 시간 선택 목록 동작: 세 줄을 손으로(휠 · 터치) 돌리거나 눌러서 고르고, 방향키 위·아래로도 돌려요
+   내부 값은 하루 중 몇 분인지(T)로 들고 있어서, 시 · 분이 넘어갈 때 오전/오후와 시가 자연스럽게 따라가요 */
 function initTimePicker(root) {
     root.querySelectorAll(".tp").forEach((tp) => initOneTimePicker(root, tp));
 }
 function initOneTimePicker(root, tp) {
+    const ROW = 40; /* 한 줄 높이 (CSS .tp-item 과 같아야 해요) */
     const input = $("input[type=hidden]", tp);
     const text = $(".tp-text", tp);
+    const field = $(".tp-field", tp);
+    const panel = $(".tp-panel", tp);
     const cols = {};
     tp.querySelectorAll(".tp-col").forEach((c) => (cols[c.dataset.col] = c));
-    const sel = (key) => $(".tp-item.is-selected", cols[key]).dataset.v;
-    const sync = () => {
-        /* 시 13~23 = 오후 / 24 = 자정(0시) / 1~12 = 오전·오후 칸을 따라가요 (12시: 오전 = 0시, 오후 = 12시) */
-        const v = +sel("h");
-        const h24 = v === 24 ? 0 : v >= 13 ? v : sel("ap") === "PM" ? (v % 12) + 12 : v % 12;
-        input.value = `${pad(h24)}:${pad(+sel("m"))}`;
-        text.textContent = input.value;
-        input.classList.remove("is-error");
+    const copies = { h: TP_H_COPIES, m: TP_M_COPIES };
+    const size = { ap: 2, h: 12, m: 60 };
+    let T = 0; /* 하루 중 분 (0~1439) */
+    const toT = (value) => {
+        const t = normTime(value);
+        return t ? +t.slice(0, 2) * 60 + +t.slice(3) : null;
     };
-    const center = (col) => {
-        const b = $(".tp-item.is-selected", col);
-        col.scrollTop = b.offsetTop - (col.clientHeight - b.offsetHeight) / 2;
+    const wrap = (n) => ((n % 1440) + 1440) % 1440;
+    const idxOf = (key) => {
+        const h24 = Math.floor(T / 60);
+        if (key === "ap") return h24 < 12 ? 0 : 1;
+        if (key === "h") return (h24 % 12 || 12) - 1 + size.h * Math.floor(copies.h / 2); /* 가운데 묶음에서 */
+        return (T % 60) + size.m * Math.floor(copies.m / 2);
     };
-    const mark = (col, btn) => {
-        col.querySelectorAll(".tp-item").forEach((b) => {
-            const on = b === btn;
+    const ref = { ap: 0, h: 0, m: 0 }; /* 줄마다 지금 가운데에 있는 칸 번호 */
+    const lock = { ap: 0, h: 0, m: 0 };
+    const place = (key) => {
+        const col = cols[key];
+        const i = idxOf(key);
+        ref[key] = i;
+        lock[key] = Date.now() + 160;
+        col.scrollTop = i * ROW;
+        col.querySelectorAll(".tp-item").forEach((b, n) => {
+            const on = n === i;
             b.classList.toggle("is-selected", on);
             b.setAttribute("aria-selected", String(on));
             b.tabIndex = on ? 0 : -1;
         });
     };
-    const setKey = (key, val) => {
-        const btn = cols[key].querySelector(`.tp-item[data-v="${val}"]`);
-        if (btn) mark(cols[key], btn);
+    const render = () => {
+        const v = `${pad(Math.floor(T / 60))}:${pad(T % 60)}`;
+        input.value = v;
+        text.textContent = v;
+        input.classList.remove("is-error");
     };
-    const pick = (btn, focus, keepScroll) => {
-        const col = btn.parentElement;
-        const key = col.dataset.col;
-        mark(col, btn);
-        /* 시를 13~23 으로 돌리면 자동으로 오후, 24 면 오전(자정) / 오전·오후를 직접 고르면 시도 맞춰져요 */
-        if (key === "h") {
-            const v = +btn.dataset.v;
-            if (v >= 13 && v <= 23) setKey("ap", "PM");
-            else if (v === 24) setKey("ap", "AM");
-        } else if (key === "ap") {
-            const v = +sel("h");
-            if (btn.dataset.v === "AM" && v >= 13 && v <= 23) {
-                setKey("h", v - 12);
-                center(cols.h);
-            } else if (btn.dataset.v === "PM" && v === 24) {
-                setKey("h", 12);
-                center(cols.h);
-            }
-        }
-        if (!keepScroll) center(col);
-        if (focus) btn.focus();
-        sync();
-    };
-    /* 손으로(휠·터치) 돌리면 가운데 걸친 값이 선택돼요 (시 · 분 목록) */
-    ["h", "m"].forEach((key) => {
-        const col = cols[key];
-        let timer = null;
-        let lock = 0;
-        col._lock = () => (lock = Date.now() + 200);
-        col.addEventListener("scroll", () => {
-            if (Date.now() < lock || panel.hidden) return;
-            clearTimeout(timer);
-            timer = setTimeout(() => {
-                const mid = col.scrollTop + col.clientHeight / 2;
-                let best = null;
-                let gap = Infinity;
-                col.querySelectorAll(".tp-item").forEach((b) => {
-                    const d = Math.abs(b.offsetTop + b.offsetHeight / 2 - mid);
-                    if (d < gap) {
-                        gap = d;
-                        best = b;
-                    }
+    /* 값이 바뀌면 세 줄을 모두 새 값에 맞춰요 (돌리고 있던 줄은 그대로 두고 나머지만 따라가요) */
+    const sync = (except) => {
+        render();
+        ["ap", "h", "m"].forEach((k) => {
+            if (k === except) return;
+            if (panel.hidden) return;
+            if (k === "ap") {
+                ref.ap = idxOf("ap");
+                lock.ap = Date.now() + 400;
+                cols.ap.scrollTo({ top: ref.ap * ROW, behavior: "smooth" });
+                cols.ap.querySelectorAll(".tp-item").forEach((b, n) => {
+                    b.classList.toggle("is-selected", n === ref.ap);
+                    b.setAttribute("aria-selected", String(n === ref.ap));
+                    b.tabIndex = n === ref.ap ? 0 : -1;
                 });
-                if (best && !best.classList.contains("is-selected")) pick(best, false, true);
-            }, 90);
+            } else place(k);
+        });
+    };
+    const settle = (key) => {
+        const col = cols[key];
+        let i = Math.round(col.scrollTop / ROW);
+        i = Math.max(0, Math.min(col.children.length - 1, i));
+        const d = i - ref[key];
+        if (!d) return;
+        if (key === "ap") {
+            ref.ap = i;
+            if (i !== idxOf("ap")) T = wrap(T + 720);
+            col.querySelectorAll(".tp-item").forEach((b, n) => {
+                b.classList.toggle("is-selected", n === i);
+                b.setAttribute("aria-selected", String(n === i));
+                b.tabIndex = n === i ? 0 : -1;
+            });
+            sync("ap");
+            return;
+        }
+        T = wrap(T + (key === "h" ? d * 60 : d));
+        sync();
+        place(key); /* 돌린 줄도 가운데 묶음으로 옮겨 다시 끝없이 돌릴 수 있게 해요 */
+    };
+    ["ap", "h", "m"].forEach((key) => {
+        let timer = null;
+        cols[key].addEventListener("scroll", () => {
+            if (Date.now() < lock[key] || panel.hidden) return;
+            clearTimeout(timer);
+            timer = setTimeout(() => settle(key), 110);
         });
     });
-    /* 시간 칸을 누르면 아래로 목록이 펼쳐지고, 다시 누르거나 바깥을 누르면 접혀요 */
-    const field = $(".tp-field", tp);
-    const panel = $(".tp-panel", tp);
-    const centerAll = () =>
-        Object.values(cols).forEach((c) => {
-            c._lock && c._lock();
-            center(c);
-        });
+    /* 칸을 누르면 그 칸이 가운데로 돌아와요 */
+    tp.addEventListener("click", (e) => {
+        const b = e.target.closest(".tp-item");
+        if (!b) return;
+        const col = b.parentElement;
+        const i = [...col.children].indexOf(b);
+        col.scrollTo({ top: i * ROW, behavior: "smooth" });
+        /* 부드럽게 돌아가는 동안 settle 이 불리지만, 안 불리는 환경(움직임 없음)에서도 값은 바뀌게 바로 한 번 처리해요 */
+        setTimeout(() => settle(col.dataset.col), 260);
+    });
+    tp.addEventListener("keydown", (e) => {
+        const b = e.target.closest(".tp-item");
+        if (!b || !["ArrowUp", "ArrowDown"].includes(e.key)) return;
+        e.preventDefault();
+        const col = b.parentElement;
+        const key = col.dataset.col;
+        const i = Math.max(0, Math.min(col.children.length - 1, ref[key] + (e.key === "ArrowDown" ? 1 : -1)));
+        col.scrollTo({ top: i * ROW, behavior: "smooth" });
+        setTimeout(() => settle(key), 260);
+        col.children[i].focus({ preventScroll: true });
+    });
     const setOpen = (on) => {
         panel.hidden = !on;
         field.setAttribute("aria-expanded", String(on));
-        if (on) {
-            centerAll();
-        }
+        if (on) ["ap", "h", "m"].forEach(place);
         placePopover(); /* 목록이 화면 아래로 넘치면 팝오버를 그만큼 위로 올려요 */
     };
     field.addEventListener("click", () => setOpen(panel.hidden));
     /* 바깥에서 값을 바꿀 때 (예: 평일/주말 탭 전환) */
     tp._set = (value) => {
-        const t = normTime(value);
-        if (!t) return;
-        const h24 = +t.slice(0, 2);
-        const want = {
-            ap: h24 < 12 ? "AM" : "PM",
-            h: String(h24 === 0 ? 12 : h24),
-            m: String(+t.slice(3)),
-        };
-        Object.entries(cols).forEach(([key, col]) =>
-            col.querySelectorAll(".tp-item").forEach((b) => {
-                const on = b.dataset.v === want[key];
-                b.classList.toggle("is-selected", on);
-                b.setAttribute("aria-selected", String(on));
-                b.tabIndex = on ? 0 : -1;
-            })
-        );
-        sync();
+        const t = toT(value);
+        if (t == null) return;
+        T = t;
+        render();
         setOpen(false);
     };
-    tp.addEventListener("click", (e) => {
-        const b = e.target.closest(".tp-item");
-        if (!b) return;
-        pick(b, false);
-        /* 분까지 고르면 목록이 닫혀요 */
-        if (b.parentElement.dataset.col === "m") setOpen(false);
-    });
     root.addEventListener("click", (e) => {
         if (!panel.hidden && !tp.contains(e.target)) setOpen(false);
     });
@@ -1433,14 +1433,8 @@ function initOneTimePicker(root, tp) {
             field.focus();
         }
     });
-    tp.addEventListener("keydown", (e) => {
-        const b = e.target.closest(".tp-item");
-        if (!b || !["ArrowUp", "ArrowDown"].includes(e.key)) return;
-        e.preventDefault();
-        const n =
-            e.key === "ArrowDown" ? b.nextElementSibling : b.previousElementSibling;
-        if (n) pick(n, true);
-    });
+    T = toT(input.value) ?? 0;
+    render();
 }
 
 /* ==========================================================

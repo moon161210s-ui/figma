@@ -104,15 +104,26 @@ let RV_OVER = {};
 try {
   RV_OVER = JSON.parse(localStorage.getItem(RV_OVER_KEY)) || {};
 } catch (e) { }
-const rvOut = (r) => RV_OVER[r.id] || rvBaseOut(r);
+/* 처음 퇴실일을 기억해 두고, 바꿔 둔 퇴실일이 있으면 적용해요 */
+RV_RESERVATIONS.forEach((r) => {
+  r.end0 = r.end;
+  const [oh, om] = rvBaseOut(r).split(":").map(Number);
+  r.out0 = oh * 60 + om - (r.ext || 0); /* 연장하기 전 처음 퇴실 시간(분) */
+  const k = RV_OVER[r.id] && RV_OVER[r.id].end;
+  if (k) {
+    const [y, m, d] = k.split("-").map(Number);
+    r.end = new Date(y, m - 1, d);
+  }
+});
+const rvOut = (r) => (RV_OVER[r.id] && RV_OVER[r.id].out) || rvBaseOut(r);
 const rvToMin = (t) => {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
 };
 /* 연장 시간: 처음 퇴실 시간(운영 규칙 · 예약 원래 시간)보다 늦춘 만큼 */
 const rvExt = (r) => {
-  const orig = rvToMin(rvBaseOut(r)) - (r.ext || 0);
-  return RV_OVER[r.id] ? Math.max(0, rvToMin(RV_OVER[r.id]) - orig) : r.ext || 0;
+  const orig = r.out0;
+  return RV_OVER[r.id] && RV_OVER[r.id].out ? Math.max(0, rvToMin(RV_OVER[r.id].out) - orig) : r.ext || 0;
 };
 
 /* 그 날짜에 걸친 예약: 대실 → 숙박, 입실 시간이 이른 순 */
@@ -436,50 +447,41 @@ function rvPlacePop(bar) {
   el.style.top = `${Math.round(top)}px`;
 }
 
-/* ---------- 퇴실 시간 변경 ---------- */
-function rvOpenOutModal(id) {
+/* ---------- 퇴실 시간 변경 ----------
+   메인 화면 '퇴실 예정' 연필 버튼의 팝오버(달력 + 퇴실 시간 + 닫기/저장하기)를 그대로 가져와서 이 버튼 아래에 띄워요 */
+function rvOpenOut(id, btn) {
   const r = RV_RESERVATIONS.find((x) => x.id === id);
   if (!r) return;
-  const el = document.createElement("div");
-  el.className = "hm rv-out-md";
-  el.innerHTML = `<div class="hm-box" role="dialog" aria-modal="true" aria-label="퇴실 시간 변경">
-      <div class="hm-head"><h2 class="hm-title">퇴실 시간 변경</h2>
-        <button class="hm-close" type="button" data-out-x aria-label="닫기">${icon("close", 24)}</button></div>
-      <div class="hm-body"><p class="rv-out-sub">${r.room}호 · 현재 ${rvOut(r)}</p>${timePickerHtml("rvOutTime", rvOut(r))}</div>
-      <div class="hm-foot"><button class="btn btn-lg btn-outline" type="button" data-out-x>취소</button>
-        <button class="btn btn-lg btn-primary" type="button" data-out-save>저장</button></div>
-    </div>`;
-  document.body.appendChild(el);
-  initTimePicker(el);
-  const close = () => {
-    el.remove();
-    document.removeEventListener("keydown", onKey, true);
-  };
-  const onKey = (e) => {
-    if (e.key === "Escape" && el.querySelector(".tp-panel[hidden]")) close();
-  };
-  document.addEventListener("keydown", onKey, true);
-  el.addEventListener("mousedown", (e) => (el._down = e.target === el));
-  el.addEventListener("click", (e) => {
-    if ((e.target === el && el._down) || e.target.closest("[data-out-x]")) return close();
-    if (!e.target.closest("[data-out-save]")) return;
-    const t = $("#rvOutTime", el).value;
-    if (t === rvBaseOut(r)) delete RV_OVER[r.id];
-    else RV_OVER[r.id] = t;
-    try {
-      localStorage.setItem(RV_OVER_KEY, JSON.stringify(RV_OVER));
-    } catch (err) { }
-    close();
-    const pop = rvPop;
-    renderReserve();
-    renderRvDetail();
-    if (pop) {
-      const bar = document.querySelector(`.rv-bar[data-rid="${pop.id}"][data-date="${rvKey(pop.date)}"]`);
-      closeRvPop();
-      if (bar) openRvPop(bar);
-    }
+  if (pop && popAnchor === btn) return closePopover();
+  const stay = r.type === "stay";
+  openPopover("checkout", btn, {
+    start: r.start,
+    end: r.end,
+    out: rvOut(r),
+    /* 대실은 입실한 날 안에서만 바꿀 수 있어요 */
+    dayOk: stay ? (d) => d > r.start : (d) => rvSame(d, r.start),
+    rvSave(date, t) {
+      if (stay) r.end = date;
+      const o = {};
+      if (t !== rvBaseOut(r)) o.out = t;
+      if (stay && !rvSame(r.end, r.end0)) o.end = rvKey(r.end);
+      if (o.out || o.end) RV_OVER[r.id] = o;
+      else delete RV_OVER[r.id];
+      try {
+        localStorage.setItem(RV_OVER_KEY, JSON.stringify(RV_OVER));
+      } catch (e) { }
+    },
+    afterSave() {
+      const shown = rvPop;
+      renderReserve();
+      renderRvDetail();
+      if (shown) {
+        const bar = document.querySelector(`.rv-bar[data-rid="${shown.id}"][data-date="${rvKey(shown.date)}"]`);
+        closeRvPop();
+        if (bar) openRvPop(bar);
+      }
+    },
   });
-  el.querySelector(".tp-field").focus();
 }
 
 /* ---------- 이동 / 선택 ---------- */
@@ -532,6 +534,7 @@ function rvSelect(key) {
 
 function handleReserveClick(e) {
   if (!$("#viewReserve")) return false;
+  if (pop && e.composedPath().includes(pop)) return false; /* 퇴실 시간 변경 팝오버 안쪽 클릭은 그대로 두어요 */
 
   /* 예약 바 클릭 우선 */
   const bar = e.target.closest(".rv-bar");
@@ -543,7 +546,7 @@ function handleReserveClick(e) {
 
   const outBtn = e.target.closest("[data-rv-out]");
   if (outBtn) {
-    rvOpenOutModal(+outBtn.dataset.rvOut);
+    rvOpenOut(+outBtn.dataset.rvOut, outBtn);
     return true;
   }
 
@@ -609,8 +612,15 @@ function handleReserveClick(e) {
   if (e.target.closest("#rvPrev")) return rvMove(-1), true;
   if (e.target.closest("#rvNext")) return rvMove(1), true;
   if (e.target.closest("#rvToday")) {
+    closeRvPop();
     rvAnchor = todayMid();
+    /* 월별 보기에서는 오늘 날짜의 우측 패널도 같이 열어요 (주별 보기는 패널을 쓰지 않아요) */
+    if (rvView === "month") {
+      rvSel = todayMid();
+      rvTab = "all";
+    }
     renderReserve();
+    renderRvDetail();
     return true;
   }
 
