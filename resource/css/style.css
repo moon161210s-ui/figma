@@ -4180,6 +4180,20 @@ body.as-dragging * {
     gap: 8px;
 }
 
+/* 페이지 제목 줄: 왼쪽 제목·설명 / 오른쪽 버튼 (시안: 카드 밖, 제목 줄의 아래쪽 정렬) */
+.rl-page-title {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding-right: 0;
+}
+
+.rl-page-tx {
+    flex: 1;
+    min-width: 0;
+}
+
 .rl-btn {
     display: inline-flex;
     align-items: center;
@@ -4547,6 +4561,11 @@ body.rl-dragging * {
 
     .rl-card {
         padding: 24px 20px;
+    }
+
+    .rl-page-title {
+        flex-wrap: wrap;
+        align-items: stretch;
     }
 
     .rl-sticky {

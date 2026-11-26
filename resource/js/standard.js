@@ -148,10 +148,6 @@ function renderCard() {
       : "이 객실 타입에만 필요한 항목을 추가해 주세요.<br />직원 체크리스트에서 공통 항목 아래에 표시됩니다."
     }</p>
       </div>
-      <div class="rl-tit-btns">
-        <button class="rl-btn is-outline" type="button" id="rlPreview">직원 화면 미리보기</button>
-        <button class="rl-btn is-primary" type="button" id="rlSave">변경 사항 일괄 저장</button>
-      </div>
     </div>
     <hr class="rl-line" />
     </div>
