@@ -801,6 +801,8 @@ button {
 }
 
 .panel {
+    /* 우측 패널을 열어 패널이 좁아졌을 때 툴바가 부딪히는지 패널 너비로 판단해요 (아래 @container) */
+    container-type: inline-size;
     padding: 20px 24px 20px;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
@@ -903,6 +905,20 @@ button {
 .toolbar::after {
     right: 0;
     background: radial-gradient(circle at 0 100%, transparent calc(var(--radius-xl) - 0.5px), var(--color-bg-base) var(--radius-xl));
+}
+
+/* 토글과 검색·필터가 한 줄에 다 안 들어가면(우측 패널을 열었을 때 등) 검색·필터 줄만 12px 띄워 아래로 내려요 */
+@container (max-width: 1010px) {
+    .toolbar {
+        flex-wrap: wrap;
+        row-gap: 12px;
+    }
+
+    .toolbar-right {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        width: 100%;
+    }
 }
 
 .search {
@@ -7914,8 +7930,9 @@ html.is-modal-open {
 }
 
 .au-teams {
-    flex: 1 1 0;
-    min-width: 0;
+    /* Figma: 왼쪽 프레임 980 고정 / 오른쪽 패널은 fill (사이 간격 16) */
+    flex: 0 1 980px;
+    min-width: 780px;
     padding: 20px 0;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
@@ -7979,9 +7996,11 @@ html.is-modal-open {
 }
 
 .au-members {
-    display: flex;
+    /* 팀원 두 명 사이는 최대 150, 공간이 모자라면 줄어들어요 */
+    display: grid;
     flex: 1 1 0;
-    gap: 150px;
+    grid-template-columns: repeat(2, 225px);
+    column-gap: clamp(16px, calc(100% - 450px), 150px);
     min-width: 0;
 }
 
@@ -8082,9 +8101,10 @@ html.is-modal-open {
 /* 오른쪽 기준 설정 패널: 640px 흰 카드 (모달 .hm-box.as-set 과 같은 내용이라 같은 규칙을 써요) */
 .au-panel.as-set {
     display: flex;
+    flex: 1 1 0;
     flex-direction: column;
-    flex-shrink: 0;
-    width: 640px;
+    min-width: 440px;
+    container-type: inline-size;
     border: 0;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
@@ -8099,7 +8119,11 @@ html.is-modal-open {
 }
 
 .au-panel .as-set-top {
-    gap: 8px;
+    gap: 4px;
+}
+
+.au-panel .as-set-top .as-set-tx p {
+    text-wrap: balance;
 }
 
 .au-panel .as-set-tx {
@@ -8107,8 +8131,16 @@ html.is-modal-open {
     min-width: 0;
 }
 
-.au-panel .as-set-top .as-set-tx p {
-    white-space: nowrap;
+@container (max-width: 635px) {
+    .au-panel .as-set-tx br {
+        display: none;
+    }
+}
+
+@container (min-width: 636px) {
+    .au-panel .as-set-top .as-set-tx p {
+        white-space: nowrap;
+    }
 }
 
 /* 팀 추가하기 / 수정하기 모달 */
@@ -8289,4 +8321,21 @@ html.is-modal-open {
     width: 100%;
     height: 100%;
     object-fit: contain;
+}
+
+/* 화면이 좁아 두 프레임이 한 줄에 안 들어가면 위아래로 쌓아요 */
+@media (max-width: 1540px) {
+    .au-body {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .au-teams {
+        flex-basis: auto;
+    }
+
+    .au-panel.as-set {
+        flex: 0 0 auto;
+        width: 100%;
+    }
 }

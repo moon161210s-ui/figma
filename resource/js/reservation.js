@@ -170,18 +170,32 @@ function rvSlots(days) {
   return out;
 }
 
+/* 앞날 · 다음날 칸에 같은 줄(같은 위치)로 보이는지 알려주는 함수를 만들어요 (rowsOf: 날짜 → 그 칸에 실제로 보이는 줄들) */
+function rvLinker(days, rowsOf) {
+  const idx = {};
+  days.forEach((d, i) => (idx[rvKey(d)] = i));
+  return (r, d, row) => {
+    const i = idx[rvKey(d)];
+    const at = (j) => j >= 0 && j < days.length && Math.floor(j / 7) === Math.floor(i / 7) && (rowsOf(days[j])[row] || {}).id === r.id;
+    return { prev: at(i - 1), next: at(i + 1) };
+  };
+}
+
 /* ---------- 예약 한 칸 ----------
    칸의 왼쪽 끝마디 = 예약이 시작하는 날, 오른쪽 끝마디 = 예약이 끝나는 날. 사이 날짜는 끝마디 없이 이어져요 */
-function rvBar(r, d) {
-  const first = rvSame(d, r.start);
-  const last = rvSame(d, r.end);
+function rvBar(r, d, link) {
+  /* link = { prev, next }: 앞날 · 다음날 칸에 같은 줄로 이어져 보이는지.
+     넘친 예약이 '외 N건'으로 숨거나 다른 줄에 올라가 이어지지 않으면, 그 칸이 막대의 시작/끝이 돼요 (예: 숙박이 한 칸에만 보일 때 글자 · 로고가 빠지지 않게) */
+  const lk = link || { prev: false, next: false };
+  const first = rvSame(d, r.start) || (!lk.prev && d.getDay() !== 0);
+  const last = rvSame(d, r.end) || (!lk.next && d.getDay() !== 6);
   const span = r.start.getTime() !== r.end.getTime();
   /* 여러 날에 걸친 예약은 한 줄로 이어진 하나의 칸처럼 보여요: 글자는 시작 칸과 (줄이 바뀌는) 일요일 칸에만 써요 */
-  const show = !span || first || d.getDay() === 0;
+  const show = !span || first || d.getDay() === 0 || !lk.prev;
   const time = `${r.in} - ${rvOut(r)}`; /* 숙박도 퇴실 시간까지 모두 보여줘요 */
   const pick = rvPop && rvPop.id === r.id ? " is-picked" : "";
   /* 기업 로고는 시안처럼 (한 줄로 이어진) 막대의 오른쪽 끝에 둬요: 끝 칸 또는 줄이 바뀌는 토요일 칸 */
-  const logoHere = !span || last || d.getDay() === 6;
+  const logoHere = !span || last || d.getDay() === 6 || !lk.next;
   return `<button class="rv-bar rv-${r.type}${first ? " is-first" : ""}${last ? " is-last" : ""
     }${show ? "" : " is-cont"}${pick}" type="button" data-rid="${r.id
     }" data-date="${rvKey(d)}">
@@ -241,10 +255,22 @@ function renderReserve() {
   for (let d = start; d <= end; d = dayAdd(d, 1)) days.push(d);
 
   const slots = rvSlots(days);
+  /* 월별: 한 칸에 실제로 보이는 줄들 (넘친 예약은 빈 줄에 올라가고, 그래도 넘치면 '외 N건') */
+  const monthRows = {};
+  if (rvView !== "week")
+    days.forEach((d) => {
+      const all = slots[rvKey(d)];
+      const rows = all.slice(0, RV_MONTH_CAP);
+      while (rows.length < RV_MONTH_CAP) rows.push(null);
+      const rest = all.slice(RV_MONTH_CAP).filter(Boolean);
+      for (let i = 0; i < rows.length && rest.length; i++) if (!rows[i]) rows[i] = rest.shift();
+      monthRows[rvKey(d)] = { rows, hidden: rest.length };
+    });
+  const linkOf = rvLinker(days, (d) => (rvView === "week" ? slots[rvKey(d)] : monthRows[rvKey(d)].rows));
   const slotHtml = (d, cap) =>
     slots[rvKey(d)]
       .slice(0, cap)
-      .map((r) => (r ? rvBar(r, d) : '<i class="rv-gap"></i>'))
+      .map((r, row) => (r ? rvBar(r, d, linkOf(r, d, row)) : '<i class="rv-gap"></i>'))
       .join("");
   if (rvView === "week") {
     t.className = "rv-table rv-week";
@@ -268,14 +294,7 @@ function renderReserve() {
       ).join("")}</div>` +
       `<div class="rv-tbody"><div class="rv-mgrid">${days
         .map((d) => {
-          /* 보이는 줄에 빈 칸이 있는데 넘친 예약이 따로 숨어 있으면, 빈 칸에 그 예약을 올려요 (빈 칸만 보이고 '외 N건'이 뜨지 않게) */
-          const all = slots[rvKey(d)];
-          const rows = all.slice(0, RV_MONTH_CAP);
-          while (rows.length < RV_MONTH_CAP) rows.push(null);
-          const rest = all.slice(RV_MONTH_CAP).filter(Boolean);
-          for (let i = 0; i < rows.length && rest.length; i++)
-            if (!rows[i]) rows[i] = rest.shift();
-          const hidden = rest.length;
+          const { rows, hidden } = monthRows[rvKey(d)];
           const other = d < first || d > last;
           return `<div class="rv-cell${other ? " is-other" : ""}">${rvDayHead(
             d,
@@ -283,7 +302,7 @@ function renderReserve() {
             other
           )}
                         <div class="rv-list">${rows
-              .map((r) => (r ? rvBar(r, d) : '<i class="rv-gap"></i>'))
+              .map((r, row) => (r ? rvBar(r, d, linkOf(r, d, row)) : '<i class="rv-gap"></i>'))
               .join("")}</div></div>`;
         })
         .join("")}</div></div>`;

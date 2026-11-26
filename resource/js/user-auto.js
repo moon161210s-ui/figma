@@ -144,7 +144,7 @@ function renderPanel() {
       <div class="hm-head"><h2 class="hm-title">청소 자동 배정 기준 설정</h2></div>
       <div class="hm-body">
         <section class="as-set-sec as-set-top">
-          <div class="as-set-tx"><h3>직원 자동 배정</h3><p>청소 일정이 생기면, 설정된 배정 기준과<br />직원별 근무 일정을 바탕으로 자동 배정합니다.</p></div>
+          <div class="as-set-tx"><h3>직원 자동 배정</h3><p>청소 일정이 생기면, 설정된 배정 기준과 <br />직원별 근무 일정을 바탕으로 자동 배정합니다.</p></div>
           ${auSeg("mode", [["auto", "자동 배정"], ["manual", "수동 배정"]], v.mode)}
         </section>
         <section class="as-set-sec as-set-top">
