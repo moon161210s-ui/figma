@@ -5195,7 +5195,16 @@ body.rl-dragging * {
     background: var(--color-base-inverse);
 }
 
+.rp-box {
+    position: relative;
+}
+
+/* 아이콘(20)이 테두리 안쪽(18)보다 커서 오른쪽 아래로 밀리던 것을 정중앙으로 맞춰요 */
 .rp-box img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     visibility: hidden;
 }
 
@@ -8381,7 +8390,7 @@ html.is-modal-open {
     display: flex;
     flex-direction: column;
     gap: 24px;
-    padding: 28px;
+    padding: 24px;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
 }
@@ -8468,4 +8477,10 @@ html.is-modal-open {
 .ob-skip svg {
     width: 24px;
     height: 24px;
+}
+
+/* 온보딩 중 스크롤 잠금 */
+html.ob-lock,
+html.ob-lock body {
+    overflow: hidden;
 }

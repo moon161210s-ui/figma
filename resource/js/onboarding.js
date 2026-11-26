@@ -57,6 +57,7 @@
                 },
                 {
                     sel: () => $one(".room-card.is-selected") || $one(".room-card"),
+                    pad: [10, 10] /* 시안: 카드 + 보라색 선택 테두리가 다 보이게 사방 10px 여유 */,
                     r: 16,
                     side: "right",
                     title: "색으로 청소 상태를 구분해요",
@@ -333,11 +334,13 @@
         if (side === "below" || side === "above") {
             left = Math.min(Math.max(cx - BOX_W / 2, EDGE), Math.max(EDGE, vw - BOX_W - EDGE));
             top = side === "below" ? hole.top + hole.height + GAP + ARROW_SHORT : hole.top - GAP - ARROW_SHORT - h;
-            off = Math.min(Math.max(cx - left, 28 + half), BOX_W - 28 - half);
+            /* 어느 방향도 자리가 없으면 화면 안에 들어오게 밀어 넣어요 (강조 영역과 겹칠 수 있어요) */
+            top = Math.min(Math.max(top, EDGE), Math.max(EDGE, vh - h - EDGE));
+            off = Math.min(Math.max(cx - left, 24 + half), BOX_W - 24 - half);
         } else {
             top = Math.min(Math.max(cy - h / 2, EDGE), Math.max(EDGE, vh - h - EDGE));
             left = side === "right" ? hole.left + hole.width + GAP + ARROW_SHORT : hole.left - GAP - ARROW_SHORT - BOX_W;
-            off = Math.min(Math.max(cy - top, 28 + half), h - 28 - half);
+            off = Math.min(Math.max(cy - top, 24 + half), h - 24 - half);
         }
         tip.style.left = `${Math.round(left)}px`;
         tip.style.top = `${Math.round(top)}px`;
@@ -392,13 +395,22 @@
         removeEventListener("resize", schedulePlace);
         removeEventListener("scroll", schedulePlace, true);
         document.removeEventListener("keydown", onKey, true);
+        document.removeEventListener("wheel", stop, true);
+        document.removeEventListener("touchmove", stop, true);
+        document.documentElement.classList.remove("ob-lock");
         if (root) root.remove();
         root = null;
         if (openedByUs && page.restore) page.restore();
         openedByUs = false;
     }
 
+    /* 온보딩 중에는 사용자가 스크롤하지 못하게 막아요 (단계 이동 시 위치 이동은 코드로만) */
+    const stop = (e) => e.preventDefault();
+    const SCROLL_KEYS = [" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"];
+
     function onKey(e) {
+        if (SCROLL_KEYS.includes(e.key) && !e.target.closest("button")) e.preventDefault();
+        if (e.key === " " && e.target.closest("button")) return;
         if (e.key === "Escape") {
             e.preventDefault();
             e.stopPropagation();
@@ -430,10 +442,21 @@
         addEventListener("resize", schedulePlace);
         addEventListener("scroll", schedulePlace, true);
         document.addEventListener("keydown", onKey, true);
+        document.addEventListener("wheel", stop, { capture: true, passive: false });
+        document.addEventListener("touchmove", stop, { capture: true, passive: false });
+        document.documentElement.classList.add("ob-lock");
         show(0);
     }
 
     window.startOnboarding = start;
+
+    /* 사이드바 '도움말' = 이 화면의 온보딩을 처음부터 다시 보여줘요 */
+    const helpBtn = document.getElementById("helpBtn");
+    if (helpBtn)
+        helpBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            start(true);
+        });
 
     const go = () => setTimeout(() => start(/[?&]onboarding\b/.test(location.search)), 350);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(go);
