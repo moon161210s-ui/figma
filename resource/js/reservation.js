@@ -713,10 +713,3 @@ document.addEventListener("scroll", () => closeRvPop(), true);
 
 renderReserve();
 renderRvDetail();
-
-/* 예약 현황 화면은 처음에는 알림 아이콘에 빨간 점이 없어요 (기존 샘플 알림은 읽은 것으로 보여요).
-   퇴실 시간을 바꿔서 '퇴실 변경 알림 전송'이 새로 생기면 그때 빨간 점이 나타나요 */
-NOTIFICATIONS.forEach((n) => {
-  if (!String(n.id).startsWith("new-")) n.read = true;
-});
-renderBell();

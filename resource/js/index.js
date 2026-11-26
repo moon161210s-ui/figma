@@ -615,6 +615,31 @@ function applyResignations() {
     });
 }
 applyResignations();
+
+/* 예약 현황에서 바꾼 오늘 투숙 중인 객실의 퇴실 시간을 메인에도 반영해요
+   - 바뀐 시간이 보이고, 담당 직원이 있으면 직원이 확인하기 전까지 '직원 미확인' 배지와 안내 문구가 떠요
+   - reservation.js 가 localStorage("rvOutToMain") 에 { 객실: { day, out, end } } 로 적어 둬요 (서버 연결 시 서버 값으로 교체) */
+function applyReservationOutChanges() {
+    let saved = {};
+    try {
+        saved = JSON.parse(localStorage.getItem("rvOutToMain")) || {};
+    } catch (e) { }
+    const t = todayMid();
+    const day = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+    ROOMS.forEach((r) => {
+        const v = saved[r.no];
+        if (!v || r.empty || v.day !== day) return;
+        const [y, m, d] = String(v.end).split("-").map(Number);
+        const end = new Date(y, m - 1, d);
+        const changed = r.out !== v.out || r.end.getTime() !== end.getTime();
+        r.out = v.out;
+        r.end = end;
+        r.outLocked = true;
+        if (changed && r.staff) r.outChange = "unconfirmed";
+        syncStayStatus(r);
+    });
+}
+applyReservationOutChanges();
 applyHours();
 
 /* 상단 요약 카드 숫자 (서버 데이터로 교체 대상) */
@@ -2328,6 +2353,9 @@ const notiExtras = (() => {
         return [];
     }
 })();
+/* 처음 화면에서는 샘플 알림이 모두 읽은 상태예요 (종 아이콘에 빨간 점 없음).
+   동작 뒤에 새 알림이 생기면 그때부터 빨간 점이 나타나고, 그 알림만 브라우저에 저장해요 */
+NOTIFICATIONS.forEach((n) => (n.read = true));
 NOTIFICATIONS = [...notiExtras, ...NOTIFICATIONS];
 function saveNotiExtras() {
     try {
