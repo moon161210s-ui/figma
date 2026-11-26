@@ -1573,6 +1573,45 @@ button {
     font-weight: var(--fw-bold);
 }
 
+/* 재배정 필요 안내 (Figma 1096-4473): 패널 왼쪽 · 오른쪽 끝까지 채워지고, 알림 전체를 누르면 직원 재배정 화면으로 가요 */
+.detail-alert {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 16px -20px 0;
+    padding: 16px;
+    background: var(--color-warning-bg);
+    color: var(--color-gray-900);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.detail-alert strong {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-bold);
+}
+
+.detail-alert-btn {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-300);
+    white-space: nowrap;
+}
+
+.detail-alert:hover .detail-alert-btn,
+.detail-alert:focus-visible .detail-alert-btn {
+    color: var(--color-gray-900);
+}
+
+.detail-alert:focus-visible {
+    outline: 0;
+}
+
 .detail-body {
     flex: 1;
     min-height: 0;

@@ -33,9 +33,28 @@ function RL_SAVE() {
       JSON.stringify({ types: rl.types, data: rl.data })
     );
   } catch (e) { }
+  rlSnap = rlSerial(); /* 저장했으니 지금 상태가 기준이 돼요 */
 }
 
 const rl = RL_LOAD();
+/* 저장하지 않은 변경 사항 확인용: 비어 있는 입력 줄은 빼고 비교해요 */
+function rlSerial() {
+  const data = {};
+  Object.keys(rl.data)
+    .sort()
+    .forEach((id) => {
+      const d = rl.data[id] || {};
+      const v = {
+        images: d.images || [],
+        checks: (d.checks || []).filter((c) => c.trim()),
+        proofs: (d.proofs || []).filter((p) => p.t.trim() || p.g.trim()),
+      };
+      if (v.images.length || v.checks.length || v.proofs.length) data[id] = v;
+    });
+  return JSON.stringify({ types: rl.types, data });
+}
+let rlSnap = rlSerial();
+const rlDirty = () => rlSerial() !== rlSnap;
 let rlSel = RL_COMMON;
 
 const rlName = (id) =>
@@ -707,3 +726,63 @@ window.addEventListener("resize", fitTypes);
 window.addEventListener("scroll", fitTypes, { passive: true });
 
 renderAll();
+
+
+/* ==========================================================
+   저장하지 않고 나가기 경고 (직원 재배정 화면과 같은 모달 / 문구만 체크리스트 관리에 맞췄어요)
+   - 청소 기준을 바꾸고 저장하지 않은 채 다른 화면으로 가려 하면 모달을 띄워요 (사이드바 · 알림 이동 · 새로고침 · 탭 닫기)
+   ========================================================== */
+let rlPendingUrl = null;
+let rlSkipLeave = false;
+
+/* index.js 의 navigateTo 가 이 함수를 거쳐요 (false 면 이동을 막아요) */
+function beforeLeave(url) {
+  if (!rlDirty() || rlSkipLeave) return true;
+  rlPendingUrl = url;
+  const el = rlOpen(
+    `<div class="hm-box rl-cm" role="alertdialog" aria-modal="true" aria-label="저장되지 않은 변경 사항이 있습니다">
+      <div class="rs-cm-body">
+        <span class="rs-cm-ic is-danger">${icon("exclamation-red", 40)}</span>
+        <div class="rs-cm-tx">
+          <strong>저장되지 않은 변경 사항이 있습니다!</strong>
+          <span>저장하지 않고 페이지를 이동하면 변경한 청소 기준이 사라지며,<br />사라진 내용은 다시 복구할 수 없습니다.</span>
+        </div>
+      </div>
+      <div class="rs-cm-btns">
+        <button class="btn btn-lg btn-outline" type="button" data-leave>저장하지 않고 나가기</button>
+        <button class="btn btn-lg btn-primary" type="button" data-stay>계속 수정</button>
+      </div>
+    </div>`
+  );
+  el.querySelector("[data-leave]").addEventListener("click", () => {
+    rlSkipLeave = true;
+    location.href = rlPendingUrl;
+  });
+  el.querySelector("[data-stay]").addEventListener("click", () => rlClose(el));
+  el.querySelector("[data-stay]").focus();
+  return false;
+}
+
+/* 사이드바 등 모든 링크 클릭을 가로채요 */
+document.addEventListener(
+  "click",
+  (e) => {
+    const a = e.target.closest("a[href]");
+    if (!a) return;
+    const href = a.getAttribute("href");
+    if (!href || href.startsWith("#")) return;
+    if (beforeLeave(href) === false) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  },
+  true
+);
+
+/* 브라우저 새로고침 · 탭 닫기 */
+window.addEventListener("beforeunload", (e) => {
+  if (rlDirty() && !rlSkipLeave) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});

@@ -853,6 +853,12 @@ function renderDetail() {
         24
     )}</button>
     </div>
+    ${r.status === "reassign"
+            ? `<a class="detail-alert" href="user-assign.html">
+      <strong>${r.staffTag ? `담당 직원이 ${r.staffTag}했어요. 직원을 재배정해 주세요.` : "담당 직원을 재배정해 주세요."}</strong>
+      <span class="detail-alert-btn">직원 재배정 하기${icon("arrow-right-gray", 24)}</span>
+    </a>`
+            : ""}
     <div class="detail-body">
       <div class="detail-room">
         <span class="detail-room-no">${r.no}호</span>
