@@ -8339,3 +8339,133 @@ html.is-modal-open {
         width: 100%;
     }
 }
+
+
+/* ==========================================================
+ 최초 진입 온보딩 (onboarding.js)
+ - 딤 + 강조 영역(구멍) + 말풍선 (Figma 온보딩 말풍선: 박스 480, 안쪽 여백 28, radius x-lg)
+ ========================================================== */
+.ob {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+.ob-hole {
+    position: fixed;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5);
+    transition: left 0.25s ease, top 0.25s ease, width 0.25s ease, height 0.25s ease;
+    pointer-events: none;
+}
+
+.ob-tip {
+    position: fixed;
+    width: 480px;
+    animation: ob-in 0.2s ease;
+}
+
+@keyframes ob-in {
+    from {
+        opacity: 0;
+    }
+}
+
+.ob-arrow {
+    position: absolute;
+    display: block;
+    line-height: 0;
+    pointer-events: none;
+}
+
+.ob-box {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 28px;
+    border-radius: var(--radius-xl);
+    background: var(--color-base-inverse);
+}
+
+.ob-text {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ob-text h2 {
+    margin: 0;
+    text-wrap: balance;
+    font-size: var(--fs-h5);
+    line-height: var(--lh-h5);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-900);
+}
+
+.ob-text p {
+    min-height: 90px;
+    text-wrap: pretty;
+    margin: 0;
+    font-size: var(--fs-h6);
+    line-height: var(--lh-h6);
+    color: var(--color-gray-300);
+}
+
+.ob-foot {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.ob-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.ob-count {
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-900);
+}
+
+.ob-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.ob-btn {
+    width: 120px;
+    padding: 0 20px;
+}
+
+.ob-next {
+    background: var(--color-gray-900);
+    color: var(--color-white);
+}
+
+.ob-next:hover {
+    background: var(--color-gray-700, #31363c);
+}
+
+.ob-skip {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-300);
+    cursor: pointer;
+}
+
+.ob-skip img,
+.ob-skip svg {
+    width: 24px;
+    height: 24px;
+}
