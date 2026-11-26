@@ -75,7 +75,7 @@ const resultCache = {};
 const RESULT_FIXED = {
     105: {
         start: 10, /* 청소 가능 시각보다 몇 분 뒤에 시작했는지 */
-        hist: (s, e) => [[s, "청소 시작"], [e, "최초 청소 완료", "침구 교체 · 욕실 청소 · 비품 보충 · 바닥 청소 · 환기까지 모두 마쳤어요."]],
+        hist: (s, e) => [[s, "청소 시작"], [e, "최초 청소 완료"]],
         memo: "침구는 전부 새것으로 교체했고, 욕실 바닥과 세면대 물기까지 닦았어요. 수건 4장, 생수 2병, 어메니티도 채워 뒀어요.",
         notes: [
             [0, "11:37", "이서영", "현관 천장등이 계속 깜빡여요.\n전등 교체 부탁드립니다."],
@@ -106,6 +106,10 @@ function todayResultRows() {
             const fx = RESULT_FIXED[r.no];
             if (fx) {
                 row.hist = fx.hist(addMinutes(r.clean || r.out, fx.start), at);
+                /* 최초 청소 완료 아래에는 '전달된 메모'와 같은 내용이 들어가요 (메모가 없으면 비워요) */
+                row.hist.forEach((h) => {
+                    if (h[1] === "최초 청소 완료") h[2] = fx.memo ? `전달된 메모: ${fx.memo}` : undefined;
+                });
                 if (fx.memo) row.memo = [at, fx.memo];
                 row.notes = fx.notes.map(([off, , name, text]) => [off, addMinutes(at, -5), name, text]);
             }
@@ -320,7 +324,7 @@ function renderResultDetail() {
             : "";
 
     /* 전달된 메모가 0건이면 토글 자체를 만들지 않아요 */
-    const memo = r.memo && r.memo[1] ? acc("전달된 메모", `<div class="rs-items">${item(fmtStamp(rsDate, r.memo[0]), r.memo[1])}</div>`, true) : "";
+    const memo = r.memo && r.memo[1] ? acc("전달된 메모", `<div class="rs-items is-memo">${item(fmtStamp(rsDate, r.memo[0]), r.memo[1])}</div>`, true) : "";
     const notes = r.notes && r.notes.length
         ? acc(
             "조치 필요 내용",

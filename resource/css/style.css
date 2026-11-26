@@ -3168,6 +3168,11 @@ main[hidden] {
     color: var(--color-gray-300);
 }
 
+/* 전달된 메모의 내용은 굵지 않게 (조치 필요 내용의 이름은 그대로 굵게) */
+.rs-items.is-memo .rs-item-tg strong {
+    font-weight: var(--fw-regular);
+}
+
 /* 인증사진 */
 .rs-photo-group {
     display: flex;
