@@ -922,7 +922,7 @@ thScheduleMidnight();
             <button class="rs-vw-btn" type="button" data-pv-step="1" aria-label="다음 사진"><img class="i20" src="${ICON("arrow-right")}" alt="" /></button>
           </div>
         </div>
-        <div class="rs-vw-list" id="pvList" aria-hidden="true">${v.photos
+        <div class="rs-vw-list" id="pvList">${v.photos
                 .map((src) => `
           <div class="rs-vw-th"><img src="${src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" /></div>`)
                 .join("")}
@@ -970,6 +970,12 @@ thScheduleMidnight();
 
     el.addEventListener("click", (e) => {
         if (e.target === el || e.target.closest("[data-pv-close]")) return close();
+        const th = e.target.closest(".rs-vw-th");
+        if (th && v) {
+            v.i = [...el.querySelectorAll(".rs-vw-th")].indexOf(th);
+            v.dx = 0;
+            return paint(true);
+        }
         const s = e.target.closest("[data-pv-step]");
         if (s) step(Number(s.dataset.pvStep));
     });

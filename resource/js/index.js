@@ -131,7 +131,7 @@ function cancelRequest(r) {
 }
 
 /* 퇴실일에 맞춰 청소 대상 여부를 정리해요
-   - 퇴실일이 오늘이 되면 숙박 중이던 객실도 청소 필요가 되고, 미리 등록한 요청 청소는 퇴실 청소 하나로 합쳐져요
+   - 퇴실일이 오늘이 되면 숙박 중이던 객실도 청소 대기가 되고, 미리 등록한 요청 청소는 퇴실 청소 하나로 합쳐져요
    - 퇴실일이 오늘이 아니게 되면 (아직 시작 전인) 퇴실 청소는 취소돼요 */
 function syncStayStatus(r) {
     if (r.empty) return;
@@ -179,7 +179,7 @@ const STAFF = [
 const STATUS = {
     /* 숙박 중이고 오늘 청소 대상이 아닌 객실: 상태 칩을 보여주지 않아요 */
     stay: { label: "숙박 중", tile: "", panel: "" },
-    todo: { label: "청소 필요", tile: "badge-todo", panel: "badge-todo" },
+    todo: { label: "청소 대기", tile: "badge-todo", panel: "badge-todo" },
     progress: { label: "청소 중", tile: "badge-progress", panel: "badge-info" },
     done: { label: "청소 완료", tile: "badge-done", panel: "badge-done" },
     reassign: {
@@ -192,7 +192,7 @@ const STATUS = {
 
 /* 청소 완료는 결과 화면에서 확인하기 전 = 초록 / 확인(검수 완료) 후 = 회색 (청소 결과 화면의 배지와 같아요) */
 const statusTile = (r) => (r.reclean && r.status === "todo" ? "badge-reassign" : r.status === "done" && r.confirmed ? "badge-todo" : STATUS[r.status].tile);
-/* 청소 결과 화면에서 재청소를 요청한 객실은 '청소 필요' 대신 결과 화면과 같은 '재청소 요청'으로 보여요 (필터 · 개수는 그대로 청소 필요예요) */
+/* 청소 결과 화면에서 재청소를 요청한 객실은 '청소 대기' 대신 결과 화면과 같은 '재청소 요청'으로 보여요 (필터 · 개수는 그대로 청소 대기예요) */
 const statusLabel = (r) => (r.reclean && r.status === "todo" ? "재청소 요청" : STATUS[r.status].label);
 
 /* 객실 카드의 날짜는 항상 오늘 기준이에요 (오늘 입실 · nights 박 뒤 퇴실). 실제 서비스에서는 서버의 예약 날짜로 교체 */
@@ -533,7 +533,7 @@ function applyHours() {
 const ROOMS = RAW_ROOMS.map(normalizeRoom);
 
 /* 직원 배정 화면에서 저장한 담당자를 반영해요 (같은 객실 데이터를 모든 화면이 공유 / 서버 연결 시 서버 값으로 교체)
-   - 재배정 필요였던 객실은 담당자가 정해지면 '청소 필요'로 돌아가요 */
+   - 재배정 필요였던 객실은 담당자가 정해지면 '청소 대기'로 돌아가요 */
 function applyAssignments() {
     let saved = null;
     try {
@@ -589,7 +589,7 @@ function saveResultState(no, row) {
         );
     } catch (e) { }
 }
-/* 재청소 요청 = 메인에서는 다시 '청소 필요' / 검수 완료 = '청소 완료' / 검수 대기 = '검수 대기' */
+/* 재청소 요청 = 메인에서는 다시 '청소 대기' / 검수 완료 = '청소 완료' / 검수 대기 = '검수 대기' */
 function applyResultState() {
     const saved = loadResultState();
     ROOMS.forEach((r) => {
@@ -602,7 +602,7 @@ function applyResultState() {
 }
 applyResultState();
 
-/* 오늘 퇴사 처리한 직원이 맡은 객실 중 청소를 끝내지 못한 객실(청소 필요 · 청소 중)은 '재배정 필요'로 바꿔요 (담당자 옆에는 조퇴 대신 퇴사 배지) */
+/* 오늘 퇴사 처리한 직원이 맡은 객실 중 청소를 끝내지 못한 객실(청소 대기 · 청소 중)은 '재배정 필요'로 바꿔요 (담당자 옆에는 조퇴 대신 퇴사 배지) */
 function applyResignations() {
     const map = resignedMap();
     const now = todayMid();
@@ -737,7 +737,7 @@ function renderDetail() {
         return;
     }
 
-    /* 청소 결과에 인증 사진이 있는 객실은 첨부파일을 보여줘요: 청소 완료 · 검수 대기 · (재청소를 요청해 '청소 필요'로 돌아온 객실) */
+    /* 청소 결과에 인증 사진이 있는 객실은 첨부파일을 보여줘요: 청소 완료 · 검수 대기 · (재청소를 요청해 '청소 대기'로 돌아온 객실) */
     const done = r.status === "done";
     const hasPhotos = done || r.status === "review" || (loadResultState()[r.no] || {}).status === "reclean";
     /* 우측 패널에서는 '청소 가능 시간'만 수정할 수 있어요 (담당 직원은 청소 직원 재배정, 퇴실 시간은 예약 현황에서 바꿔요) */
@@ -1129,7 +1129,7 @@ function openPopover(kind, anchor, room) {
                 room.staff = chosen;
                 room.staffTag = ""; /* 조퇴 표시는 이전 직원 기준이라 지워요 */
                 if (room.status === "reassign")
-                    room.status = "todo"; /* 재배정 완료 → 청소 필요 */
+                    room.status = "todo"; /* 재배정 완료 → 청소 대기 */
             }
             maybeRegisterClean(room);
             return true;
@@ -1908,7 +1908,7 @@ function rerenderDetail() {
     if (next) next.scrollTop = top;
 }
 
-/* 숙박 중인 객실에 담당자와 청소 가능 시간을 모두 정하면 '손님 요청 청소'로 등록돼요 (청소 필요) */
+/* 숙박 중인 객실에 담당자와 청소 가능 시간을 모두 정하면 '손님 요청 청소'로 등록돼요 (청소 대기) */
 function maybeRegisterClean(r) {
     if (canRequest(r) && r.staff && r.cleanLocked) {
         r.status = "todo";
@@ -2073,7 +2073,7 @@ setTimeout(function tick() {
    - 읽음 처리 : 알림의 버튼을 누르면 그 알림이, 알림 센터를 닫으면 보고 있던 탭의 알림이 모두 읽음이 돼요
    - 서버 연결 : 서버에서 받은 알림 목록으로 setNotifications(list) 를 호출하세요
        알림 1건 = { id, type, title, date, text, actions: [{ label, room? }], read }
-       type : exit(퇴실 변경 확인) / issue(특이사항) / reassign(재배정 필요) / todo(청소 필요) / review(검수 요청) / notice(시스템 공지)
+       type : exit(퇴실 변경 확인) / issue(특이사항) / reassign(재배정 필요) / todo(청소 대기) / review(검수 요청) / notice(시스템 공지)
        actions 의 room 이 있으면 그 객실을 선택해서 보여줘요 (없으면 읽음 처리만 해요 → 서버 연결 시 처리 동작을 넣으세요)
        actions 의 href 가 있으면 그 주소로 이동해요 (특이사항 '자세히 보기' → thread.html)
        actions 의 result({ room, date: "YYYY-MM-DD" })가 있으면 청소 결과 화면으로 이동해서 그 날짜의 그 객실 상세를 열어요 (검수 요청 알림)
@@ -2170,7 +2170,7 @@ let NOTIFICATIONS = [
     {
         id: 3,
         type: "todo",
-        title: "104호 · 청소 필요",
+        title: "104호 · 청소 대기",
         date: notiDate(0, "11:41"),
         text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 1시간 지났어요.",
         actions: [{ label: "현황 확인", room: "104" }],
@@ -2201,7 +2201,7 @@ let NOTIFICATIONS = [
     {
         id: 15,
         type: "todo",
-        title: "201호 · 청소 필요",
+        title: "201호 · 청소 대기",
         date: notiDate(1, "12:10"),
         text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 30분 지났어요.",
         actions: [{ label: "현황 확인", room: "201" }],
@@ -2250,7 +2250,7 @@ let NOTIFICATIONS = [
     {
         id: 20,
         type: "todo",
-        title: "301호 · 청소 필요",
+        title: "301호 · 청소 대기",
         date: notiDate(3, "13:40"),
         text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 1시간 지났어요.",
         actions: [{ label: "현황 확인", room: "301" }],
@@ -2308,7 +2308,7 @@ let NOTIFICATIONS = [
     {
         id: 25,
         type: "todo",
-        title: "102호 · 청소 필요",
+        title: "102호 · 청소 대기",
         date: notiDate(6, "12:25"),
         text: "청소가 아직 시작되지 않았어요.\n예정 시간보다 30분 지났어요.",
         actions: [{ label: "현황 확인", room: "102" }],

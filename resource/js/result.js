@@ -535,7 +535,7 @@ function openRsModal(kind) {
 }
 
 /* 인증 사진 뷰어: 큰 사진을 좌우로 끌면(드래그) 끈 방향의 다음 사진으로 넘어가요.
-   아래 작은 사진들은 지금 보는 사진만 선명하고 나머지는 흐려요 (눌러서 바꾸는 게 아니라 위치 표시예요) */
+   아래 작은 사진들은 지금 보는 사진만 선명하고 나머지는 흐려요 (작은 사진을 눌러도 그 사진으로 넘어가요) */
 let rsView = null;
 function openRsViewer(r, gi, i) {
     const g = PHOTO_GROUPS[gi];
@@ -559,7 +559,7 @@ function openRsViewer(r, gi, i) {
             <button class="rs-vw-btn" type="button" data-rs-step="1" aria-label="다음 사진"><img class="i20" src="${ICON("arrow-right")}" alt="" /></button>
           </div>
         </div>
-        <div class="rs-vw-list" id="rsVwList" aria-hidden="true">${rsView.photos.map((p) => `
+        <div class="rs-vw-list" id="rsVwList">${rsView.photos.map((p) => `
           <div class="rs-vw-th${p.video ? " is-video" : ""}">${p.video ? `<video src="${p.src}#t=0.1" preload="metadata" muted playsinline tabindex="-1"></video><span class="rs-video-play"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 4.8v10.4a.8.8 0 0 0 1.2.7l8.4-5.2a.8.8 0 0 0 0-1.4L8.2 4.1A.8.8 0 0 0 7 4.8Z" fill="#fff"/></svg></span>` : `<img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" />`}${p.fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</div>`).join("")}
         </div>
       </div>
@@ -632,6 +632,14 @@ rsModalEl.addEventListener("pointerdown", (e) => {
 
 rsModalEl.addEventListener("click", (e) => {
     if (e.target === rsModalEl) return closeRsModal();
+    /* 아래 작은 사진을 누르면 그 사진으로 넘어가요 */
+    const th = e.target.closest(".rs-vw-th");
+    if (th && rsView) {
+        rsView.i = [...rsModalEl.querySelectorAll(".rs-vw-th")].indexOf(th);
+        rsView.dx = 0;
+        paintRsViewer(true);
+        return;
+    }
     const step = e.target.closest("[data-rs-step]");
     if (step) {
         stepRsViewer(Number(step.dataset.rsStep));

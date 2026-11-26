@@ -3467,11 +3467,12 @@ main[hidden] {
     pointer-events: none;
 }
 
-/* 이전 / 다음 버튼: 큰 사진 오른쪽 아래 (40×40, 간격 10, 가장자리에서 24) */
+/* 이전 / 다음 버튼: 큰 사진 오른쪽 위 (40×40, 간격 10, 가장자리에서 24) */
 .rs-vw-nav {
     position: absolute;
     right: 24px;
-    bottom: 24px;
+    top: 24px;
+    /* 영상 재생 바를 가리지 않게 사진도 영상도 모두 위쪽에 놓아요 */
     display: flex;
     gap: 10px;
 }
@@ -3501,6 +3502,7 @@ main[hidden] {
 
 .rs-vw-th {
     position: relative;
+    cursor: pointer;
     flex: 0 0 145px;
     width: 145px;
     height: 110px;
@@ -8508,11 +8510,6 @@ html.is-modal-open {
 
 .rs-vw-main.is-vid {
     cursor: default;
-}
-
-.rs-vw-main.is-vid .rs-vw-nav {
-    top: 24px;
-    bottom: auto;
 }
 
 /* ==========================================================

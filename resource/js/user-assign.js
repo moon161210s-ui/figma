@@ -1,7 +1,7 @@
 /* =========================================================
    직원 배정 (user-assign.html)
    - 객실 데이터는 index.js 의 ROOMS 를 메인 화면과 같이 써요
-     ('청소 필요' · '재배정 필요' 객실만 가져와서 보여줘요)
+     ('청소 대기' · '재배정 필요' 객실만 가져와서 보여줘요)
    - 담당자는 오른쪽 위 '변경사항 일괄저장'을 눌러야 반영돼요 (그 전까지는 asChanges 에만 담겨 있어요)
    ========================================================= */
 
@@ -409,7 +409,7 @@ function saveAssign() {
         if (!r) return;
         r.staff = name; /* 다른 화면(메인 등)도 같은 ROOMS 값을 봐요 */
         r.staffTag = "";
-        if (r.status === "reassign") r.status = "todo"; /* 담당자가 정해지면 '청소 필요'로 돌아가요 */
+        if (r.status === "reassign") r.status = "todo"; /* 담당자가 정해지면 '청소 대기'로 돌아가요 */
     });
     try {
         localStorage.setItem("roomAssign", JSON.stringify(saved));
