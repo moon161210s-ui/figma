@@ -91,7 +91,7 @@ function fitTypes() {
     box.style.maxHeight = "";
     return;
   }
-  const top = Math.max(120, box.getBoundingClientRect().top);
+  const top = Math.max(216, box.getBoundingClientRect().top); /* 페이지 제목(고정) 아래 216px 에 붙어요 */
   box.style.maxHeight = Math.max(240, window.innerHeight - top - 20) + "px";
 }
 

@@ -1773,9 +1773,16 @@ button {
     display: none;
 }
 
+/* 팝오버 안의 시간 목록은 시간 입력칸 위쪽으로 열어서, 아래의 닫기 · 저장하기 버튼이 가려지지 않게 해요 */
+.popover .tp-panel {
+    top: auto;
+    bottom: calc(100% + 4px);
+}
+
 .tp-panel {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
+    /* 시(00~23) · 분(00~59) */
     /* 시간 칸 아래 4px 간격으로 떠서 열려요 (알람처럼 위·가운데·아래 세 줄이 보여요) */
     position: absolute;
     left: 0;
@@ -3996,7 +4003,7 @@ body.as-dragging * {
 /* ---- 왼쪽: 객실 타입 (화면 아래 여백 20px 까지만 커지고, 더 많으면 목록 안에서 스크롤 / 높이는 standard.js 의 fitTypes) ---- */
 .rl-types {
     position: sticky;
-    top: 120px;
+    top: 216px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -4111,10 +4118,10 @@ body.as-dragging * {
     background: var(--color-base-inverse);
 }
 
-/* 제목 · 설명 · 버튼 영역은 스크롤해도 헤더 바로 아래(120px)에 고정돼요 (아래 항목들만 스크롤) */
+/* 카드 제목 영역은 스크롤해도 페이지 제목 바로 아래(216px)에 고정돼요 (아래 항목들만 스크롤) */
 .rl-sticky {
     position: sticky;
-    top: 120px;
+    top: 216px;
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -4182,11 +4189,16 @@ body.as-dragging * {
 
 /* 페이지 제목 줄: 왼쪽 제목·설명 / 오른쪽 버튼 (시안: 카드 밖, 제목 줄의 아래쪽 정렬) */
 .rl-page-title {
+    position: sticky;
+    top: 120px;
+    /* 헤더 바로 아래에 고정 (제목 + 설명 + 버튼 = 높이 96px → 아래 카드들은 216px 에 붙어요) */
+    z-index: 15;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
     gap: 16px;
     padding-right: 0;
+    background: var(--color-bg-base);
 }
 
 .rl-page-tx {
@@ -4564,8 +4576,14 @@ body.rl-dragging * {
     }
 
     .rl-page-title {
+        position: static;
         flex-wrap: wrap;
         align-items: stretch;
+    }
+
+    .rl-types,
+    .rl-sticky {
+        top: 0;
     }
 
     .rl-sticky {
@@ -4648,7 +4666,6 @@ body.rl-dragging * {
     display: flex;
     gap: 16px;
     height: calc(100vh - 300px);
-    min-height: 480px;
     padding-bottom: 16px;
     overflow-x: scroll;
     /* 스크롤바 자리가 늘 있어서 칸 높이가 달라지지 않아요 */
@@ -7856,9 +7873,14 @@ html.is-modal-open {
 }
 
 @supports not selector(::-webkit-scrollbar) {
-    *:not(.is-scrolling):not(.th-board):not(.ui-table):not(.noti-tabs) {
+    *:not(.is-scrolling):not(.th-board):not(.th-list):not(.ui-table):not(.noti-tabs) {
         scrollbar-color: transparent transparent;
     }
+}
+
+/* 조치 필요 목록의 카드 목록은 스크롤하지 않아도 세로 스크롤바가 늘 보여요 (넘칠 때만 생겨요) */
+.th-list:not(.is-scrolling)::-webkit-scrollbar-thumb:vertical {
+    background: var(--color-gray-200) !important;
 }
 
 .th-board img,
@@ -8464,16 +8486,33 @@ html.is-modal-open {
     transform: translate(-50%, -50%);
 }
 
-.rs-vw-main.is-video {
-    cursor: default;
+/* 인증 사진 뷰어 안의 영상: 사진과 같은 칸에서 함께 넘겨 봐요 */
+.rs-vw-slide.is-video {
     background: var(--color-gray-900);
 }
 
-.rs-vw-main.is-video video {
+.rs-vw-slide video {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
+}
+
+.rs-vw-th video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.rs-vw-main.is-vid {
+    cursor: default;
+}
+
+.rs-vw-main.is-vid .rs-vw-nav {
+    top: 24px;
+    bottom: auto;
 }
 
 /* ==========================================================

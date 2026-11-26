@@ -2,7 +2,7 @@
    청소 자동 배정 관리 (user-auto.html / index.js 뒤에 불러와요)
    - 위쪽: 전체 청소 팀 · 전체 직원 · 배정 가능한 직원(아직 어느 팀에도 없는 직원) 수
    - 왼쪽: 청소 조 목록 (팀 추가하기 / 팀 수정하기 / 삭제) — 한 팀 = 팀원 2명 + 팀원별 배정 제외 대상(없을 수 있어요)
-   - 오른쪽: 청소 자동 배정 기준 설정 (직원 자동 배정 · 객실당 청소 인원 · 우선순위 · 기준 적용 방식) / 닫기 = 바꾼 내용 버리기, 저장 = 반영
+   - 오른쪽: 청소 자동 배정 기준 설정 (직원 자동 배정 · 객실당 청소 인원 · 우선순위 · 기준 적용 방식) / 저장 = 반영
    - 저장 위치 (직원 재배정 화면과 같은 값을 써요 / 서버 연결 시 두 값만 서버 값으로 바꾸면 돼요)
        · 팀: localStorage 'cleanTeams'  [{ name, members: [이름, 이름], exclude: [제외 대상 | "", 제외 대상 | ""] }]
        · 기준: localStorage 'assignSettings'  { mode, unit, order, apply, keepManual, ... }
@@ -173,7 +173,6 @@ function renderPanel() {
         </section>
       </div>
       <div class="hm-foot">
-        <button class="btn btn-lg btn-outline" type="button" data-au-set="close">닫기</button>
         <button class="btn btn-lg btn-primary" type="button" data-au-set="save">저장</button>
       </div>`;
     $("#auPanel")
@@ -520,11 +519,6 @@ auPanel.addEventListener("click", (e) => {
     }
     const b = e.target.closest("[data-au-set]");
     if (!b) return;
-    if (b.dataset.auSet === "close") {
-        /* 닫기 = 바꾼 내용을 버리고 저장된 값으로 되돌려요 */
-        auDraft = auLoadSet();
-        return renderPanel();
-    }
     /* 저장: 다른 값(예: 하루 최대 업무량)은 그대로 두고 이 패널의 값만 바꿔요 */
     let cur = {};
     try {

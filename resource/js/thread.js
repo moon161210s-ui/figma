@@ -808,6 +808,8 @@ function handleThreadClick(e) {
         const k = act.dataset.thAct;
         thApply(item, k);
         renderThread();
+        /* 직접 처리하기: 카드가 '처리 중' 탭으로 옮겨 갔다고 알려줘요 */
+        if (k === "take") openThNotice(item);
         return true;
     }
     /* 카드를 누르면 그 호실의 특이사항 상세가 오른쪽에서 열려요 (카드 안 버튼은 제외) */
@@ -985,3 +987,41 @@ thScheduleMidnight();
         true
     );
 })();
+
+/* ---------- 직접 처리하기 안내 모달: 카드가 '처리 중' 탭으로 이동했어요 (청소 결과의 확인 모달과 같은 모양) ---------- */
+const thNoteEl = document.createElement("div");
+thNoteEl.className = "hm";
+thNoteEl.id = "thNotice";
+thNoteEl.hidden = true;
+document.body.appendChild(thNoteEl);
+function closeThNotice() {
+    thNoteEl.hidden = true;
+    thNoteEl.innerHTML = "";
+}
+function openThNotice(item) {
+    thNoteEl.innerHTML = `
+    <div class="hm-box rs-cm" role="alertdialog" aria-modal="true" aria-label="처리 중 탭으로 이동">
+      <div class="rs-cm-body">
+        <span class="rs-cm-ic"><img src="${ICON("check-purple")}" alt="" /></span>
+        <div class="rs-cm-tx"><strong>처리 중 탭으로 이동했어요</strong><span>${item.room}호 특이사항을 처리 중으로 옮겼어요.<br />‘처리 중’ 탭에서 확인할 수 있어요.</span></div>
+      </div>
+      <div class="rs-cm-btns">
+        <button class="btn btn-lg btn-primary" type="button" data-th-note="close">확인</button>
+      </div>
+    </div>`;
+    thNoteEl.hidden = false;
+    thNoteEl.querySelector(".btn-primary").focus();
+}
+thNoteEl.addEventListener("click", (e) => {
+    if (e.target === thNoteEl || e.target.closest("[data-th-note]")) closeThNotice();
+});
+document.addEventListener(
+    "keydown",
+    (e) => {
+        if (e.key === "Escape" && !thNoteEl.hidden) {
+            e.stopImmediatePropagation();
+            closeThNotice();
+        }
+    },
+    true
+);

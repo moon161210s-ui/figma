@@ -122,6 +122,7 @@ function syncResult(r) {
         const room = ROOMS.find((x) => x.no === r.no);
         if (room) {
             room.status = r.status === "reclean" ? "todo" : r.status;
+            room.reclean = r.status === "reclean";
             room.confirmed = !!r.confirmed && r.status === "done"; /* 확인한 청소 완료는 메인에서도 회색 */
         }
     }
@@ -301,9 +302,8 @@ function renderResultDetail() {
     const checklist =
         editable || r.status === "reclean"
             ? acc(
-                "청소 체크리스트",
+                editable ? "재청소를 요청할 항목을 선택해 주세요" : "재청소를 요청한 항목",
                 `<div class="rs-checks">
-            <p class="rs-hint">${editable ? "재청소를 요청할 내용을 체크해 주세요." : "재청소를 요청한 내용이에요."}</p>
             <div class="rs-check-list">${CHECK_ITEMS.map((c) => {
                     const on = !editable && (r.req || []).includes(c);
                     return `<button class="rs-check-item${on ? " is-checked" : ""}" type="button" role="checkbox" aria-checked="${on}" data-rs-check${editable ? "" : " disabled"}>
@@ -312,7 +312,7 @@ function renderResultDetail() {
           </div>
           ${editable || r.msg
                     ? `<div class="rs-textarea">
-            <label for="rsMsg">${editable ? "직원에게 전달할 내용" : "직원에게 전달한 내용"}</label>
+            <label for="rsMsg">${editable ? "직원에게 요청할 사항" : "직원에게 요청한 사항"}</label>
             <textarea id="rsMsg" placeholder="직원에게 요청할 내용을 작성해 주세요."${editable ? "" : " readonly"}>${editable ? "" : r.msg || ""}</textarea>
           </div>`
                     : ""}`
@@ -473,6 +473,8 @@ function handleResultsClick(e) {
             r.at = addMinutes(nowHHMM(), rc.after);
             r.hist.push([r.at, "직원 재검수 요청", `전달된 메모: ${rc.memo}`]);
             r.memo = [r.at, rc.memo];
+            /* 직원이 재청소를 마치고 다시 검수를 요청한 상태 → 체크리스트가 비워진 '검수 대기'예요 (같은 내용으로 다시 재청소를 요청할 수도 있어요) */
+            r.status = "review";
         }
         syncResult(r);
         renderResults();
@@ -485,7 +487,7 @@ function handleResultsClick(e) {
         return true;
     }
     if (r && e.target.closest("[data-rs-video]")) {
-        openRsVideo();
+        openRsViewer(r, 0, rsCount(r, 0)); /* 영상은 사진들 뒤에 붙어 있어요 */
         return true;
     }
     const photo = e.target.closest("[data-rs-photo]");
@@ -535,33 +537,22 @@ function openRsModal(kind) {
 /* 인증 사진 뷰어: 큰 사진을 좌우로 끌면(드래그) 끈 방향의 다음 사진으로 넘어가요.
    아래 작은 사진들은 지금 보는 사진만 선명하고 나머지는 흐려요 (눌러서 바꾸는 게 아니라 위치 표시예요) */
 let rsView = null;
-function openRsVideo() {
-    rsView = null;
-    rsModalEl.innerHTML = `
-    <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="침구 정리 영상">
-      <div class="hm-head">
-        <h2 class="hm-title">인증 영상</h2>
-        <button class="hm-close" type="button" data-rs-m="close" aria-label="닫기"><img class="i20" src="${ICON("close")}" alt="" /></button>
-      </div>
-      <div class="rs-vw-body">
-        <div class="rs-vw-main is-video"><video src="${RS_VIDEO}" controls autoplay playsinline></video></div>
-      </div>
-    </div>`;
-    rsModalEl.hidden = false;
-}
 function openRsViewer(r, gi, i) {
     const g = PHOTO_GROUPS[gi];
     rsView = { photos: Array.from({ length: rsCount(r, gi) }, (_, k) => rsPhoto(r, gi, k)), i, dx: 0 };
+    /* 검수 대기 객실의 인증 영상은 사진 맨 뒤에 같이 넘겨 볼 수 있어요 */
+    const hasVideo = gi === 0 && r.status === "review";
+    if (hasVideo) rsView.photos.push({ src: RS_VIDEO, video: true });
     rsModalEl.innerHTML = `
-    <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="인증 사진">
+    <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="${hasVideo ? "인증 사진 · 영상" : "인증 사진"}">
       <div class="hm-head">
-        <h2 class="hm-title">인증 사진</h2>
+        <h2 class="hm-title">${hasVideo ? "인증 사진 · 영상" : "인증 사진"}</h2>
         <button class="hm-close" type="button" data-rs-m="close" aria-label="닫기"><img class="i20" src="${ICON("close")}" alt="" /></button>
       </div>
       <div class="rs-vw-body">
         <div class="rs-vw-main" id="rsVwMain" aria-roledescription="carousel" aria-label="좌우로 끌어서 다음 사진 보기">
           <div class="rs-vw-track" id="rsVwTrack">${rsView.photos.map((p, k) => `
-            <div class="rs-vw-slide" role="group" aria-label="${k + 1} / ${rsView.photos.length}"><img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" /></div>`).join("")}
+            <div class="rs-vw-slide${p.video ? " is-video" : ""}" role="group" aria-label="${k + 1} / ${rsView.photos.length}">${p.video ? `<video src="${p.src}" controls playsinline preload="metadata"></video>` : `<img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" />`}</div>`).join("")}
           </div>
           <div class="rs-vw-nav">
             <button class="rs-vw-btn" type="button" data-rs-step="-1" aria-label="이전 사진"><img class="i20" src="${ICON("arrow-left")}" alt="" /></button>
@@ -569,7 +560,7 @@ function openRsViewer(r, gi, i) {
           </div>
         </div>
         <div class="rs-vw-list" id="rsVwList" aria-hidden="true">${rsView.photos.map((p) => `
-          <div class="rs-vw-th"><img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" />${p.fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</div>`).join("")}
+          <div class="rs-vw-th${p.video ? " is-video" : ""}">${p.video ? `<video src="${p.src}#t=0.1" preload="metadata" muted playsinline tabindex="-1"></video><span class="rs-video-play"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 4.8v10.4a.8.8 0 0 0 1.2.7l8.4-5.2a.8.8 0 0 0 0-1.4L8.2 4.1A.8.8 0 0 0 7 4.8Z" fill="#fff"/></svg></span>` : `<img src="${p.src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" />`}${p.fresh ? `<span class="badge badge-pr500 rs-new">NEW</span>` : ""}</div>`).join("")}
         </div>
       </div>
     </div>`;
@@ -583,6 +574,12 @@ function paintRsViewer(animate = true) {
     if (!track || !rsView) return;
     track.classList.toggle("is-dragging", !animate);
     track.style.transform = `translateX(calc(${-rsView.i * 100}% + ${rsView.dx}px))`;
+    /* 다른 사진으로 넘어가면 재생 중인 영상은 멈춰요 */
+    rsModalEl.querySelectorAll(".rs-vw-slide video").forEach((v, n) => {
+        if (v.closest(".rs-vw-slide") !== rsModalEl.querySelectorAll(".rs-vw-slide")[rsView.i]) v.pause();
+    });
+    /* 영상 칸에서는 이전/다음 버튼이 영상 재생 바를 가리지 않게 위쪽으로 올려요 */
+    rsModalEl.querySelector("#rsVwMain")?.classList.toggle("is-vid", !!(rsView.photos[rsView.i] || {}).video);
     const ths = [...rsModalEl.querySelectorAll(".rs-vw-th")];
     ths.forEach((t, k) => t.classList.toggle("is-on", k === rsView.i));
     /* 처음/마지막 사진에서는 더 갈 수 없는 쪽 버튼을 흐리게 */
@@ -604,7 +601,7 @@ function stepRsViewer(d) {
 /* 큰 사진 드래그: 사진이 손을 따라 움직이고, 놓을 때 충분히 끌었거나(너비의 15%) 빠르게 튕기면 다음 사진으로 넘어가요 */
 rsModalEl.addEventListener("pointerdown", (e) => {
     const main = e.target.closest("#rsVwMain");
-    if (!main || !rsView || e.button > 0 || e.target.closest(".rs-vw-nav")) return;
+    if (!main || !rsView || e.button > 0 || e.target.closest(".rs-vw-nav, video")) return; /* 영상 위에서는 재생 조작을 우선해요 (넘기기는 ‹ › 버튼 · 키보드) */
     const x0 = e.clientX, t0 = performance.now();
     const w = main.clientWidth;
     main.setPointerCapture(e.pointerId);

@@ -104,7 +104,7 @@
                 },
                 {
                     sel: () => $all(".rl-sec")[0],
-                    pad: [0, 0],
+                    pad: [20, 20], /* 시안(2528:49695): 섹션보다 사방 20px 정도 넓게 */
                     r: 16,
                     side: "left",
                     title: "정리된 모습을 사진으로 보여주세요",
@@ -112,7 +112,7 @@
                 },
                 {
                     sel: () => $all(".rl-sec")[1],
-                    pad: [0, 0],
+                    pad: [20, 20], /* 시안(2528:49695): 섹션보다 사방 20px 정도 넓게 */
                     r: 16,
                     side: "left",
                     title: "직원이 필수로 확인할 항목을 적어요",
@@ -120,7 +120,7 @@
                 },
                 {
                     sel: () => $all(".rl-sec")[2],
-                    pad: [0, 0],
+                    pad: [20, 20], /* 시안(2528:49695): 섹션보다 사방 20px 정도 넓게 */
                     r: 16,
                     side: "left",
                     title: "완료할 때 받을 사진을 정해요",
@@ -268,7 +268,9 @@
             r = Math.max(r, q.right);
             b = Math.max(b, q.bottom);
         });
-        const pad = Array.isArray(step.pad) ? step.pad : [step.pad || 0, step.pad || 0];
+        /* 시안 여유값은 1920 화면 기준이에요. 화면이 줄어 안의 요소가 작아지면 사방 여유도 같은 비율로 줄여요 (본문 폭 1640px 기준 / 정수로 반올림) */
+        const k = Math.min(1, Math.max(0.3, (window.innerWidth - 260) / 1640));
+        const pad = (Array.isArray(step.pad) ? step.pad : [step.pad || 0, step.pad || 0]).map((v) => Math.round(v * k));
         return { left: Math.round(l - pad[1]), top: Math.round(t - pad[0]), width: Math.round(r - l + pad[1] * 2), height: Math.round(b - t + pad[0] * 2) };
     };
 

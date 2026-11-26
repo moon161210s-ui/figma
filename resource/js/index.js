@@ -191,7 +191,9 @@ const STATUS = {
 };
 
 /* 청소 완료는 결과 화면에서 확인하기 전 = 초록 / 확인(검수 완료) 후 = 회색 (청소 결과 화면의 배지와 같아요) */
-const statusTile = (r) => (r.status === "done" && r.confirmed ? "badge-todo" : STATUS[r.status].tile);
+const statusTile = (r) => (r.reclean && r.status === "todo" ? "badge-reassign" : r.status === "done" && r.confirmed ? "badge-todo" : STATUS[r.status].tile);
+/* 청소 결과 화면에서 재청소를 요청한 객실은 '청소 필요' 대신 결과 화면과 같은 '재청소 요청'으로 보여요 (필터 · 개수는 그대로 청소 필요예요) */
+const statusLabel = (r) => (r.reclean && r.status === "todo" ? "재청소 요청" : STATUS[r.status].label);
 
 /* 객실 카드의 날짜는 항상 오늘 기준이에요 (오늘 입실 · nights 박 뒤 퇴실). 실제 서비스에서는 서버의 예약 날짜로 교체 */
 const todayMid = () => {
@@ -594,6 +596,7 @@ function applyResultState() {
         const v = saved[r.no];
         if (!v || r.empty) return;
         r.status = v.status === "reclean" ? "todo" : v.status;
+        r.reclean = v.status === "reclean";
         r.confirmed = !!v.confirmed && v.status === "done";
     });
 }
@@ -650,7 +653,7 @@ function roomCard(r) {
             }" data-room="${r.no}" tabindex="0" role="button" aria-pressed="${r.no === selectedNo
             }">
         <div class="room-top"><span class="room-no">${r.no}호</span>${reg
-                ? `<span class="badge ${statusTile(r)}">${STATUS[r.status].label
+                ? `<span class="badge ${statusTile(r)}">${statusLabel(r)
                 }</span>`
                 : ""
             }</div>
@@ -669,7 +672,7 @@ function roomCard(r) {
           <span class="room-no">${r.no}호</span>
           ${isStayOnly(r)
             ? ""
-            : `<span class="badge ${statusTile(r)}">${s.label}</span>`
+            : `<span class="badge ${statusTile(r)}">${statusLabel(r)}</span>`
         }
         </div>
         <dl class="room-info">
@@ -734,7 +737,9 @@ function renderDetail() {
         return;
     }
 
+    /* 청소 결과에 인증 사진이 있는 객실은 첨부파일을 보여줘요: 청소 완료 · 검수 대기 · (재청소를 요청해 '청소 필요'로 돌아온 객실) */
     const done = r.status === "done";
+    const hasPhotos = done || r.status === "review" || (loadResultState()[r.no] || {}).status === "reclean";
     /* 우측 패널에서는 '청소 가능 시간'만 수정할 수 있어요 (담당 직원은 청소 직원 재배정, 퇴실 시간은 예약 현황에서 바꿔요) */
     const editable = (kind) => kind === "clean" && !done;
     const edit = (kind, label) =>
@@ -763,7 +768,7 @@ function renderDetail() {
         <span class="detail-room-no">${r.no}호</span>
 ${(r.empty && !r.status) || isStayOnly(r)
             ? ""
-            : `<span class="badge ${statusTile(r)}">${STATUS[r.status].label
+            : `<span class="badge ${statusTile(r)}">${statusLabel(r)
             }</span>`
         }
       </div>
@@ -784,7 +789,7 @@ ${(r.empty && !r.status) || isStayOnly(r)
         ${row("담당 직원", staffText(r), "staff")}`
         }
       </dl>
-      ${done
+      ${hasPhotos
             ? `
         <h3 class="detail-section">첨부파일 <small>(${roomPhotos(r.no).length
             })</small></h3>
@@ -886,9 +891,9 @@ function trackPopover() {
     requestAnimationFrame(tick);
 }
 
-/* 시간 선택 목록 HTML: 휴대폰 알람처럼 오전/오후 · 시 · 분 세 줄을 돌려서 골라요 (고른 값은 숨겨진 #id 에 "HH:MM" 으로 들어가요)
-   - 시(1~12)와 분(00~59)은 끝없이 이어져서 계속 돌릴 수 있고, 11시에서 12시로 넘어갈 때 오전 ↔ 오후가 알아서 바뀌어요
-   - 분이 59 에서 00 으로 넘어가면 시도 하나 넘어가요 (11:59 → 12:00 오후)
+/* 시간 선택 목록 HTML: 휴대폰 알람처럼 시(24시간) · 분 두 줄을 돌려서 골라요 (고른 값은 숨겨진 #id 에 "HH:MM" 으로 들어가요)
+   - 시(00~23)와 분(00~59)은 끝없이 이어져서 계속 돌릴 수 있어요
+   - 분이 59 에서 00 으로 넘어가면 시도 하나 넘어가요 (11:59 → 12:00)
    팝오버(퇴실 시간 등)와 운영 시간대 설정 모달이 같이 써요 */
 const TP_H_COPIES = 9;
 const TP_M_COPIES = 5;
@@ -897,7 +902,7 @@ function timePickerHtml(id, value) {
     const items = (vals, label) =>
         vals.map((v) => `<button type="button" class="tp-item" data-v="${v}" role="option" aria-selected="false" tabindex="-1">${label(v)}</button>`).join("");
     const rep = (arr, n) => Array.from({ length: n }, () => arr).flat();
-    const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+    const hours = Array.from({ length: 24 }, (_, i) => i);
     const mins = Array.from({ length: 60 }, (_, i) => i);
     return `
     <div class="tp" id="tp-${id}">
@@ -906,8 +911,7 @@ function timePickerHtml(id, value) {
     )}<span class="tp-text">${t}</span></button>
       <input id="${id}" type="hidden" value="${t}" />
       <div class="tp-panel" hidden>
-        <div class="tp-col" data-col="ap" role="listbox">${items(["AM", "PM"], (v) => (v === "AM" ? "오전" : "오후"))}</div>
-        <div class="tp-col" data-col="h" role="listbox">${items(rep(hours, TP_H_COPIES), String)}</div>
+        <div class="tp-col" data-col="h" role="listbox">${items(rep(hours, TP_H_COPIES), pad)}</div>
         <div class="tp-col" data-col="m" role="listbox">${items(rep(mins, TP_M_COPIES), pad)}</div>
       </div>
     </div>`;
@@ -961,7 +965,7 @@ function openPopover(kind, anchor, room) {
       <button class="btn btn-sm btn-outline" type="button" data-pop-close>닫기</button>
       <button class="btn btn-sm btn-primary" type="button" data-pop-save>저장하기</button>
     </div>`;
-    /* 시간 선택: 오전/오후 · 시 · 분 목록 (timePickerHtml / initTimePicker 참고) */
+    /* 시간 선택: 시(24시간) · 분 목록 (timePickerHtml / initTimePicker 참고) */
     const timeField = timePickerHtml;
     /* 저장할 때 시간을 읽어요 (형식이 틀리면 빨간 테두리) */
     const readTime = () => {
@@ -1151,6 +1155,12 @@ function openPopover(kind, anchor, room) {
         let sel = new Date(baseDate);
         const todayMid = new Date();
         todayMid.setHours(0, 0, 0, 0);
+        /* 특이사항 히스토리 날짜 선택: 히스토리가 있는 날짜만 고를 수 있어요 (없는 날짜는 회색으로 막아요) */
+        const histDays =
+            kind === "threadHistDate"
+                ? new Set(tdHistory().map((x) => new Date(x.date.getFullYear(), x.date.getMonth(), x.date.getDate()).getTime()))
+                : null;
+        const dayOff = (dt) => !!histDays && !histDays.has(dt.getTime());
         const drawCal = () => {
             const first = view.getDay();
             const days = new Date(
@@ -1166,14 +1176,15 @@ function openPopover(kind, anchor, room) {
             for (let i = 0; i < first; i++) cells.push("<span></span>");
             for (let n = 1; n <= days; n++) {
                 const dt = new Date(view.getFullYear(), view.getMonth(), n);
-                const on = dt.getTime() === sel.getTime();
+                const off = dayOff(dt);
+                const on = !off && dt.getTime() === sel.getTime();
                 const isToday = dt.getTime() === todayMid.getTime();
                 const cls = [on ? "is-selected" : "", isToday ? "is-today" : ""]
                     .filter(Boolean)
                     .join(" ");
                 cells.push(
                     `<button type="button" data-day="${n}"${cls ? ` class="${cls}"` : ""
-                    }${isToday ? ' aria-label="오늘"' : ""}>${n}</button>`
+                    }${isToday ? ' aria-label="오늘"' : ""}${off ? " disabled" : ""}>${n}</button>`
                 );
             }
             $(".cal-grid", pop).innerHTML = cells.join("");
@@ -1219,7 +1230,7 @@ function openPopover(kind, anchor, room) {
         save = () => {
             if (kind === "threadHistDate") {
                 closePopover();
-                tdGoDate(sel);
+                if (!dayOff(sel)) tdGoDate(sel); /* 히스토리가 없는 날짜는 이동하지 않아요 */
                 return false;
             }
             if (kind === "threadDate") {
@@ -1288,8 +1299,8 @@ function openPopover(kind, anchor, room) {
     placePopover();
 }
 
-/* 시간 선택 목록 동작: 세 줄을 손으로(휠 · 터치) 돌리거나 눌러서 고르고, 방향키 위·아래로도 돌려요
-   내부 값은 하루 중 몇 분인지(T)로 들고 있어서, 시 · 분이 넘어갈 때 오전/오후와 시가 자연스럽게 따라가요 */
+/* 시간 선택 목록 동작: 두 줄(시 · 분)을 손으로(휠 · 터치) 돌리거나 눌러서 고르고, 방향키 위·아래로도 돌려요
+   내부 값은 하루 중 몇 분인지(T)로 들고 있어서, 분이 넘어갈 때 시가 자연스럽게 따라가요 */
 function initTimePicker(root) {
     root.querySelectorAll(".tp").forEach((tp) => initOneTimePicker(root, tp));
 }
@@ -1302,7 +1313,7 @@ function initOneTimePicker(root, tp) {
     const cols = {};
     tp.querySelectorAll(".tp-col").forEach((c) => (cols[c.dataset.col] = c));
     const copies = { h: TP_H_COPIES, m: TP_M_COPIES };
-    const size = { ap: 2, h: 12, m: 60 };
+    const size = { h: 24, m: 60 };
     let T = 0; /* 하루 중 분 (0~1439) */
     const toT = (value) => {
         const t = normTime(value);
@@ -1310,13 +1321,11 @@ function initOneTimePicker(root, tp) {
     };
     const wrap = (n) => ((n % 1440) + 1440) % 1440;
     const idxOf = (key) => {
-        const h24 = Math.floor(T / 60);
-        if (key === "ap") return h24 < 12 ? 0 : 1;
-        if (key === "h") return (h24 % 12 || 12) - 1 + size.h * Math.floor(copies.h / 2); /* 가운데 묶음에서 */
+        if (key === "h") return Math.floor(T / 60) + size.h * Math.floor(copies.h / 2); /* 가운데 묶음에서 */
         return (T % 60) + size.m * Math.floor(copies.m / 2);
     };
-    const ref = { ap: 0, h: 0, m: 0 }; /* 줄마다 지금 가운데에 있는 칸 번호 */
-    const lock = { ap: 0, h: 0, m: 0 };
+    const ref = { h: 0, m: 0 }; /* 줄마다 지금 가운데에 있는 칸 번호 */
+    const lock = { h: 0, m: 0 };
     const place = (key) => {
         const col = cols[key];
         const i = idxOf(key);
@@ -1336,22 +1345,12 @@ function initOneTimePicker(root, tp) {
         text.textContent = v;
         input.classList.remove("is-error");
     };
-    /* 값이 바뀌면 세 줄을 모두 새 값에 맞춰요 (돌리고 있던 줄은 그대로 두고 나머지만 따라가요) */
+    /* 값이 바뀌면 두 줄을 모두 새 값에 맞춰요 (돌리고 있던 줄은 그대로 두고 나머지만 따라가요) */
     const sync = (except) => {
         render();
-        ["ap", "h", "m"].forEach((k) => {
-            if (k === except) return;
-            if (panel.hidden) return;
-            if (k === "ap") {
-                ref.ap = idxOf("ap");
-                lock.ap = Date.now() + 400;
-                cols.ap.scrollTo({ top: ref.ap * ROW, behavior: "smooth" });
-                cols.ap.querySelectorAll(".tp-item").forEach((b, n) => {
-                    b.classList.toggle("is-selected", n === ref.ap);
-                    b.setAttribute("aria-selected", String(n === ref.ap));
-                    b.tabIndex = n === ref.ap ? 0 : -1;
-                });
-            } else place(k);
+        ["h", "m"].forEach((k) => {
+            if (k === except || panel.hidden) return;
+            place(k);
         });
     };
     const settle = (key) => {
@@ -1360,22 +1359,11 @@ function initOneTimePicker(root, tp) {
         i = Math.max(0, Math.min(col.children.length - 1, i));
         const d = i - ref[key];
         if (!d) return;
-        if (key === "ap") {
-            ref.ap = i;
-            if (i !== idxOf("ap")) T = wrap(T + 720);
-            col.querySelectorAll(".tp-item").forEach((b, n) => {
-                b.classList.toggle("is-selected", n === i);
-                b.setAttribute("aria-selected", String(n === i));
-                b.tabIndex = n === i ? 0 : -1;
-            });
-            sync("ap");
-            return;
-        }
         T = wrap(T + (key === "h" ? d * 60 : d));
         sync();
         place(key); /* 돌린 줄도 가운데 묶음으로 옮겨 다시 끝없이 돌릴 수 있게 해요 */
     };
-    ["ap", "h", "m"].forEach((key) => {
+    ["h", "m"].forEach((key) => {
         let timer = null;
         cols[key].addEventListener("scroll", () => {
             if (Date.now() < lock[key] || panel.hidden) return;
@@ -1407,7 +1395,7 @@ function initOneTimePicker(root, tp) {
     const setOpen = (on) => {
         panel.hidden = !on;
         field.setAttribute("aria-expanded", String(on));
-        if (on) ["ap", "h", "m"].forEach(place);
+        if (on) ["h", "m"].forEach(place);
         placePopover(); /* 목록이 화면 아래로 넘치면 팝오버를 그만큼 위로 올려요 */
     };
     field.addEventListener("click", () => setOpen(panel.hidden));
@@ -2690,7 +2678,7 @@ let hmTab = "weekday";
 let hmTrigger = null;
 const hoursOpen = () => !hm.hidden;
 
-/* 입·퇴실 시간은 오전/오후 · 시 · 분 목록에서 골라요 (고른 값은 숨겨진 #hmIn / #hmOut 에 "HH:MM" 으로 들어가요) */
+/* 입·퇴실 시간은 시(24시간) · 분 목록에서 골라요 (고른 값은 숨겨진 #hmIn / #hmOut 에 "HH:MM" 으로 들어가요) */
 $("#hmInTp").innerHTML = timePickerHtml("hmIn", HOURS.weekday.in);
 $("#hmOutTp").innerHTML = timePickerHtml("hmOut", HOURS.weekday.out);
 initTimePicker(hm);
