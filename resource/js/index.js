@@ -397,6 +397,69 @@ const RAW_ROOMS = [
         cleanReq: true,
     },
     { no: "304", floor: 3, empty: true },
+    /* 4 · 5층 (시안 샘플 / 예약 현황 · 청소 결과의 같은 객실 데이터와 날짜 · 시간이 맞아요) */
+    {
+        no: "401",
+        floor: 4,
+        status: "progress",
+        out: "11:00",
+        staff: "유가은",
+        nights: 1,
+        cleanMin: 25,
+    },
+    { no: "402", floor: 4, empty: true },
+    {
+        no: "403",
+        floor: 4,
+        status: "done",
+        out: "11:00",
+        staff: "이서영",
+        nights: 1,
+        nextIn: true,
+        nextNights: 1,
+    },
+    {
+        no: "404",
+        floor: 4,
+        status: "todo",
+        out: "11:00",
+        staff: "한다경",
+        nights: 3,
+    },
+    {
+        no: "501",
+        floor: 5,
+        status: "stay",
+        out: "11:00",
+        nights: 2,
+        stayed: 1,
+    },
+    {
+        no: "502",
+        floor: 5,
+        status: "review",
+        out: "11:00",
+        staff: "한다경",
+        nights: 1,
+    },
+    {
+        no: "503",
+        floor: 5,
+        status: "todo",
+        out: "11:00",
+        staff: "유가은",
+        nights: 4,
+        nextIn: true,
+        nextNights: 2,
+    },
+    {
+        no: "504",
+        floor: 5,
+        status: "todo",
+        out: "11:00",
+        staff: "최하석",
+        nights: 2,
+    },
 ];
 
 /* 오늘 기준으로 입실일 · 퇴실일을 계산해요 (날짜가 바뀌면 refreshToday 가 다시 불러요) */
@@ -419,6 +482,8 @@ const ROOM_TYPE = {
     101: "스탠다드", 102: "디럭스", 103: "프리미엄", 104: "스탠다드", 105: "디럭스", 106: "스탠다드", 107: "프리미엄", 108: "디럭스",
     201: "디럭스", 202: "스탠다드", 203: "프리미엄", 204: "스탠다드",
     301: "프리미엄", 302: "디럭스", 303: "스탠다드", 304: "프리미엄",
+    401: "스탠다드", 402: "디럭스", 403: "프리미엄", 404: "스탠다드",
+    501: "디럭스", 502: "스탠다드", 503: "프리미엄", 504: "프리미엄",
 };
 
 /* 서버에서 받은 객실 한 건을 화면에서 쓰는 형태(날짜 계산 포함)로 바꿔요 */
