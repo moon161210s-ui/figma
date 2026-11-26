@@ -472,11 +472,6 @@ button {
     color: var(--color-dangerous);
 }
 
-/* 시안: 2depth 메뉴가 있는 그룹은 1depth 에 배경 없이 선택된 2depth 메뉴만 진하게 표시 */
-.nav-group:has(.nav-sub)>.nav-item.is-active {
-    background: transparent;
-}
-
 .nav-sub {
     display: flex;
     flex-direction: column;
@@ -7032,6 +7027,21 @@ html.is-modal-open {
     touch-action: none;
 }
 
+/* 호버: 직원 재배정의 조별 · 개인 카드(.as-user)와 같이 테두리 + 손잡이를 진하게 */
+.as-rank:hover,
+.as-rank.is-drag {
+    border-color: var(--color-gray-900);
+}
+
+.as-rank .as-rank-handle {
+    opacity: 0.35;
+}
+
+.as-rank:hover .as-rank-handle,
+.as-rank.is-drag .as-rank-handle {
+    opacity: 1;
+}
+
 .as-rank-badge {
     display: grid;
     flex-shrink: 0;
@@ -7446,6 +7456,8 @@ html.is-modal-open {
     display: block;
     flex-shrink: 0;
     overflow: hidden;
+    padding: 0;
+    cursor: zoom-in;
     border: 1px solid var(--color-line-low);
     background: var(--color-gray-50);
 }
@@ -7937,9 +7949,14 @@ html.is-modal-open {
     display: flex;
     align-items: flex-start;
     gap: 16px;
+    /* 제목 · 숫자 카드가 다 올라가 좌우 패널이 헤더 아래에 닿을 만큼 스크롤 길이를 확보해요 */
+    min-height: calc(100vh - 140px);
 }
 
 .au-teams {
+    /* 스크롤하면 제목 · 숫자 카드는 위로 사라지고, 좌우 패널이 헤더 바로 아래(120px)까지 올라와 고정돼요 (시안 2529:89873) */
+    position: sticky;
+    top: 120px;
     /* Figma: 왼쪽 프레임 980 고정 / 오른쪽 패널은 fill (사이 간격 16) */
     flex: 0 1 980px;
     min-width: 584px;
@@ -8202,20 +8219,22 @@ html.is-modal-open {
 .au-form-lb,
 .au-form-lbs strong {
     font-size: var(--fs-body1);
-    line-height: var(--lh-body1);
+    line-height: 26px;
+    /* 시안: 제목 글자 칸 높이 26 */
     font-weight: var(--fw-bold);
     color: var(--color-gray-900);
 }
 
+/* 팀원 선택: 제목 위, 설명 아래 두 줄 (줄 사이 간격 0) */
 .au-form-lbs {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
+    flex-direction: column;
+    gap: 0;
 }
 
 .au-form-lbs span {
     font-size: var(--fs-body2);
-    line-height: var(--lh-body2);
+    line-height: 22px;
     color: var(--color-gray-300);
 }
 
@@ -8294,10 +8313,110 @@ html.is-modal-open {
     width: 100%;
 }
 
+/* 팀원 · 배정 제외 대상 셀렉트 목록: 최대 높이 260px, 20명이 넘으면 맨 위에 검색 칸 */
 .au-menu {
     z-index: 200;
+    max-height: 260px;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.au-menu-search {
+    display: block;
+    flex-shrink: 0;
+    height: 40px;
+    border: 1px solid var(--color-line-normal);
+    border-radius: var(--radius-sm);
+}
+
+.au-menu-search:focus-within {
+    border-color: var(--color-gray-900);
+}
+
+.au-menu-search input {
+    width: 100%;
+    height: 100%;
+    padding: 0 12px;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    outline: 0;
+    font: inherit;
+    font-size: var(--fs-body1);
+    color: var(--color-gray-900);
+}
+
+.au-menu-list {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
     overflow-y: auto;
+    list-style: none;
+}
+
+/* 이름 + 소속 두 줄 (줄 사이 간격 0) */
+.au-menu .au-opt {
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
     gap: 0;
+    height: auto;
+    padding: 8px 12px;
+}
+
+.au-menu .au-opt.is-single {
+    height: 40px;
+    padding: 0 12px;
+}
+
+.au-opt-nm {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-900);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.au-opt-sub {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: var(--fs-body2);
+    line-height: var(--lh-body2);
+    font-weight: var(--fw-regular);
+    color: var(--color-gray-300);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.au-menu .au-opt[hidden] {
+    display: none;
+}
+
+.au-menu .au-opt.is-off {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.au-menu .au-opt.is-off:hover {
+    background: transparent;
+}
+
+.au-menu-empty {
+    padding: 12px;
+    font-size: var(--fs-body1);
+    line-height: var(--lh-body1);
+    color: var(--color-gray-300);
+}
+
+.au-menu-empty[hidden] {
+    display: none;
 }
 
 .au-menu .filter-item.is-selected {

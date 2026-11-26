@@ -308,15 +308,25 @@ function auConfirmDelete(i) {
 let auForm = null; /* { index | null, name, members: [a, b], exclude: [a, b], el } */
 let auMenu = null;
 
+/* 셀렉트에는 일하는 직원 전체가 떠요. 고를 수 없는 사람(같은 팀의 짝꿍 · 배정 제외 대상이 될 수 없는 본인/짝꿍)은 흐리게 보여줘요 */
+const auTeamOf = (name) => {
+    const f = auForm;
+    const i = auTeams.findIndex((t, k) => k !== f.index && t.members.includes(name));
+    return i < 0 ? "" : auTeams[i].name;
+};
 const auOptions = (slot, kind) => {
     const f = auForm;
     const other = f.members[1 - slot];
-    if (kind === "member") {
-        /* 다른 팀에 이미 있는 직원과 같은 팀의 다른 팀원은 고를 수 없어요 */
-        const used = new Set(auTeams.filter((_, i) => i !== f.index).flatMap((t) => t.members));
-        return auRoster().filter((n) => !used.has(n) && n !== other);
-    }
-    return auRoster().filter((n) => n !== f.members[slot] && n !== other);
+    return auRoster().map((n) => {
+        let off = "";
+        if (kind === "member") {
+            if (n === other) off = `팀원 ${2 - slot}로 선택됨`;
+        } else if (n === f.members[slot]) off = "팀원 본인";
+        else if (n === other) off = "같은 팀 팀원";
+        const mine = f.index != null && auTeams[f.index] && auTeams[f.index].members.includes(n);
+        const sub = off || (mine ? f.name || auTeams[f.index].name : auTeamOf(n) || "소속 팀 없음");
+        return { n, sub, off: !!off };
+    });
 };
 
 function auMemberCard(slot) {
@@ -388,27 +398,49 @@ function openAuMenu(btn) {
     const slot = +btn.dataset.slot;
     const cur = auForm[kind === "member" ? "members" : "exclude"][slot];
     const opts = auOptions(slot, kind);
-    const items = (kind === "exclude" ? [["", "선택 안 함"]] : []).concat(opts.map((n) => [n, n]));
-    const ul = document.createElement("ul");
-    ul.className = "filter-menu au-menu";
-    ul.setAttribute("role", "listbox");
-    ul.innerHTML = items
-        .map(([v, l]) => `<li class="filter-item${cur === v ? " is-selected" : ""}" role="option" aria-selected="${cur === v}" data-opt="${auEsc(v)}"><span class="label">${auEsc(l)}</span></li>`)
+    /* 20명이 넘으면 맨 위에 검색 칸이 나와요 */
+    const searchable = opts.length > 20;
+    const none = kind === "exclude" ? `<li class="filter-item au-opt is-single${cur === "" ? " is-selected" : ""}" role="option" aria-selected="${cur === ""}" data-opt="" data-nm=""><span class="au-opt-nm">선택 안 함</span></li>` : "";
+    const rows = opts
+        .map(
+            (o) =>
+                `<li class="filter-item au-opt is-single${cur === o.n ? " is-selected" : ""}${o.off ? " is-off" : ""}" role="option" aria-selected="${cur === o.n}"${o.off ? ' aria-disabled="true"' : ""} data-opt="${auEsc(o.n)}" data-nm="${auEsc(o.n)}"><span class="au-opt-nm">${auEsc(o.n)}</span></li>`
+        )
         .join("");
-    document.body.appendChild(ul);
+    const el = document.createElement("div");
+    el.className = "filter-menu au-menu";
+    el.innerHTML = `${searchable ? '<label class="au-menu-search"><input type="text" placeholder="이름을 검색해 주세요." autocomplete="off" aria-label="직원 검색" /></label>' : ""}<ul class="au-menu-list" role="listbox">${none}${rows}<li class="au-menu-empty" hidden>검색 결과가 없어요.</li></ul>`;
+    document.body.appendChild(el);
     const r = btn.getBoundingClientRect();
-    ul.style.width = `${r.width}px`;
-    const h = ul.offsetHeight;
-    const below = innerHeight - r.bottom - 12;
-    const top = h <= below || below >= r.top - 12 ? r.bottom + 4 : r.top - 4 - h;
-    ul.style.left = `${Math.round(r.left)}px`;
-    ul.style.top = `${Math.round(top)}px`;
-    ul.style.maxHeight = `${Math.max(120, Math.min(h, (h <= below ? below : r.top - 12)))}px`;
+    el.style.width = `${r.width}px`;
+    const h = el.offsetHeight; /* 최대 260px (CSS) */
+    const below = innerHeight - r.bottom - 8 - 12;
+    const above = r.top - 8 - 12;
+    const openDown = h <= below || below >= above;
+    el.style.left = `${Math.round(r.left)}px`;
+    el.style.top = `${openDown ? r.bottom + 8 : r.top - 8 - Math.min(h, above)}px`;
+    el.style.maxHeight = `${Math.max(120, Math.min(260, openDown ? below : above))}px`;
     btn.setAttribute("aria-expanded", "true");
-    auMenu = { el: ul, btn, kind, slot };
-    ul.addEventListener("click", (e) => {
+    auMenu = { el, btn, kind, slot };
+    const sel = el.querySelector(".is-selected");
+    if (sel) sel.scrollIntoView({ block: "nearest" });
+    const q = el.querySelector(".au-menu-search input");
+    if (q) {
+        q.focus();
+        q.addEventListener("input", () => {
+            const v = q.value.trim();
+            let n = 0;
+            el.querySelectorAll(".au-opt").forEach((li) => {
+                const hit = !v || li.dataset.nm.includes(v);
+                li.hidden = !hit;
+                if (hit) n++;
+            });
+            el.querySelector(".au-menu-empty").hidden = n > 0;
+        });
+    }
+    el.addEventListener("click", (e) => {
         const o = e.target.closest("[data-opt]");
-        if (!o) return;
+        if (!o || o.classList.contains("is-off")) return;
         const val = o.dataset.opt;
         const m = auMenu;
         closeAuMenu();
@@ -443,6 +475,16 @@ function auFormClick(e) {
     });
     if (bad) return bad.focus();
     const team = { name, members: f.members.slice(), exclude: f.exclude.slice() };
+    /* 다른 팀에 있던 직원을 골랐다면 그 팀에서는 빠져요 (한 직원은 한 팀에만 있어요) */
+    auTeams.forEach((t, i) => {
+        if (i === f.index) return;
+        team.members.forEach((m) => {
+            const k = t.members.indexOf(m);
+            if (k < 0) return;
+            t.members.splice(k, 1);
+            t.exclude.splice(k, 1);
+        });
+    });
     if (f.index == null) auTeams.push(team);
     else auTeams[f.index] = team;
     auSaveTeams();
@@ -504,7 +546,7 @@ auPanel.addEventListener("change", (e) => {
 });
 window.addEventListener("resize", () => auPanel.querySelectorAll(".ui-seg").forEach((g) => auPositionSeg(g, false)));
 
-/* 패널은 화면 맨 아래(여백 20px)까지만 채우고, 스크롤하면 헤더 아래(120px)에 붙어요 (메인 우측 상세 패널과 같은 방식) */
+/* 패널은 화면 맨 아래(여백 20px)까지만 채우고, 스크롤하면 헤더 아래(120px)까지 올라와 붙어요 (메인 우측 상세 패널과 같은 방식) */
 function auFitPanel() {
     if (getComputedStyle(auPanel).position !== "sticky") return (auPanel.style.maxHeight = "");
     const top = Math.max(120, auPanel.getBoundingClientRect().top);

@@ -529,7 +529,7 @@ let tdYears = new Set(); /* 펼쳐 둔 연도 */
 let tdMenu = null; /* 열려 있는 필터 드롭다운 */
 
 const tdImgs = (i, n) => thImgs(i).slice(0, n);
-const tdImgHtml = (i, cls) => (thImgs(i).length ? `<div class="td-imgs ${cls}">${tdImgs(i, 3).map((src) => `<span class="td-img"><img src="${src}" alt="" onerror="this.style.visibility='hidden'" /></span>`).join("")}</div>` : "");
+const tdImgHtml = (i, cls) => (thImgs(i).length ? `<div class="td-imgs ${cls}">${tdImgs(i, 3).map((src, k) => `<button class="td-img" type="button" data-td-photo="${i.id}:${k}" aria-label="사진 크게 보기"><img src="${src}" alt="" onerror="this.style.visibility='hidden'" /></button>`).join("")}</div>` : "");
 const tdMini = (st) => `<span class="mini-badge${st === "wait" ? " is-blue" : ""}">${TD_STATE[st]}</span>`;
 const tdCatName = (id) => (TH_CATS.find((c) => c.id === id) || { name: "기타" }).name;
 const tdWhen = (i) => `${pad(i.date.getMonth() + 1)}.${pad(i.date.getDate())} ${i.time}`;
@@ -722,6 +722,14 @@ tdEl.addEventListener("click", (e) => {
     }
     const dd = e.target.closest("[data-td-dd]");
     if (dd) return openTdMenu(dd);
+    /* 사진을 누르면 청소 결과의 인증 사진과 같은 모달로 크게 보여줘요 */
+    const ph = e.target.closest("[data-td-photo]");
+    if (ph) {
+        const [id, k] = ph.dataset.tdPhoto.split(":").map(Number);
+        const item = TH_ITEMS.find((x) => x.id === id);
+        if (item) openPhotoViewer(thImgs(item), k, "사진");
+        return;
+    }
     const yr = e.target.closest("[data-td-year]");
     if (yr) {
         const y = +yr.dataset.tdYear;
@@ -734,7 +742,7 @@ tdEl.addEventListener("click", (e) => {
 document.addEventListener(
     "keydown",
     (e) => {
-        if (e.key !== "Escape" || tdEl.hidden || pop) return; /* 달력이 열려 있으면 달력만 닫아요 (index.js) */
+        if (e.key !== "Escape" || tdEl.hidden || pop || window.phOpen?.()) return; /* 달력이 열려 있으면 달력만 닫아요 (index.js) */
         tdMenu ? closeTdMenu() : closeThDetail();
     },
     true
@@ -849,3 +857,131 @@ function thScheduleMidnight() {
     }, next - now);
 }
 thScheduleMidnight();
+
+/* ---------- 사진 크게 보기 모달 ----------
+   청소 결과 확인의 '인증 사진' 뷰어와 같은 모양이에요 (같은 CSS: .hm / .rs-vw*).
+   좌우로 끌거나 ‹ › · 키보드 ← → 로 넘기고, 닫기는 X · 바깥 클릭 · Esc (Esc 는 이 모달만 닫아요) */
+(function () {
+    const el = document.createElement("div");
+    el.className = "hm";
+    el.id = "photoViewer";
+    el.hidden = true;
+    document.body.appendChild(el);
+    let v = null; /* { photos, i, dx } */
+
+    const close = () => {
+        el.hidden = true;
+        el.innerHTML = "";
+        v = null;
+    };
+
+    function paint(animate = true) {
+        const track = el.querySelector("#pvTrack");
+        if (!track || !v) return;
+        track.classList.toggle("is-dragging", !animate);
+        track.style.transform = `translateX(calc(${-v.i * 100}% + ${v.dx}px))`;
+        const ths = [...el.querySelectorAll(".rs-vw-th")];
+        ths.forEach((t, k) => t.classList.toggle("is-on", k === v.i));
+        const prev = el.querySelector('[data-pv-step="-1"]');
+        const next = el.querySelector('[data-pv-step="1"]');
+        if (prev) prev.disabled = v.i === 0;
+        if (next) next.disabled = v.i === v.photos.length - 1;
+        const list = el.querySelector("#pvList");
+        const cur = ths[v.i];
+        if (list && cur) list.scrollTo({ left: cur.offsetLeft - (list.clientWidth - cur.offsetWidth) / 2, behavior: animate ? "smooth" : "auto" });
+    }
+
+    function step(d) {
+        if (!v) return;
+        v.i = Math.min(Math.max(v.i + d, 0), v.photos.length - 1);
+        v.dx = 0;
+        paint(true);
+    }
+
+    window.phOpen = () => !el.hidden;
+    window.openPhotoViewer = function (photos, i = 0, title = "사진") {
+        if (!photos || !photos.length) return;
+        v = { photos: photos.slice(), i: Math.min(Math.max(i, 0), photos.length - 1), dx: 0 };
+        el.innerHTML = `
+    <div class="hm-box rs-vw" role="dialog" aria-modal="true" aria-label="${title}">
+      <div class="hm-head">
+        <h2 class="hm-title">${title}</h2>
+        <button class="hm-close" type="button" data-pv-close aria-label="닫기"><img class="i20" src="${ICON("close")}" alt="" /></button>
+      </div>
+      <div class="rs-vw-body">
+        <div class="rs-vw-main" id="pvMain" aria-roledescription="carousel" aria-label="좌우로 끌어서 다음 사진 보기">
+          <div class="rs-vw-track" id="pvTrack">${v.photos
+                .map((src, k) => `
+            <div class="rs-vw-slide" role="group" aria-label="${k + 1} / ${v.photos.length}"><img src="${src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" /></div>`)
+                .join("")}
+          </div>
+          <div class="rs-vw-nav">
+            <button class="rs-vw-btn" type="button" data-pv-step="-1" aria-label="이전 사진"><img class="i20" src="${ICON("arrow-left")}" alt="" /></button>
+            <button class="rs-vw-btn" type="button" data-pv-step="1" aria-label="다음 사진"><img class="i20" src="${ICON("arrow-right")}" alt="" /></button>
+          </div>
+        </div>
+        <div class="rs-vw-list" id="pvList" aria-hidden="true">${v.photos
+                .map((src) => `
+          <div class="rs-vw-th"><img src="${src}" alt="" draggable="false" onerror="this.style.visibility='hidden'" /></div>`)
+                .join("")}
+        </div>
+      </div>
+    </div>`;
+        document.body.appendChild(el); /* 열려 있는 다른 모달보다 위에 보이게 맨 뒤로 */
+        el.hidden = false;
+        paint(false);
+    };
+
+    /* 큰 사진 드래그: 손을 따라 움직이고, 너비의 15% 이상 끌거나 빠르게 튕기면 다음 사진 */
+    el.addEventListener("pointerdown", (e) => {
+        const main = e.target.closest("#pvMain");
+        if (!main || !v || e.button > 0 || e.target.closest(".rs-vw-nav")) return;
+        const x0 = e.clientX;
+        const t0 = performance.now();
+        const w = main.clientWidth;
+        main.setPointerCapture(e.pointerId);
+        main.classList.add("is-grabbing");
+        const move = (ev) => {
+            const dx = ev.clientX - x0;
+            const edge = (v.i === 0 && dx > 0) || (v.i === v.photos.length - 1 && dx < 0);
+            v.dx = edge ? dx * 0.3 : dx;
+            paint(false);
+        };
+        const up = (ev) => {
+            main.removeEventListener("pointermove", move);
+            main.removeEventListener("pointerup", up);
+            main.removeEventListener("pointercancel", up);
+            main.classList.remove("is-grabbing");
+            if (!v) return;
+            const dx = ev.clientX - x0;
+            const fast = Math.abs(dx) / Math.max(performance.now() - t0, 1) > 0.5 && Math.abs(dx) > 30;
+            if (Math.abs(dx) > w * 0.15 || fast) step(dx < 0 ? 1 : -1);
+            else {
+                v.dx = 0;
+                paint(true);
+            }
+        };
+        main.addEventListener("pointermove", move);
+        main.addEventListener("pointerup", up);
+        main.addEventListener("pointercancel", up);
+    });
+
+    el.addEventListener("click", (e) => {
+        if (e.target === el || e.target.closest("[data-pv-close]")) return close();
+        const s = e.target.closest("[data-pv-step]");
+        if (s) step(Number(s.dataset.pvStep));
+    });
+
+    document.addEventListener(
+        "keydown",
+        (e) => {
+            if (el.hidden) return;
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                close();
+            } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") step(e.key === "ArrowRight" ? 1 : -1);
+        },
+        true
+    );
+})();

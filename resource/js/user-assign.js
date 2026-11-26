@@ -216,7 +216,7 @@ function asRoomCard(r) {
         <span class="badge ${need ? "badge-reassign" : "badge-todo"}">${need ? "재배정 필요" : "배정 완료"}</span>
       </div>
       <p class="as-room-staff"><span>담당</span><b>${tom ? asTomStaff(r) : need ? r.staff : asStaffOf(r)}</b>${tag}</p>
-      ${need ? (asChanges[r.no] ? asDropped(asChanges[r.no]) : `<div class="as-drop">담당자를 드래그해 배정</div>`) : ""}
+      ${need ? (asChanges[r.no] ? asDropped(asChanges[r.no]) : `<div class="as-drop">담당자를 드래그해 배정</div>`) : changed ? asDropped(tom ? asTomChanges[r.no] : asChanges[r.no]) : ""}
     </article>`;
 }
 
