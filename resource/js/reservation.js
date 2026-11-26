@@ -332,11 +332,25 @@ function renderReserve() {
   }
 }
 
+/* 알림 문구용 시간: "HH:MM" → 아침 6시 / 오전 11시 / 낮 12시 / 낮 1시 / 저녁 6시 / 밤 9시 (분이 있으면 "오전 11시 30분") */
+function rvNotiTime(t) {
+  const [h, m] = String(t).split(":").map(Number);
+  const part = h < 12 ? (h === 0 ? "밤" : h >= 6 && h < 9 ? "아침" : "오전") : h < 18 ? "낮" : h < 21 ? "저녁" : "밤";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${part} ${h12}시${m ? ` ${m}분` : ""}`;
+}
+
+/* 이미 퇴실한 예약인지: 퇴실 날짜가 오늘보다 앞이면 퇴실이 끝난 예약이에요 (이런 예약은 퇴실 시간 변경 버튼을 보여주지 않아요)
+   오늘 퇴실하는 예약은 시간이 지났어도 아직 퇴실 전으로 보고 버튼을 보여줘요 (사용성 테스트용 / 서버 연결 시 실제 퇴실 여부로 교체) */
+function rvDeparted(r) {
+  return r.end < todayMid();
+}
+
 /* ---------- 우측 '날짜 상세' 패널 ---------- */
 function rvCard(r, pop) {
   const stay = r.type === "stay";
   const ext = rvExt(r);
-  const outBtn = `<button class="rv-out-btn" type="button" data-rv-out="${r.id}">퇴실 시간 변경</button>`;
+  const outBtn = rvDeparted(r) ? "" : `<button class="rv-out-btn" type="button" data-rv-out="${r.id}">퇴실 시간 변경</button>`;
   const miniExt = ext ? `<em class="rv-mini">${rvExtText(ext)}</em>` : "";
   const chRow = `<div><dt>예약</dt><dd>${RV_CH[r.ch].html}</dd></div>`;
   const nights = dayDiff(r.start, r.end);
@@ -482,6 +496,8 @@ function rvOpenOut(id, btn) {
     /* 대실은 입실한 날 안에서만 바꿀 수 있어요 */
     dayOk: stay ? (d) => d > r.start : (d) => rvSame(d, r.start),
     rvSave(date, t) {
+      const oldOut = rvOut(r);
+      const oldEnd = r.end;
       if (stay) r.end = date;
       const o = {};
       if (t !== rvBaseOut(r)) o.out = t;
@@ -491,6 +507,40 @@ function rvOpenOut(id, btn) {
       try {
         localStorage.setItem(RV_OVER_KEY, JSON.stringify(RV_OVER));
       } catch (e) { }
+      /* 오늘 투숙 중인 예약이면 메인 화면에도 바뀐 퇴실 시간을 넘겨요 (메인에서 '직원 미확인'으로 보여요) */
+      if (t !== oldOut || (stay && !rvSame(oldEnd, r.end))) {
+        const today = todayMid();
+        if (r.start <= today && r.end >= today) {
+          let m = {};
+          try {
+            m = JSON.parse(localStorage.getItem("rvOutToMain")) || {};
+          } catch (e) { }
+          m[r.room] = { day: rvKey(today), out: t, end: rvKey(r.end) };
+          try {
+            localStorage.setItem("rvOutToMain", JSON.stringify(m));
+          } catch (e) { }
+        }
+      }
+      /* 퇴실 시간(또는 퇴실일)이 실제로 바뀌었으면 담당 직원에게 퇴실 변경 알림이 간 것을 알림 센터에 남겨요 */
+      const dateChanged = stay && !rvSame(oldEnd, r.end);
+      if (t !== oldOut || dateChanged) {
+        const staff = (ROOMS.find((x) => !x.empty && x.no === r.room) || {}).staff;
+        const from = `${dateChanged ? rvFmtMD(oldEnd) + " " : ""}${rvNotiTime(oldOut)}`;
+        const to = `${dateChanged ? rvFmtMD(r.end) + " " : ""}${rvNotiTime(t)}`;
+        addNotification({
+          type: "exit",
+          title: `${r.room}호 · 퇴실 변경 알림 전송`,
+          text: `${staff ? staff + " 직원" : "담당 직원"}에게 퇴실 변경 알림을 보냈어요.\n${from} → ${to}`,
+        });
+        /* 잠시 뒤 담당 직원이 알림을 확인했다는 알림이 한 번 더 와요 (사용성 테스트용 / 서버 연결 시 실제 확인 시점으로 교체) */
+        setTimeout(() => {
+          addNotification({
+            type: "exit",
+            title: `${staff || "담당 직원"} · 퇴실 변경 확인`,
+            text: `${r.room}호 퇴실 시간 변경 알림을 확인했어요.\n${from} → ${to}`,
+          });
+        }, 3000);
+      }
     },
     afterSave() {
       const shown = rvPop;
@@ -663,3 +713,10 @@ document.addEventListener("scroll", () => closeRvPop(), true);
 
 renderReserve();
 renderRvDetail();
+
+/* 예약 현황 화면은 처음에는 알림 아이콘에 빨간 점이 없어요 (기존 샘플 알림은 읽은 것으로 보여요).
+   퇴실 시간을 바꿔서 '퇴실 변경 알림 전송'이 새로 생기면 그때 빨간 점이 나타나요 */
+NOTIFICATIONS.forEach((n) => {
+  if (!String(n.id).startsWith("new-")) n.read = true;
+});
+renderBell();

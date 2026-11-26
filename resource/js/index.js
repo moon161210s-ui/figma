@@ -2318,6 +2318,36 @@ let NOTIFICATIONS = [
 
 const readIds =
     new Set(); /* 이 화면에서 읽은 알림 (서버 목록으로 교체돼도 읽음 상태를 유지) */
+/* 화면에서 동작한 뒤 새로 생기는 알림 (예: 예약 현황에서 퇴실 시간을 바꾸면 '퇴실 변경 알림 전송')
+   - 다른 화면으로 가도 보이도록 이 브라우저에 보관해요 (서버 연결 시 서버가 알림 목록을 내려주면 이 부분은 필요 없어요) */
+const NOTI_EXTRA_KEY = "notiExtra";
+const notiExtras = (() => {
+    try {
+        return (JSON.parse(localStorage.getItem(NOTI_EXTRA_KEY)) || []).filter((n) => n && n.day === NOTI_TODAY);
+    } catch (e) {
+        return [];
+    }
+})();
+NOTIFICATIONS = [...notiExtras, ...NOTIFICATIONS];
+function saveNotiExtras() {
+    try {
+        localStorage.setItem(NOTI_EXTRA_KEY, JSON.stringify(notiExtras.slice(0, 30)));
+    } catch (e) { }
+}
+/* 알림 한 건을 맨 위에 새로 추가해요 (읽지 않은 상태 → 종 아이콘에 빨간 점) */
+function addNotification(n) {
+    const now = new Date();
+    const item = Object.assign({ actions: [], read: false }, n, {
+        id: `new-${now.getTime()}`,
+        date: notiDate(0, `${pad(now.getHours())}:${pad(now.getMinutes())}`),
+        day: NOTI_TODAY,
+    });
+    notiExtras.unshift(item);
+    saveNotiExtras();
+    NOTIFICATIONS.unshift(item);
+    renderBell();
+    renderNoti();
+}
 let notiTab = "전체";
 let notiOpen = false;
 const esc = (v) =>
@@ -2450,6 +2480,8 @@ function markRead(ids) {
     NOTIFICATIONS.forEach((n) => {
         if (readIds.has(n.id)) n.read = true;
     });
+    notiExtras.forEach((n) => (n.read = n.read || readIds.has(n.id)));
+    saveNotiExtras();
     /* ★ 서버 연결 지점: 여기서 읽음 상태를 서버에 저장하세요  예) fetch("/api/notifications/read", { method: "POST", body: JSON.stringify({ ids }) }) */
     renderBell();
     renderNoti();
