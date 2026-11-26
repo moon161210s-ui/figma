@@ -590,6 +590,15 @@ function wsRow(w) {
     </div>`;
 }
 
+/* 모달 안 목록: 저장한 값이 있으면 그대로, 아직 저장한 적이 없으면 값이 비어 있는 한 줄로 열어요 (시안 2431:69314) */
+function wsModalList() {
+    try {
+        const v = JSON.parse(localStorage.getItem(WS_KEY));
+        if (Array.isArray(v) && v.length) return v;
+    } catch (e) { }
+    return [{ id: wsNewId(), name: "", start: "00:00", end: "00:00" }];
+}
+
 function openWorkShifts(trigger) {
     wsTrigger = trigger || null;
     wsModal.innerHTML = `
@@ -599,7 +608,7 @@ function openWorkShifts(trigger) {
         <button class="hm-close" type="button" data-ws-m="close" aria-label="닫기">${icon("close", 20)}</button>
       </div>
       <div class="ws-body">
-        <div class="ws-list" id="wsList">${wsLoad().map(wsRow).join("")}</div>
+        <div class="ws-list" id="wsList">${wsModalList().map(wsRow).join("")}</div>
         <button class="btn btn-sm btn-outline ws-add" type="button" data-ws-m="add">${icon("plus", 20)}항목 추가</button>
       </div>
       <div class="hm-foot">

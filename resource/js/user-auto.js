@@ -503,6 +503,16 @@ auPanel.addEventListener("change", (e) => {
     auPanel.querySelector("#auKeepRow").hidden = e.target.value !== "today";
 });
 window.addEventListener("resize", () => auPanel.querySelectorAll(".ui-seg").forEach((g) => auPositionSeg(g, false)));
+
+/* 패널은 화면 맨 아래(여백 20px)까지만 채우고, 스크롤하면 헤더 아래(120px)에 붙어요 (메인 우측 상세 패널과 같은 방식) */
+function auFitPanel() {
+    if (getComputedStyle(auPanel).position !== "sticky") return (auPanel.style.maxHeight = "");
+    const top = Math.max(120, auPanel.getBoundingClientRect().top);
+    auPanel.style.maxHeight = Math.max(480, window.innerHeight - top - 20) + "px";
+}
+window.addEventListener("scroll", auFitPanel, { passive: true });
+window.addEventListener("resize", auFitPanel);
+auFitPanel();
 document.addEventListener("scroll", closeAuMenu, true);
 
 function renderAll() {

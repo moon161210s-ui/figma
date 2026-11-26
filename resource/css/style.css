@@ -7899,7 +7899,7 @@ html.is-modal-open {
 .au-stat {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     padding: 20px 24px 16px;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
@@ -7914,21 +7914,22 @@ html.is-modal-open {
 
 .au-stat-v {
     display: flex;
-    align-items: baseline;
+    align-items: flex-end;
     gap: 4px;
 }
 
 .au-stat-v strong {
-    font-size: var(--fs-h3);
-    line-height: var(--lh-h3);
+    font-size: var(--fs-h2);
+    line-height: var(--lh-h2);
     font-weight: var(--fw-bold);
     color: var(--color-gray-900);
 }
 
 .au-stat-v small {
+    padding-bottom: 10px;
     font-size: var(--fs-body1);
     line-height: var(--lh-body1);
-    font-weight: var(--fw-medium);
+    font-weight: var(--fw-regular);
     color: var(--color-gray-900);
 }
 
@@ -7941,7 +7942,7 @@ html.is-modal-open {
 .au-teams {
     /* Figma: 왼쪽 프레임 980 고정 / 오른쪽 패널은 fill (사이 간격 16) */
     flex: 0 1 980px;
-    min-width: 780px;
+    min-width: 584px;
     padding: 20px 0;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
@@ -7986,7 +7987,7 @@ html.is-modal-open {
 .au-team {
     display: flex;
     align-items: center;
-    gap: 40px;
+    gap: clamp(16px, 3vw, 40px);
     height: 95px;
     border-bottom: 1px solid var(--color-line-normal);
 }
@@ -8008,8 +8009,8 @@ html.is-modal-open {
     /* 팀원 두 명 사이는 최대 150, 공간이 모자라면 줄어들어요 */
     display: grid;
     flex: 1 1 0;
-    grid-template-columns: repeat(2, 225px);
-    column-gap: clamp(16px, calc(100% - 450px), 150px);
+    grid-template-columns: repeat(2, minmax(0, 225px));
+    column-gap: clamp(12px, calc(100% - 450px), 150px);
     min-width: 0;
 }
 
@@ -8025,6 +8026,13 @@ html.is-modal-open {
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+}
+
+.au-member-tx strong,
+.au-member-tx span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .au-member-tx strong {
@@ -8112,19 +8120,16 @@ html.is-modal-open {
     display: flex;
     flex: 1 1 0;
     flex-direction: column;
-    min-width: 440px;
+    min-width: 400px;
     container-type: inline-size;
     border: 0;
     border-radius: var(--radius-xl);
     background: var(--color-base-inverse);
     box-shadow: none;
-}
-
-.au-panel .hm-body {
-    margin-right: 0;
-    padding-right: 24px;
-    scrollbar-gutter: auto;
-    overflow: visible;
+    /* 메인 우측 상세 패널처럼 스크롤해도 헤더(120px) 아래에 붙고, 패널 안에서만 스크롤돼요 (최대 높이는 user-auto.js 가 맞춰요) */
+    position: sticky;
+    top: 120px;
+    overflow: hidden;
 }
 
 .au-panel .as-set-top {
@@ -8138,6 +8143,7 @@ html.is-modal-open {
 .au-panel .as-set-tx {
     flex: 1 1 0;
     min-width: 0;
+    word-break: keep-all;
 }
 
 @container (max-width: 635px) {
@@ -8331,24 +8337,6 @@ html.is-modal-open {
     height: 100%;
     object-fit: contain;
 }
-
-/* 화면이 좁아 두 프레임이 한 줄에 안 들어가면 위아래로 쌓아요 */
-@media (max-width: 1540px) {
-    .au-body {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .au-teams {
-        flex-basis: auto;
-    }
-
-    .au-panel.as-set {
-        flex: 0 0 auto;
-        width: 100%;
-    }
-}
-
 
 /* ==========================================================
  최초 진입 온보딩 (onboarding.js)
