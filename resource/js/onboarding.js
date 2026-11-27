@@ -238,10 +238,10 @@
 
     /* ---------- 말풍선 화살표 (Figma polygon 50x36, 끝이 살짝 둥글어요) ---------- */
     const ARROWS = {
-        up: `<svg width="50" height="36" viewBox="0 0 50 36" fill="none" aria-hidden="true"><path d="M0 36 22.4 4.2a3.4 3.4 0 0 1 5.2 0L50 36Z" fill="#fff"/></svg>`,
-        down: `<svg width="50" height="36" viewBox="0 0 50 36" fill="none" aria-hidden="true"><path d="M0 0 22.4 31.8a3.4 3.4 0 0 0 5.2 0L50 0Z" fill="#fff"/></svg>`,
-        left: `<svg width="36" height="50" viewBox="0 0 36 50" fill="none" aria-hidden="true"><path d="M36 0 4.2 22.4a3.4 3.4 0 0 0 0 5.2L36 50Z" fill="#fff"/></svg>`,
-        right: `<svg width="36" height="50" viewBox="0 0 36 50" fill="none" aria-hidden="true"><path d="M0 0 31.8 22.4a3.4 3.4 0 0 1 0 5.2L0 50Z" fill="#fff"/></svg>`,
+        up: `<svg width="50" height="36" viewBox="0 0 50 36" fill="none" aria-hidden="true"><path d="M0 36 22.4 4.2a3.4 3.4 0 0 1 5.2 0L50 36Z" fill="currentColor"/></svg>`,
+        down: `<svg width="50" height="36" viewBox="0 0 50 36" fill="none" aria-hidden="true"><path d="M0 0 22.4 31.8a3.4 3.4 0 0 0 5.2 0L50 0Z" fill="currentColor"/></svg>`,
+        left: `<svg width="36" height="50" viewBox="0 0 36 50" fill="none" aria-hidden="true"><path d="M36 0 4.2 22.4a3.4 3.4 0 0 0 0 5.2L36 50Z" fill="currentColor"/></svg>`,
+        right: `<svg width="36" height="50" viewBox="0 0 36 50" fill="none" aria-hidden="true"><path d="M0 0 31.8 22.4a3.4 3.4 0 0 1 0 5.2L0 50Z" fill="currentColor"/></svg>`,
     };
     const ARROW_FOR_SIDE = { below: "up", above: "down", right: "left", left: "right" };
 

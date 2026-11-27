@@ -8656,6 +8656,7 @@ html.is-modal-open {
     position: absolute;
     display: block;
     line-height: 0;
+    color: var(--color-base-inverse);
     pointer-events: none;
 }
 
