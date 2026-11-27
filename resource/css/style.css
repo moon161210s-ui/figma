@@ -48,6 +48,8 @@
     /* ---------- Color / Base ---------- */
     --color-base-inverse: #ffffff;
     /* White+Black (반전) */
+    --color-tab-on: #1f2225;
+    /* 탭 버튼 선택 배경 (Black+gray 반전) */
 
     /* ---------- Color / Line ---------- */
     --color-line-low: #edeff3;
@@ -188,53 +190,74 @@
     }
 }
 
-/* ---------- Dark mode (Light와 값이 다른 토큰만) ---------- */
+/* ---------- Dark mode (Light와 값이 다른 토큰만) ----------
+ Figma "Theme_Light" 시안(708-16704 / 2614-65946)의 Light · Dark 컬러 값이에요.
+ Figma 에서 Dark 값이 Light 와 똑같이 표시된 토큰(gray-50 · gray-100 · gray-400~700)은 시안 값이 없어서
+ 다크에 맞게 정한 임시값이에요 (★ 표시) */
 [data-theme="dark"] {
     color-scheme: dark;
     /* 입력창·기본 스크롤바 등 브라우저 기본 요소도 어둡게 */
 
-    /* Figma Dark 값 */
-    --color-primary-500: rgba(102, 67, 230, 0.5);
-    /* Figma Dark: 6643E6, 투명도 50% */
-    --color-bg-base: #1c1d22;
-    --color-base-inverse: #000000;
-    /* White+Black(반전): 카드·패널 배경 */
-
-    /* ↓ 아래는 다크 시안이 없어서 라이트 값을 뒤집어 정한 임시값이에요 (다크 시안 확인 후 교체) */
-    --color-bg-low: #1c1d22;
-    /* Figma 값(#f8fafd)은 다크에서 너무 밝아 바꿨어요 */
-    --color-bg-disable: #292d31;
-    --color-bg-hover: #1c1d22;
-    --color-line-normal: #353a3f;
-    --color-line-low: #292d31;
-
-    --color-gray-900: #f4f6fb;
-    /* 기본 글자색 */
-    --color-gray-800: #e4e8ee;
-    --color-gray-700: #c0c4cf;
-    --color-gray-600: #a5aeba;
-    --color-gray-500: #a5aeba;
-    --color-gray-400: #a5aeba;
-    --color-gray-300: #a5aeba;
-    /* 보조 글자색 */
-    --color-gray-200: #656d77;
-    /* 흐린 글자·스크롤바 */
-    --color-gray-100: #4a5159;
-    --color-gray-50: #292d31;
-
-    /* 다크 참고 시안(764:11526)의 보라 컬러감 */
-    --color-primary-50: rgba(113, 80, 232, 0.19);
-    /* 보라 틴트 배경 (활성 메뉴·호버·칩) */
-    --color-primary-300: #a18aff;
-    /* 밝은 보라 */
+    /* Primary */
+    --color-primary-500: #8266eb;
+    --color-primary-600: #5d3dd1;
+    /* 버튼 hover */
     --color-primary-accent: #8266eb;
     /* 보라 글자·선택 테두리 */
-    --color-primary-600: rgba(102, 67, 230, 0.65);
-    /* 버튼 hover */
-    --color-dangerous-bg: rgba(225, 65, 65, 0.16);
-    --color-warning-bg: rgba(249, 150, 37, 0.16);
-    --color-success-bg: rgba(76, 175, 80, 0.16);
-    --color-information-bg: rgba(0, 145, 234, 0.16);
+    --color-primary-50: rgba(113, 80, 232, 0.19);
+    /* ★ 보라 틴트 배경 (활성 메뉴·호버·칩) */
+    --color-primary-300: #a18aff;
+    /* ★ 밝은 보라 */
+
+    /* GrayScale (글자) */
+    --color-gray-900: #ffffff;
+    /* 기본 글자색 (Strong) */
+    --color-gray-300: #adb5c7;
+    /* 보조 글자색 (Normal) */
+    --color-gray-200: #596069;
+    /* 흐린 글자 (Disable) */
+    --color-gray-800: #e4e8ee;
+    /* ★ */
+    --color-gray-700: #c0c4cf;
+    /* ★ */
+    --color-gray-600: #a5aeba;
+    /* ★ */
+    --color-gray-500: #a5aeba;
+    /* ★ */
+    --color-gray-400: #a5aeba;
+    /* ★ */
+    --color-gray-100: #4a5159;
+    /* ★ */
+    --color-gray-50: #292d31;
+    /* ★ */
+
+    /* Background / Base */
+    --color-bg-base: #15161a;
+    --color-base-inverse: #1f2225;
+    /* White+Black(반전): 카드·패널 배경 */
+    --color-bg-disable: #0e0e11;
+    --color-bg-low: #15161a;
+    /* ★ Figma 값(#f8f9fb)은 다크에서 너무 밝아 바꿨어요 */
+    --color-bg-hover: #15161a;
+    /* ★ */
+
+    /* Line */
+    --color-line-normal: #292d31;
+    --color-line-low: #363a3d;
+
+    /* System */
+    --color-dangerous: #ffa0a0;
+    --color-warning: #f1bd56;
+    --color-success: #a5ddb1;
+    --color-information: #7ec9f8;
+    --color-dangerous-bg: rgba(255, 160, 160, 0.16);
+    --color-warning-bg: rgba(241, 189, 86, 0.16);
+    --color-success-bg: rgba(165, 221, 177, 0.16);
+    --color-information-bg: rgba(126, 201, 248, 0.16);
+
+    /* 탭 버튼 선택 배경 (Black+gray 반전) */
+    --color-tab-on: #4a5159;
+    /* ★ 다크 값은 시안에서 확인이 안 돼서 임시값이에요 */
 }
 
 /* ==========================================================
@@ -1447,14 +1470,14 @@ button {
     height: 48px;
     padding: 0 19px;
     border-radius: var(--radius-lg);
-    font-size: var(--fs-body2);
+    font-size: var(--fs-body1);
 }
 
 .btn-sm {
     height: 40px;
     padding: 0 15px;
     border-radius: var(--radius-md);
-    font-size: var(--fs-body2);
+    font-size: var(--fs-body1);
 }
 
 .btn-xs {
@@ -1482,7 +1505,7 @@ button {
 
 .btn-dark {
     background: var(--color-gray-900);
-    color: var(--color-white);
+    color: var(--color-base-inverse);
 }
 
 .btn-dark:hover {
@@ -2218,10 +2241,15 @@ button {
 }
 
 .noti-tab.is-active {
-    border-color: var(--color-gray-900);
-    background: var(--color-gray-900);
-    color: var(--color-base-inverse);
-    /* 라이트: 흰 글자 / 다크: 검은 글자 */
+    border-color: var(--color-tab-on);
+    background: var(--color-tab-on);
+    color: var(--color-white);
+    /* Figma tab_button: 선택 배경은 Black+gray(반전), 글자는 늘 흰색 */
+}
+
+.noti-tab.has-dot.is-active::after {
+    top: 0;
+    right: 2px;
 }
 
 .noti-tab.has-dot::after {
@@ -2427,6 +2455,11 @@ button {
     filter: invert(1);
 }
 
+/* 회색 아이콘(#656D77)은 다크의 보조 글자색(#ADB5C7)에 가깝게 밝혀요 */
+[data-theme="dark"] img[src*="resource/icon/"][src*="-gray"] {
+    filter: brightness(1.7);
+}
+
 [data-theme="dark"] .logo img {
     filter: invert(1) hue-rotate(180deg);
 }
@@ -2570,9 +2603,9 @@ button {
 }
 
 .hm-tab[aria-selected="true"] {
-    border-color: var(--color-gray-900);
-    background: var(--color-gray-900);
-    color: var(--color-base-inverse);
+    border-color: var(--color-tab-on);
+    background: var(--color-tab-on);
+    color: var(--color-white);
 }
 
 .hm-row {
@@ -2787,9 +2820,9 @@ main[hidden] {
 }
 
 .rs-chip.is-active {
-    border-color: var(--color-gray-900);
-    background: var(--color-gray-900);
-    color: var(--color-base-inverse);
+    border-color: var(--color-tab-on);
+    background: var(--color-tab-on);
+    color: var(--color-white);
 }
 
 /* 위쪽 고정 영역: 날짜 / 검색 / 드롭다운 / 칩 / 표 머리글
@@ -6019,7 +6052,7 @@ body.rl-dragging * {
 
 .rv-day.is-sel {
     background: var(--color-gray-900);
-    color: var(--color-white);
+    color: var(--color-base-inverse);
     font-weight: var(--fw-bold);
 }
 
@@ -8657,7 +8690,7 @@ html.is-modal-open {
 
 .ob-next {
     background: var(--color-gray-900);
-    color: var(--color-white);
+    color: var(--color-base-inverse);
 }
 
 .ob-next:hover {
