@@ -42,6 +42,8 @@
     --color-bg-base: #f4f6fb;
     --color-bg-low: #f8f8f9;
     --color-bg-disable: #f2f3f6;
+    --color-chip-bg: #f4f6fb;
+    /* 칩·배지 배경 (다크는 Base bg 2) */
     --color-bg-hover: #f8faff;
     /* 호버 배경 (Figma base-bg-low) */
 
@@ -49,6 +51,9 @@
     --color-base-inverse: #ffffff;
     /* White+Black (반전) */
     --color-tab-on: #1f2225;
+    --color-seg-on: #ffffff;
+    --color-scroll-thumb-h: #1f2225;
+    /* 세그먼트(월별/주별, 전체/숙박/대실) 선택 칸 */
     /* 탭 버튼 선택 배경 (Black+gray 반전) */
 
     /* ---------- Color / Line ---------- */
@@ -149,7 +154,7 @@
 }
 
 *::-webkit-scrollbar-thumb:horizontal {
-    background: var(--color-gray-900);
+    background: var(--color-scroll-thumb-h);
 }
 
 *::-webkit-scrollbar-thumb {
@@ -167,7 +172,7 @@
     .ui-table,
     .attach-list,
     .noti-tabs {
-        scrollbar-color: var(--color-gray-900) var(--color-gray-50);
+        scrollbar-color: var(--color-scroll-thumb-h) var(--color-gray-50);
     }
 }
 
@@ -204,8 +209,8 @@
     /* 버튼 hover */
     --color-primary-accent: #8266eb;
     /* 보라 글자·선택 테두리 */
-    --color-primary-50: rgba(113, 80, 232, 0.19);
-    /* ★ 보라 틴트 배경 (활성 메뉴·호버·칩) */
+    --color-primary-50: #27243c;
+    /* 보라 틴트 배경 (활성 메뉴·호버·칩) */
     --color-primary-300: #a18aff;
     /* ★ 밝은 보라 */
 
@@ -235,7 +240,9 @@
     --color-bg-base: #15161a;
     --color-base-inverse: #1f2225;
     /* White+Black(반전): 카드·패널 배경 */
-    --color-bg-disable: #0e0e11;
+    --color-bg-disable: #26292b;
+    /* Base bg 2 */
+    --color-chip-bg: #26292b;
     --color-bg-low: #15161a;
     /* ★ Figma 값(#f8f9fb)은 다크에서 너무 밝아 바꿨어요 */
     --color-bg-hover: #15161a;
@@ -250,14 +257,15 @@
     --color-warning: #f1bd56;
     --color-success: #a5ddb1;
     --color-information: #7ec9f8;
-    --color-dangerous-bg: rgba(255, 160, 160, 0.16);
-    --color-warning-bg: rgba(241, 189, 86, 0.16);
-    --color-success-bg: rgba(165, 221, 177, 0.16);
+    --color-dangerous-bg: #3c2326;
+    --color-warning-bg: #392c12;
+    --color-success-bg: #1b3324;
     --color-information-bg: rgba(126, 201, 248, 0.16);
 
     /* 탭 버튼 선택 배경 (Black+gray 반전) */
-    --color-tab-on: #4a5159;
-    /* ★ 다크 값은 시안에서 확인이 안 돼서 임시값이에요 */
+    --color-tab-on: #363a3d;
+    --color-seg-on: #363a3d;
+    --color-scroll-thumb-h: #363a3d;
 }
 
 /* ==========================================================
@@ -1379,7 +1387,7 @@ button {
     /* 가로를 정수로 맞추려면 inline 이면 안 돼요 (index.js pxSnap) */
     padding: 2px 6px;
     border-radius: var(--radius-xs);
-    background: var(--color-bg-base);
+    background: var(--color-chip-bg);
     font-size: var(--fs-body3);
     line-height: var(--lh-body3);
     font-weight: var(--fw-medium);
@@ -1428,7 +1436,7 @@ button {
 
 .badge-progress,
 .badge-todo {
-    background: var(--color-bg-base);
+    background: var(--color-chip-bg);
     color: var(--color-gray-300);
 }
 
@@ -1751,6 +1759,26 @@ button {
     height: 104px;
     border-radius: var(--radius-sm);
     object-fit: cover;
+}
+
+/* 첨부파일 안의 영상 칸 (사진과 같은 104px) */
+.attach-video {
+    position: relative;
+    flex-shrink: 0;
+    display: block;
+    width: 104px;
+    height: 104px;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-disable);
+}
+
+.attach-video video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
 }
 
 .detail>.btn {
@@ -2460,8 +2488,10 @@ button {
     filter: brightness(1.7);
 }
 
+/* 로고: 보라색 V 는 그대로 두고 글자만 흰색인 파일로 바꿔요 (색을 뒤집는 필터는 쓰지 않아요) */
 [data-theme="dark"] .logo img {
-    filter: invert(1) hue-rotate(180deg);
+    filter: none;
+    content: url("../logo/logo-dark.svg");
 }
 
 /* ==========================================================
@@ -5235,7 +5265,7 @@ body.rl-dragging * {
     height: 32px;
     padding: 0 12px;
     border-radius: var(--radius-xs);
-    background: var(--color-bg-base);
+    background: var(--color-chip-bg);
     font-size: var(--fs-body2);
     line-height: var(--lh-body2);
     font-weight: var(--fw-bold);
@@ -5853,7 +5883,7 @@ body.rl-dragging * {
     width: calc((100% - 8px) / 2);
     height: 40px;
     border-radius: var(--radius-md);
-    background: var(--color-white);
+    background: var(--color-seg-on);
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.07);
     pointer-events: none;
     transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
@@ -6425,7 +6455,7 @@ body.rl-dragging * {
     padding: 0;
     border: 1px solid var(--color-line-normal);
     border-radius: var(--radius-sm);
-    background: var(--color-static-white, #fff);
+    background: var(--color-base-inverse);
     font: inherit;
     font-size: var(--fs-body3);
     line-height: var(--lh-body3);
@@ -6442,7 +6472,7 @@ body.rl-dragging * {
 .rv-mini {
     padding: 2px 6px;
     border-radius: var(--radius-xs);
-    background: var(--color-bg-base);
+    background: var(--color-chip-bg);
     color: var(--color-gray-300);
     font-size: var(--fs-body3);
     line-height: var(--lh-body3);
@@ -6658,7 +6688,7 @@ body.rl-dragging * {
 }
 
 .ui-name .tag {
-    background: var(--color-bg-base);
+    background: var(--color-chip-bg);
 }
 
 .ui-tr.is-selected .ui-name .tag,
@@ -6667,13 +6697,20 @@ body.rl-dragging * {
 }
 
 .ui-name .tag {
-    background: var(--color-bg-base);
+    background: var(--color-chip-bg);
 }
 
 /* 행이 선택(호버)돼 배경이 회색이 되면 배지가 묻혀서 한 단계 진한 회색으로 바꿔요 */
 .ui-tr:hover .ui-name .tag,
 .ui-tr.is-selected .ui-name .tag {
     background: var(--color-gray-50);
+}
+
+/* 다크: 선택·호버된 행의 칩은 밝은 회색 배경에 어두운 글자 (시안) */
+[data-theme="dark"] .ui-tr:hover .ui-name .tag,
+[data-theme="dark"] .ui-tr.is-selected .ui-name .tag {
+    background: var(--color-gray-800);
+    color: var(--color-base-inverse);
 }
 
 .ui-review {
@@ -6835,7 +6872,7 @@ body.rl-dragging * {
     left: 0;
     height: 40px;
     border-radius: var(--radius-md);
-    background: var(--color-white);
+    background: var(--color-seg-on);
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.07);
     pointer-events: none;
     transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
@@ -7397,7 +7434,7 @@ html.is-modal-open {
     justify-content: center;
     padding: 2px 6px;
     border-radius: var(--radius-xs);
-    background: var(--color-bg-base);
+    background: var(--color-chip-bg);
     font-size: var(--fs-body3);
     line-height: var(--lh-body3);
     font-weight: var(--fw-medium);
@@ -7519,7 +7556,7 @@ html.is-modal-open {
     height: 32px;
     padding: 0 12px;
     border-radius: var(--radius-xs);
-    background: var(--color-bg-base);
+    background: var(--color-chip-bg);
     font-size: var(--fs-body2);
     line-height: var(--lh-body2);
     font-weight: var(--fw-bold);

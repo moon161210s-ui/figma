@@ -49,6 +49,11 @@ const roomPhotos = (no) => {
         : ATTACHMENTS;
 };
 
+/* 검수 대기 객실은 인증 영상도 첨부파일에 같이 떠요 (청소 결과 화면의 사진 모달과 같은 영상 / 사진 맨 뒤) */
+const ATTACH_VIDEO = "resource/room.mp4";
+const hasAttachVideo = (r) => r.status === "review";
+const attachVideoTile = `<span class="attach-video" aria-label="인증 영상"><video src="${ATTACH_VIDEO}#t=0.1" preload="metadata" muted playsinline tabindex="-1"></video><span class="rs-video-play"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 4.8v10.4a.8.8 0 0 0 1.2.7l8.4-5.2a.8.8 0 0 0 0-1.4L8.2 4.1A.8.8 0 0 0 7 4.8Z" fill="#fff"/></svg></span></span>`;
+
 /* 청소 담당자가 청소를 끝내는 시각 (결과 화면 · 업무 특이사항이 같은 시각을 써요) */
 const cleanDoneAt = (no) => {
     const r = ROOMS.find((x) => x.no === no);
@@ -887,12 +892,12 @@ ${(r.empty && !r.status) || isStayOnly(r)
       </dl>
       ${hasPhotos
             ? `
-        <h3 class="detail-section">첨부파일 <small>(${roomPhotos(r.no).length
+        <h3 class="detail-section">첨부파일 <small>(${roomPhotos(r.no).length + (hasAttachVideo(r) ? 1 : 0)
             })</small></h3>
         <div class="attach-list">
           ${roomPhotos(r.no)
                 .map((src) => `<img src="${src}" alt="청소 완료 사진" />`)
-                .join("")}
+                .join("")}${hasAttachVideo(r) ? attachVideoTile : ""}
         </div>`
             : `
         <h3 class="detail-section">첨부파일</h3>

@@ -341,12 +341,12 @@ function renderResultDetail() {
         r.status === "reclean"
             ? `<div class="rs-d-foot">
       <button class="btn btn-lg btn-outline" type="button" data-rs-cancel>재청소 요청 취소</button>
-      <button class="btn btn-lg btn-primary" type="button" data-rs-confirm>검수 완료</button>
+      <button class="btn btn-lg btn-outline" type="button" data-rs-confirm>검수 완료</button>
     </div>`
             : r.status === "review"
                 ? `<div class="rs-d-foot">
       <button class="btn btn-lg btn-outline" type="button" data-rs-reclean>재청소 요청</button>
-      <button class="btn btn-lg btn-primary" type="button" data-rs-confirm>검수 완료</button>
+      <button class="btn btn-lg btn-outline" type="button" data-rs-confirm>검수 완료</button>
     </div>`
                 : `<div class="rs-d-foot is-single">
       <button class="btn btn-lg btn-primary" type="button" data-rs-reclean>재청소 요청</button>
@@ -365,19 +365,42 @@ function renderResultDetail() {
     </div>
     ${foot}`;
     fitRsDetail();
+    rsWatchCta();
     rsSyncCta();
 }
 
-/* 재청소 요청 CTA 색: 체크리스트에 하나라도 표시하면 '재청소 요청'이 보라색 (메모는 색에 영향이 없어요) / 체크리스트가 모두 비어 있으면 '검수 완료'가 보라색 */
+/* 하단 버튼 색 (둘 다 있을 때 / 처음에는 둘 다 라인)
+   1순위: 재청소 요청 체크리스트에 하나라도 표시하면 '재청소 요청'이 보라색 (메모는 색에 영향이 없어요)
+   2순위: 표시한 게 없고 우측 패널을 맨 아래까지 스크롤하면 '검수 완료'가 보라색 (스크롤할 내용이 없으면 이미 맨 아래로 봐요) */
 function rsSyncCta() {
-    const rc = $("#rsDetail [data-rs-reclean]");
     const cf = $("#rsDetail [data-rs-confirm]");
-    if (!rc || !cf) return; /* 두 버튼이 같이 있는 검수 대기 상태에서만 바뀌어요 */
+    if (!cf) return; /* 검수 완료 버튼이 없는 상태(청소 완료)는 바뀌지 않아요 */
+    const rc = $("#rsDetail [data-rs-reclean]");
+    const body = $("#rsDetail .rs-d-body");
     const touched = !!document.querySelector("#rsDetail .rs-check-item.is-checked");
-    rc.classList.toggle("btn-primary", touched);
-    rc.classList.toggle("btn-outline", !touched);
-    cf.classList.toggle("btn-primary", !touched);
-    cf.classList.toggle("btn-outline", touched);
+    const atEnd = !body || body.scrollTop + body.clientHeight >= body.scrollHeight - 1;
+    const confirmOn = !touched && atEnd;
+    if (rc) {
+        rc.classList.toggle("btn-primary", touched);
+        rc.classList.toggle("btn-outline", !touched);
+    }
+    cf.classList.toggle("btn-primary", confirmOn);
+    cf.classList.toggle("btn-outline", !confirmOn);
+}
+
+/* 패널을 스크롤하거나 내용 높이(토글 펼침·접힘)가 바뀌면 버튼 색을 다시 정해요 */
+let rsCtaObs = null;
+function rsWatchCta() {
+    const body = $("#rsDetail .rs-d-body");
+    if (!body) return;
+    body.addEventListener("scroll", rsSyncCta, { passive: true });
+    if (rsCtaObs) rsCtaObs.disconnect();
+    if (typeof ResizeObserver === "function") {
+        rsCtaObs = new ResizeObserver(rsSyncCta);
+        rsCtaObs.observe(body);
+        const inner = body.querySelector(".rs-d-in");
+        if (inner) rsCtaObs.observe(inner);
+    }
 }
 
 /* 상세 패널은 화면 맨 아래(여백 20px)까지 채우고, 스크롤하면 헤더 아래(120px)에 붙어요 */
