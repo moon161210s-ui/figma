@@ -268,8 +268,8 @@
             r = Math.max(r, q.right);
             b = Math.max(b, q.bottom);
         });
-        /* 버튼이 대상이면 구멍을 버튼 크기·모서리 그대로 뚫어요 (여유 없음) */
-        if (els.length === 1 && els[0].matches("button, .btn, [role='button']")) {
+        /* 여유(pad)를 따로 정하지 않은 버튼 대상은 구멍을 버튼 크기·모서리 그대로 뚫어요 (객실 카드처럼 pad가 있는 단계는 제외) */
+        if (step.pad === undefined && els.length === 1 && els[0].matches("button, .btn, [role='button']")) {
             const q = els[0].getBoundingClientRect();
             const cs = getComputedStyle(els[0]);
             const rad = Math.round(parseFloat(cs.borderTopLeftRadius)) || 0;
