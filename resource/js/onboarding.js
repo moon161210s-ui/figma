@@ -268,6 +268,13 @@
             r = Math.max(r, q.right);
             b = Math.max(b, q.bottom);
         });
+        /* 버튼이 대상이면 구멍을 버튼 크기·모서리 그대로 뚫어요 (여유 없음) */
+        if (els.length === 1 && els[0].matches("button, .btn, [role='button']")) {
+            const q = els[0].getBoundingClientRect();
+            const cs = getComputedStyle(els[0]);
+            const rad = Math.round(parseFloat(cs.borderTopLeftRadius)) || 0;
+            return { left: Math.round(q.left), top: Math.round(q.top), width: Math.round(q.width), height: Math.round(q.height), radius: rad };
+        }
         /* 시안 여유값은 1920 화면 기준이에요. 화면이 줄어 안의 요소가 작아지면 사방 여유도 같은 비율로 줄여요 (본문 폭 1640px 기준 / 정수로 반올림) */
         const k = Math.min(1, Math.max(0.3, (window.innerWidth - 260) / 1640));
         const pad = (Array.isArray(step.pad) ? step.pad : [step.pad || 0, step.pad || 0]).map((v) => Math.round(v * k));
@@ -312,7 +319,7 @@
         const vw = innerWidth;
         const vh = innerHeight;
 
-        holeEl.style.cssText = `left:${hole.left}px;top:${hole.top}px;width:${hole.width}px;height:${hole.height}px;border-radius:${step.r || 16}px`;
+        holeEl.style.cssText = `left:${hole.left}px;top:${hole.top}px;width:${hole.width}px;height:${hole.height}px;border-radius:${hole.radius != null ? hole.radius : step.r || 16}px`;
 
         /* 말풍선 방향: 시안 방향이 들어갈 자리가 없으면 반대쪽 → 위아래 순서로 바꿔요 */
         const h = tip.offsetHeight;
